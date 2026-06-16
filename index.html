@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BFT CALC — Calcolatrice e Tabelle d'officina</title>
+<meta name="theme-color" content="#FFFFFF">
+<meta name="description" content="Calcolatrice parametri di taglio (fresatura, tornitura, foratura, filettatura) e tabelle tecniche d'officina (tolleranze ISO 286, filettature). 100% offline.">
+<!-- PWA / installabile su PC e tablet -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="application-name" content="BFT CALC">
+<meta name="apple-mobile-web-app-title" content="BFT CALC">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Saira+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF; --surface:#FAFAFB; --panel:#FFFFFF; --panel-2:#F4F4F6; --line:#E4E4E7; --line-2:#D4D6DB; --steel:#DDE1E7;
+  --yellow:#F4C400; --yellow-dim:#E3B400; --yellow-text:#8F7400; --sel:#FCF3C9; --row-hover:#FFFBEC; --soft:#FCF7E1;
+  --text:#17181A; --muted:#6B6E76; --muted-2:#9A9DA6;
+  --green:#178A4C; --red:#C2402F; --warn:#B45309;
+  --display:'Saira Condensed','Arial Narrow',sans-serif;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'Courier New',ui-monospace,'Consolas',monospace;
+  --r:7px; --rs:5px;
+}
+*{box-sizing:border-box}
+html{color-scheme:light}
+html,body{margin:0;padding:0}
+body{background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%}
+button{font-family:inherit; cursor:pointer}
+::selection{background:var(--yellow); color:#000}
+.wrap{max-width:1120px; margin:0 auto; padding:0 20px}
+
+/* ---------- HEADER ---------- */
+.masthead{position:sticky; top:0; z-index:50; background:#fff; border-bottom:3px solid var(--yellow); box-shadow:0 1px 0 var(--line)}
+.masthead .bar{max-width:1120px; margin:0 auto; padding:0 20px; height:60px; display:flex; align-items:center; gap:14px}
+.logo{display:flex; align-items:center; gap:10px; flex-shrink:0; background:transparent; border:0; padding:0}
+.logo .mark{width:30px; height:30px; background:var(--yellow); border-radius:5px; display:grid; place-items:center; font-family:var(--display); font-weight:800; color:#000; font-size:19px; line-height:1}
+.logo .wm{font-family:var(--display); font-size:21px; letter-spacing:.4px; line-height:1}
+.logo .wm b{font-weight:700; color:var(--text)} .logo .wm span{font-weight:400; color:var(--muted)}
+.crumb{font-family:var(--display); font-weight:600; font-size:15px; color:var(--yellow-text); letter-spacing:.7px; text-transform:uppercase; padding-left:14px; border-left:1px solid var(--line); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.crumb .sep{color:var(--muted-2); margin:0 7px; font-weight:400}
+.crumb .dim{color:var(--muted)}
+.hstatus{margin-left:auto; display:flex; align-items:center; gap:14px; font-family:var(--mono); font-size:11px; color:var(--muted); flex-shrink:0}
+.hstatus .dot{width:7px; height:7px; border-radius:50%; background:var(--green); display:inline-block; margin-right:5px}
+.hstatus b{color:var(--text); font-weight:700}
+
+/* ---------- SUBNAV ---------- */
+.subnav{background:#fff; border-bottom:1px solid var(--line); position:sticky; top:60px; z-index:40}
+.subnav.hidden{display:none}
+.subnav .bar{max-width:1120px; margin:0 auto; padding:0 20px; display:flex; align-items:center; gap:0; overflow-x:auto; scrollbar-width:none}
+.subnav .bar::-webkit-scrollbar{display:none}
+.back{flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; background:transparent; border:0; color:var(--muted); font-family:var(--sans); font-weight:600; font-size:12px; padding:13px 14px 13px 0; margin-right:12px; border-right:1px solid var(--line); white-space:nowrap}
+.back:hover{color:var(--text)} .back svg{width:14px; height:14px}
+.subtabs{display:flex; gap:2px}
+.stab{flex:0 0 auto; background:transparent; border:0; border-bottom:3px solid transparent; color:var(--muted); font-family:var(--display); font-weight:600; text-transform:uppercase; letter-spacing:.5px; font-size:15px; padding:13px 14px 10px; white-space:nowrap; line-height:1.05}
+.stab:hover{color:var(--text); background:var(--panel-2)}
+.stab.on{color:var(--yellow-text); border-bottom-color:var(--yellow)}
+
+/* ---------- LAYOUT ---------- */
+main{padding:24px 0 40px}
+.view{display:none}
+.view.on{display:block; animation:fade .18s ease}
+@keyframes fade{from{opacity:0; transform:translateY(3px)}to{opacity:1; transform:none}}
+.sechead{margin-bottom:18px}
+.sechead .eyebrow{display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--yellow-text); margin-bottom:6px}
+.sechead h2{font-family:var(--display); font-weight:700; text-transform:uppercase; letter-spacing:.4px; font-size:26px; margin:0; color:var(--text); line-height:1}
+.sechead .sub{display:block; font-size:12px; color:var(--muted); margin-top:5px}
+.sechead::after{content:""; display:block; width:54px; height:3px; background:var(--yellow); margin-top:11px}
+
+/* ---------- HOME HUB ---------- */
+.hubintro{margin-bottom:20px}
+.hubintro h1{font-family:var(--display); font-weight:700; text-transform:uppercase; letter-spacing:.4px; font-size:30px; margin:0; color:var(--text); line-height:1}
+.hubintro p{margin:7px 0 0; font-size:13px; color:var(--muted)}
+.hub{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+.hubcard{display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; transition:border-color .15s, box-shadow .15s}
+.hubcard:hover{border-color:var(--yellow); box-shadow:0 8px 26px rgba(20,20,20,.08)}
+.hubcard .top{display:flex; align-items:center; gap:14px; padding:20px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,#fff,var(--surface)); border-radius:0; border-left:0; border-right:0; border-top:0; text-align:left; width:100%}
+.hubcard .ico{width:46px; height:46px; border-radius:9px; background:var(--sel); border:1px solid var(--yellow-dim); display:grid; place-items:center; flex-shrink:0; color:#7a6200}
+.hubcard .ico svg{width:26px; height:26px}
+.hubcard .ttx{display:flex; flex-direction:column; min-width:0}
+.hubcard .ttx .h{font-family:var(--display); font-weight:700; text-transform:uppercase; letter-spacing:.5px; font-size:24px; color:var(--text); line-height:1}
+.hubcard .ttx .p{font-size:12px; color:var(--muted); margin-top:4px}
+.hubcard .top .arr{margin-left:auto; color:var(--muted-2); font-size:20px; transition:transform .15s,color .15s; align-self:center}
+.hubcard .top:hover .arr{color:var(--yellow-text); transform:translateX(3px)}
+.hubitems{display:flex; flex-direction:column}
+.hubitem{display:flex; align-items:center; gap:12px; padding:13px 20px; border:0; border-top:1px solid var(--line); background:transparent; text-align:left; width:100%}
+.hubitem:first-child{border-top:0}
+.hubitem:hover{background:var(--row-hover)}
+.hubitem .dot{width:9px; height:9px; border-radius:2px; background:var(--yellow); flex-shrink:0}
+.hubitem .lab{font-family:var(--display); font-weight:600; font-size:16px; letter-spacing:.3px; color:var(--text); text-transform:uppercase}
+.hubitem .desc{font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:auto; margin-right:10px}
+.hubitem .chev{color:var(--muted-2); font-size:18px; transition:transform .15s,color .15s}
+.hubitem:hover .chev{transform:translateX(3px); color:var(--yellow-text)}
+.hubhint{margin:18px 2px 0; font-size:11.5px; color:var(--muted)}
+
+/* ---------- CARDS ---------- */
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); margin-bottom:16px; overflow:hidden}
+.card>.ch{display:flex; justify-content:space-between; align-items:center; padding:11px 15px; background:var(--panel-2); border-bottom:1px solid var(--line)}
+.card>.ch>span:first-child{font-family:var(--display); font-weight:600; text-transform:uppercase; letter-spacing:.5px; font-size:14.5px; color:var(--text)}
+.card>.ch>span:first-child::before{content:""; display:inline-block; width:8px; height:8px; background:var(--yellow); border-radius:2px; margin-right:9px; vertical-align:1px}
+.card>.ch .tag{font-family:var(--mono); font-size:10.5px; color:var(--muted); letter-spacing:.5px}
+.card .cb{padding:15px}
+
+/* ---------- INPUTS ---------- */
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:12px 14px}
+.f{display:flex; flex-direction:column; gap:5px}
+.f label{font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:600}
+.f label .u{color:var(--muted-2); font-weight:400; text-transform:none; letter-spacing:0}
+.f input,.f select{font-family:var(--mono); font-size:15px; padding:9px 10px; border:1px solid var(--line-2); background:var(--panel-2); color:var(--text); width:100%; border-radius:var(--rs); -webkit-appearance:none; appearance:none}
+.f input:focus,.f select:focus{outline:none; border-color:var(--yellow); background:#fff; box-shadow:0 0 0 3px var(--sel)}
+.f select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%); background-position:calc(100% - 15px) calc(50% - 2px),calc(100% - 10px) calc(50% - 2px); background-size:5px 5px,5px 5px; background-repeat:no-repeat; padding-right:30px}
+
+.seg{display:inline-flex; background:var(--panel-2); border:1px solid var(--line-2); border-radius:var(--rs); padding:3px; gap:2px; flex-wrap:wrap}
+.seg button{font-family:var(--display); font-weight:600; text-transform:uppercase; letter-spacing:.4px; font-size:13px; border:1px solid transparent; background:transparent; color:var(--muted); padding:7px 13px; border-radius:4px; line-height:1}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:#fff; color:var(--yellow-text); box-shadow:0 1px 2px rgba(0,0,0,.09); border-color:var(--line)}
+.seg.sm button{font-size:12px; padding:6px 11px}
+
+/* ---------- READOUT ---------- */
+.readout{background:var(--panel-2); border:1px solid var(--line-2); border-radius:var(--r); overflow:hidden}
+.readout .rh{display:flex; justify-content:space-between; padding:8px 14px; background:#fff; border-bottom:1px solid var(--line); font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; color:var(--muted)}
+.readout .rh b{color:var(--yellow-text); letter-spacing:1px}
+.rgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(142px,1fr)); gap:1px; background:var(--line)}
+.rcell{background:#fff; padding:11px 14px}
+.rcell .k{font-size:10.5px; letter-spacing:.3px; color:var(--muted); text-transform:uppercase; font-weight:600}
+.rcell .v{font-family:var(--mono); font-size:23px; font-weight:700; color:var(--text); line-height:1.15; margin-top:3px; letter-spacing:-.5px}
+.rcell .v small{font-family:var(--mono); font-size:11px; color:var(--muted-2); font-weight:400; letter-spacing:0; margin-left:3px}
+.rcell.alt .v{color:var(--yellow-text)} .rcell.warn .v{color:var(--warn)}
+
+/* ---------- TABLES ---------- */
+.tbl-wrap{overflow:auto; -webkit-overflow-scrolling:touch}
+table{border-collapse:collapse; width:100%; font-family:var(--mono); font-size:12.5px}
+th,td{padding:8px 11px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line)}
+th{position:sticky; top:0; background:var(--panel-2); color:var(--text); font-family:var(--display); font-weight:600; text-transform:uppercase; letter-spacing:.4px; font-size:12px; border-bottom:2px solid var(--yellow); z-index:1}
+th.l,td.l{text-align:left}
+th .u{display:block; font-family:var(--mono); font-size:9px; color:var(--muted); font-weight:400; letter-spacing:.3px; text-transform:none}
+tbody tr:nth-child(even){background:var(--surface)}
+tbody tr:hover{background:var(--row-hover)}
+td.key{color:var(--text); font-weight:700}
+
+.note{font-size:11.5px; color:var(--muted); margin:10px 2px 0; display:flex; gap:6px; line-height:1.5}
+.note b{color:var(--text)}
+.warnbox{border:1px solid var(--line); border-left:3px solid var(--yellow); background:var(--soft); padding:10px 13px; font-size:12px; color:#6b5a1e; border-radius:var(--rs); margin:10px 0}
+.chips{display:flex; flex-wrap:wrap; gap:7px; margin-top:11px}
+.chips button{font-family:var(--mono); font-size:12px; border:1px solid var(--line-2); background:#fff; color:var(--text); padding:6px 10px; border-radius:var(--rs); letter-spacing:.3px}
+.chips button:hover{border-color:var(--yellow); background:var(--sel)}
+.split{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-top:0}
+.split>div{background:#fff; padding:13px 15px}
+.split .sh{font-family:var(--display); font-weight:700; text-transform:uppercase; font-size:14px; letter-spacing:.5px; color:var(--text); border-bottom:2px solid var(--yellow); padding-bottom:5px; margin-bottom:9px}
+.kv{display:flex; justify-content:space-between; font-family:var(--mono); font-size:13px; padding:3px 0}
+.kv span:first-child{color:var(--muted); font-family:var(--sans); font-size:12px}
+.kv b{font-weight:700; color:var(--text)}
+.fit-verdict{font-family:var(--display); font-weight:700; text-transform:uppercase; font-size:18px; letter-spacing:.5px; padding:11px 14px; color:#fff; text-align:center}
+.search-in{font-family:var(--mono); font-size:14px; padding:10px 12px; border:1px solid var(--line-2); background:var(--panel-2); width:100%; border-radius:var(--rs)}
+.search-in:focus{outline:none; border-color:var(--yellow); background:#fff; box-shadow:0 0 0 3px var(--sel)}
+.tsub{display:none} .tsub.on{display:block}
+.tolpane{display:none} .tolpane.on{display:block}
+.hubitem .ti{width:22px;height:22px;flex-shrink:0;color:#6B6E76;display:grid;place-items:center}
+.hubitem .ti svg{width:22px;height:22px}
+.hubitem:hover .ti{color:var(--yellow-text)}
+.thr-draw{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.thr-draw .dh{display:flex;justify-content:space-between;align-items:center;padding:11px 15px;background:var(--panel-2);border-bottom:1px solid var(--line)}
+.thr-draw .dh>span:first-child{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:14.5px;color:var(--text)}
+.thr-draw .dh>span:first-child::before{content:"";display:inline-block;width:8px;height:8px;background:var(--yellow);border-radius:2px;margin-right:9px;vertical-align:1px}
+.thr-draw .dh .tag{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.thr-sel{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 15px;border-bottom:1px solid var(--line)}
+.thr-svg{padding:8px 10px 4px;background:#fff}
+.thr-svg{padding:12px 14px 4px}
+.thr-svg svg{width:100%;height:auto;max-height:430px;display:block;margin:0 auto}
+.thr-params{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px;background:var(--line);border-top:1px solid var(--line)}
+.tp{background:#fff;padding:9px 13px}
+.tp .k{font-size:10px;letter-spacing:.3px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.tp .v{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--text);margin-top:2px}
+.tp .v small{font-size:10px;color:var(--muted-2);font-weight:400;margin-left:2px}
+.tp.hi .v{color:var(--yellow-text)}
+.tp.pf{background:#FFFBE8}
+.tp.pf .k{color:#8F7400}
+.tp.pf .v{color:var(--yellow-text);text-decoration:underline;text-decoration-color:#CDA600;text-underline-offset:3px;text-decoration-thickness:2px}
+.tp.pf .v small{text-decoration:none;display:inline-block;color:#A88E1F}
+.tol-band{padding:13px 15px;font-family:var(--mono);font-size:18px;font-weight:700;color:var(--text);border-bottom:1px solid var(--line);background:var(--panel-2)}
+.tol-band .dev{color:var(--yellow-text);font-size:14.5px;margin-left:6px}
+.thrcard tbody tr.clk{cursor:pointer}
+.thrcard tbody tr.clk:hover{background:var(--panel-2)}
+.thrcard tbody tr.clk:hover td.key{color:var(--yellow-text)}
+.rowhint{font-family:var(--mono);font-size:11px;color:var(--muted);margin:0 0 13px 2px}
+.ctools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.ctbtn{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:8px 14px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;color:var(--text)}
+.ctbtn:hover{background:var(--panel-2)}
+.ctbtn.prim{border-color:var(--yellow);box-shadow:inset 0 -2px 0 var(--yellow)}
+.ctbtn.ghost{color:var(--muted)}
+.ctpair{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#fff}
+.ctpair input{border:0;outline:0;padding:8px 11px;font-family:var(--sans);font-size:12.5px;color:var(--text);background:transparent;width:148px}
+.ctpair input::placeholder{color:#9A9DA6}
+.ctpair .ctsave{border:0;border-left:1px solid var(--line);background:#fff;padding:8px 14px;font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text);box-shadow:inset 0 -2px 0 var(--yellow)}
+.ctpair .ctsave:hover{background:var(--panel-2)}
+.cthint{font-size:11.5px;color:var(--muted);margin:-2px 0 9px 2px;line-height:1.4}
+.cthint b{color:var(--text);font-weight:600}
+.tbl-foot{display:flex;justify-content:flex-end;margin-top:16px}
+.tbl-foot .pdfbtn{margin-right:0}
+table.cmp{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px}
+table.cmp th,table.cmp td{padding:9px 13px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+table.cmp th.l,table.cmp td.l{text-align:left;font-family:var(--sans);color:var(--muted);font-weight:600}
+table.cmp thead th{background:var(--panel-2);text-transform:uppercase;font-size:11px;letter-spacing:.4px;color:var(--muted);font-family:var(--sans)}
+table.cmp td.win{background:#E3F2EA;color:#178A4C;font-weight:700}
+.tol-hero{padding:18px;text-align:center;background:var(--panel-2);border-bottom:1px solid var(--line)}
+.tol-dk{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
+.tol-dev{font-family:var(--mono);font-size:32px;font-weight:800;color:var(--text);letter-spacing:.5px}
+.tol-dev span{font-size:14px;color:var(--muted);font-weight:600;margin-left:8px}
+.tol-lims{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--line)}
+.tl{background:#fff;padding:13px 16px}
+.tl .k{font-size:10.5px;letter-spacing:.3px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.tl .v{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text);margin-top:3px}
+.tl .v small{font-size:11px;color:var(--muted);font-weight:400}
+.tl.hi{background:#FFFDF5}
+.tl.hi .v{color:var(--yellow-text)}
+.pdfbtn{font-family:var(--sans);font-size:12px;font-weight:600;padding:6px 12px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;color:var(--text);margin-right:14px}
+.pdfbtn:hover{background:var(--panel-2);border-color:var(--yellow)}
+table th.pf{background:#F4E39A;color:#5f4d00;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}
+table td.pf{background:#FFFBE8;color:var(--yellow-text);font-weight:700;text-decoration:underline;text-decoration-color:#CDA600;text-underline-offset:3px;text-decoration-thickness:2px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(18px);background:#17181A;color:#fff;font-family:var(--sans);font-size:13.5px;font-weight:600;padding:11px 20px;border-radius:8px;box-shadow:0 10px 32px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .22s ease,transform .22s ease;z-index:9999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{margin:13mm}
+  body{background:#fff}
+  .subnav,.pdfbtn,.hstatus,.ctools,.cthint,.tbl-foot,#thrSearch,.rowhint,.back{display:none !important}
+  .masthead{position:static;box-shadow:none;border-bottom:1.5px solid #111}
+  .wrap{max-width:none;margin:0}
+  .tbl-wrap{max-height:none !important;overflow:visible !important}
+  .thr-svg svg{max-height:none}
+  .card,.readout,.thr-draw,.tol-res,#cmpOut>.card{break-inside:avoid;page-break-inside:avoid;box-shadow:none}
+  .sechead{break-after:avoid;page-break-after:avoid}
+  .note{break-inside:avoid}
+  .view{display:none !important}
+  .view.on{display:block !important}
+  .tsub{display:none !important}
+  .tsub.on{display:block !important}
+  .hubintro,.no-print{display:none !important}
+  #cmpOut>.card,.readout,.tol-res,.thr-draw{break-inside:avoid}
+  .toast{display:none !important}
+  .thrcard{display:none !important}
+  body.cmp-active #view-calc > *{display:none !important}
+  body.cmp-active #view-calc > .sechead{display:block !important}
+  body.cmp-active #view-calc > #cmpOut{display:block !important}
+}
+
+footer{margin-top:34px; border-top:1px solid var(--line); padding-top:16px; font-size:11px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px}
+footer b{color:var(--text)}
+
+@media (max-width:680px){
+  .hub{grid-template-columns:1fr}
+  .crumb{font-size:13px; letter-spacing:.4px}
+  .logo .wm span{display:none}
+  .sechead h2{font-size:23px} .hubintro h1{font-size:25px}
+  .split{grid-template-columns:1fr}
+  .rcell .v{font-size:20px}
+}
+@media print{
+  .subnav,.hstatus,.no-print{display:none}
+  .masthead{position:static}
+  body{background:#fff}
+  th{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="bar">
+    <button class="logo" data-go="home" title="Home"><span class="mark">B</span><span class="wm"><b>BFT</b> <span>Burzoni</span></span></button>
+    <div class="crumb" id="crumb">Officina · Calc</div>
+    <button class="pdfbtn pdfprint" id="btnPdf" title="Stampa / salva come PDF">⎙ PDF</button>
+    <div class="hstatus"><span><span class="dot"></span>offline</span><span>REV&nbsp;<b>1.3</b></span><span id="clock">--:--</span></div>
+  </div>
+</header>
+
+<nav class="subnav hidden" id="subnav">
+  <div class="bar">
+    <button class="back" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Home</button>
+    <div class="subtabs" id="subtabs"></div>
+  </div>
+</nav>
+
+<div class="wrap">
+<main>
+
+<!-- ===================== HOME ===================== -->
+<section id="view-home" class="view on">
+  <div class="hubintro">
+    <h1>Strumenti d'officina</h1>
+    <p>Calcolo parametri di taglio e tabelle tecniche di riferimento — 100% offline.</p>
+  </div>
+  <div class="hub">
+
+    <div class="hubcard">
+      <button class="top" data-go="calc">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><line x1="7.5" y1="6.5" x2="16.5" y2="6.5"/><line x1="8" y1="11" x2="8" y2="11"/><line x1="12" y1="11" x2="12" y2="11"/><line x1="16" y1="11" x2="16" y2="11"/><line x1="8" y1="14.5" x2="8" y2="14.5"/><line x1="12" y1="14.5" x2="12" y2="14.5"/><line x1="16" y1="14.5" x2="16" y2="14.5"/><line x1="8" y1="18" x2="16" y2="18"/></svg></span>
+        <span class="ttx"><span class="h">Calcolatrice</span><span class="p">Parametri di taglio · 4 lavorazioni</span></span>
+        <span class="arr">›</span>
+      </button>
+      <div class="hubitems">
+        <button class="hubitem" data-go="calc" data-mode="mill"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v15l-3 3-3-3V3z"/><path d="M9 8l6-3M9 12l6-3M9 16l6-3"/></svg></span><span class="lab">Fresatura</span><span class="desc">Vc · fz · MRR</span><span class="chev">›</span></button>
+        <button class="hubitem" data-go="calc" data-mode="turn"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.5l8 8.5-8 8.5-8-8.5z"/><circle cx="12" cy="12" r="2.4"/></svg></span><span class="lab">Tornitura</span><span class="desc">Vc · fn · Ra</span><span class="chev">›</span></button>
+        <button class="hubitem" data-go="calc" data-mode="drill"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v13l3 4 3-4V3"/><path d="M9 7l6 3M9 11l6 3"/></svg></span><span class="lab">Foratura</span><span class="desc">Ø · penetrazione</span><span class="chev">›</span></button>
+        <button class="hubitem" data-go="calc" data-mode="tap"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4v3h-4z"/><path d="M9 6v10l3 4 3-4V6"/><path d="M9 9h6M9 12h6M9 15h6"/></svg></span><span class="lab">Filettatura</span><span class="desc">passo · n</span><span class="chev">›</span></button>
+      </div>
+    </div>
+
+    <div class="hubcard">
+      <button class="top" data-go="tables">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="14.5" x2="21" y2="14.5"/><line x1="10" y1="9" x2="10" y2="20"/><line x1="15.5" y1="9" x2="15.5" y2="20"/></svg></span>
+        <span class="ttx"><span class="h">Tabelle</span><span class="p">Riferimenti tecnici normati</span></span>
+        <span class="arr">›</span>
+      </button>
+      <div class="hubitems">
+        <button class="hubitem" data-go="tables" data-sub="tol"><span class="dot"></span><span class="lab">Tolleranze</span><span class="desc">ISO 286 · quota</span><span class="chev">›</span></button>
+        <button class="hubitem" data-go="tables" data-sub="thread"><span class="dot"></span><span class="lab">Filettature</span><span class="desc">M · UNC · UNF</span><span class="chev">›</span></button>
+      </div>
+    </div>
+
+  </div>
+  <div class="hubhint">Suggerimento: dalla card puoi aprire direttamente la singola lavorazione o tabella.</div>
+</section>
+
+<!-- ===================== CALCOLATRICE ===================== -->
+<section id="view-calc" class="view">
+  <div class="sechead">
+    <span class="eyebrow">Calcolatrice</span>
+    <h2 id="calcTitle">Fresatura</h2>
+    <span class="sub" id="calcSub">parametri di taglio · calcolo in tempo reale</span>
+  </div>
+  <div class="cthint">↳ <b>Confronto strategie:</b> assegna un nome (facoltativo) e premi Salva A / Salva B per mettere due set di parametri a confronto.</div>
+  <div class="ctools">
+    <button class="ctbtn" id="btnClear">↺ Svuota campi</button>
+    <div class="ctpair"><input type="text" id="nameA" placeholder="Nome strategia A" maxlength="24"><button class="ctsave" id="btnSaveA">Salva A</button></div>
+    <div class="ctpair"><input type="text" id="nameB" placeholder="Nome strategia B" maxlength="24"><button class="ctsave" id="btnSaveB">Salva B</button></div>
+    <button class="ctbtn ghost" id="btnClrCmp">Pulisci confronto</button>
+  </div>
+  <div class="card">
+    <div class="ch"><span id="inHdr">Ingressi</span><span class="tag" id="inTag"></span></div>
+    <div class="cb"><div class="grid" id="inGrid"></div></div>
+  </div>
+  <div class="readout" id="readout">
+    <div class="rh"><span id="roMode">FRESATURA</span><span>OUTPUT&nbsp;·&nbsp;<b id="roStatus">LIVE</b></span></div>
+    <div class="rgrid" id="rgrid"></div>
+  </div>
+  <div class="card">
+    <div class="ch"><span>Potenza, coppia, tempo &amp; costo</span><span class="tag">kc operatore</span></div>
+    <div class="cb"><div class="grid" id="pwGrid"></div></div>
+  </div>
+  <div class="readout" id="pwReadout">
+    <div class="rh"><span>POTENZA · COPPIA · COSTO</span><span>Pc · Mc · Tc · €</span></div>
+    <div class="rgrid" id="pwgrid"></div>
+  </div>
+  <div class="note"><span>kc = forza di taglio specifica del materiale (indicativi: acciaio ~1500–3000 · ghisa ~800–1500 · alluminio ~400–900 · inox/leghe ~1800–3000 N/mm²). Pc = potenza netta · P motore = Pc/η · Mc = coppia mandrino · Costo pezzo = Tc × tariffa(€/min) + utensile/pz. In filettatura Pc/Mc non applicabili (dominati dalla coppia di avvitamento).</span></div>
+  <div id="cmpOut"></div>
+  <div class="note" id="cutNote"><span>Ra teorica da raggio di punta · hₘ spessore truciolo medio, hₑₓ massimo (validi per κr e ingaggio impostati). In filettatura l'avanzamento è bloccato al passo.</span></div>
+</section>
+
+<!-- ===================== TABELLE ===================== -->
+<section id="view-tables" class="view">
+
+  <!-- --- TOLLERANZE (ISO 286) --- -->
+  <div id="tab-tol" class="tsub on">
+    <div class="sechead">
+      <span class="eyebrow">Tabelle</span>
+      <h2>Tolleranze</h2>
+      <span class="sub">calcolo quota con tolleranza secondo ISO 286-1</span>
+    </div>
+    <div class="card">
+      <div class="ch"><span>Quota con tolleranza</span><span class="tag">ISO 286-1</span></div>
+      <div class="cb">
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(132px,1fr))">
+          <div class="f"><label>Lato</label>
+            <div class="seg sm" id="tolSide" style="margin-top:1px"><button class="on" data-s="albero">Albero</button><button data-s="foro">Foro</button></div>
+          </div>
+          <div class="f"><label>Nominale <span class="u">mm</span></label><input id="tolD" type="number" value="10" min="0.1" max="500" step="0.1"></div>
+          <div class="f"><label>Scostam. fondamentale</label><select id="tolL"></select></div>
+          <div class="f"><label>Grado IT</label><select id="tolG"></select></div>
+        </div>
+        <div class="chips" id="tolPresets"></div>
+      </div>
+    </div>
+    <div id="tolOut"></div>
+    <div class="note"><span><b>LSD</b> = limite superiore di dimensione (Ø max) · <b>LIS</b> = limite inferiore (Ø min). Scostamenti secondo ISO 286-1. Lettere a/b/c e d–s coperte; interferenze p/r/s fino a Ø50, oltre verificare le sotto-fasce.</span></div>
+    <div class="tbl-foot"><button class="pdfbtn pdfprint" title="Stampa / salva come PDF">⎙ PDF</button></div>
+  </div>
+
+  <!-- --- FILETTATURE --- -->
+  <div id="tab-thread" class="tsub">
+    <div class="sechead"><span class="eyebrow">Tabelle</span><h2>Filettature</h2><span class="sub">profilo tecnico + tabelle complete · metrica, trapezia, Whitworth, gas (cil. e conica), NPT, unificata</span></div>
+    <div class="thr-draw">
+      <div class="dh"><span>Profilo filettatura</span><span class="tag" id="drawTag">ISO 68 · 60°</span></div>
+      <div class="thr-sel">
+        <div class="f"><label>Tipo filettatura</label><select id="drawFam"></select></div>
+        <div class="f"><label>Misura</label><select id="drawSize"></select></div>
+      </div>
+      <div class="thr-svg" id="drawSvg"></div>
+      <div class="thr-params" id="drawParams"></div>
+    </div>
+    <div style="margin-bottom:6px"><input class="search-in" id="thrSearch" placeholder="Filtra: M8, Tr20, 1/4, G1/2, fine…" autocomplete="off"></div>
+    <div class="rowhint">↑ Tocca una riga per caricarla nel profilo · la tabella mostra il tipo selezionato</div>
+    <div class="card thrcard"><div class="ch"><span>Metrica passo grosso · M</span><span class="tag">ISO 261 · mm</span></div><div class="cb" style="padding:0"><div class="tbl-wrap"><table id="t_mc"><thead></thead><tbody></tbody></table></div></div></div>
+    <div class="card thrcard"><div class="ch"><span>Metrica passo fine · M×p</span><span class="tag">ISO 261 · mm</span></div><div class="cb" style="padding:0"><div class="tbl-wrap"><table id="t_mf"><thead></thead><tbody></tbody></table></div></div></div>
+    <div class="card thrcard"><div class="ch"><span>Trapezia · Tr</span><span class="tag">ISO 2904 · mm</span></div><div class="cb" style="padding:0"><div class="tbl-wrap"><table id="t_tr"><thead></thead><tbody></tbody></table></div></div></div>
+    <div class="card thrcard"><div class="ch"><span>Whitworth · BSW</span><span class="tag">BS 84 · 55°</span></div><div class="cb" style="padding:0"><div class="tbl-wrap"><table id="t_bsw"><thead></thead><tbody></tbody></table></div></div></div>
+    <div class="card thrcard"><div class="ch"><span>Gas cilindrica · G (BSP)</span><span class="tag">ISO 228 · mm</span></div><div class="cb" style="padding:0"><div class="tbl-wrap"><table id="t_bsp"><thead></thead><tbody></tbody></table></div></div></div>
+    <div class="card thrcard"><div class="ch"><span>Gas conica · R / Rc (BSPT)</span><span class="tag">ISO 7 · 55° · conica 1:16</span></div><div class="cb" style="padding:0"><div class="tbl-wrap"><table id="t_r"><thead></thead><tbody></tbody></table></div></div></div>
+    <div class="card thrcard"><div class="ch"><span>NPT conica · ANSI</span><span class="tag">ASME B1.20.1 · 60° · 1:16</span></div><div class="cb" style="padding:0"><div class="tbl-wrap"><table id="t_npt"><thead></thead><tbody></tbody></table></div></div></div>
+    <div class="card thrcard"><div class="ch"><span>Unificata · UNC / UNF / UNEF</span><span class="tag">ASME B1.1 · mm</span></div><div class="cb" style="padding:0"><div class="tbl-wrap"><table id="t_un"><thead></thead><tbody></tbody></table></div></div></div>
+    <div class="note"><span>d₂ = diam. medio · d₃ = nocciolo (vite) · D₁ = nocciolo madrevite · A<sub>s</sub> = sezione resistente · Preforo = foro di maschiatura indicativo (~D−p). Disegno: profilo ingrandito, diametri non in scala radiale.</span></div>
+    <div class="tbl-foot"><button class="pdfbtn pdfprint" title="Stampa / salva come PDF">⎙ PDF</button></div>
+  </div>
+
+
+</section>
+
+</main>
+<footer>
+  <span><b>BFT&nbsp;Burzoni</b> — strumento interno officina · 100% offline, nessun dato trasmesso</span>
+  <span>Rif.: UNI EN ISO 286-1 · ISO 261/262 · ISO 228/7 · ASME B1.1 / B1.20.1</span>
+</footer>
+</div><!-- /wrap -->
+
+<script>
+(function(){
+'use strict';
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function el(t,a,h){var e=document.createElement(t); if(a)for(var k in a)e.setAttribute(k,a[k]); if(h!=null)e.innerHTML=h; return e;}
+function num(v){v=parseFloat(v); return isFinite(v)?v:0;}
+function fmt(x,d){ if(!isFinite(x))return '—'; if(d==null){var a=Math.abs(x); d=a>=1000?0:a>=100?1:a>=10?2:a>=1?3:4;} return x.toFixed(d); }
+function itc(x){return (''+x).replace('.',',');}
+function D3(x){return fmt(x,3).replace('.',',');}
+function sign(x){return (x>0?'+':'')+x;}
+var store={get:function(k){try{return localStorage.getItem('bftcalc_'+k);}catch(e){return null;}},
+           set:function(k,v){try{localStorage.setItem('bftcalc_'+k,v);}catch(e){}}};
+
+/* ================= NAVIGATION ================= */
+var V={view:'home',mode:'mill',tsub:'tol'};
+var CALC_TABS=[['mill','Fresatura'],['turn','Tornitura'],['drill','Foratura'],['tap','Filettatura']];
+var TABLE_TABS=[['tol','Tolleranze'],['thread','Filettature']];
+function persistNav(){store.set('nav',JSON.stringify({mode:V.mode,tsub:V.tsub}));}
+function buildCrumb(){var c=$('#crumb');
+  if(V.view==='home'){c.textContent='Officina · Calc'; return;}
+  if(V.view==='calc'){c.textContent='Calcolatrice'; return;}
+  var name={tol:'Tolleranze',thread:'Filettature'}[V.tsub];
+  c.innerHTML='Tabelle<span class="sep">/</span><span class="dim">'+name+'</span>';}
+function render(){
+  $$('.view').forEach(function(s){s.classList.toggle('on',s.id==='view-'+V.view);});
+  var sn=$('#subnav');
+  if(V.view==='home'){sn.classList.add('hidden'); buildCrumb(); persistNav(); window.scrollTo(0,0); return;}
+  sn.classList.remove('hidden');
+  var st=$('#subtabs'); st.innerHTML='';
+  var tabs=V.view==='calc'?CALC_TABS:TABLE_TABS, active=V.view==='calc'?V.mode:V.tsub;
+  tabs.forEach(function(t){var b=el('button',{'class':'stab'+(t[0]===active?' on':'')},t[1]);
+    b.addEventListener('click',function(){ if(V.view==='calc')V.mode=t[0]; else V.tsub=t[0]; render(); });
+    st.appendChild(b);});
+  if(V.view==='calc'){cut.mode=V.mode; cut.lastSpeed='vc'; cut.lastFeed='fz'; buildCutInputs(); buildPwInputs(); recompute(null);}
+  else {$$('.tsub').forEach(function(x){x.classList.toggle('on',x.id==='tab-'+V.tsub);});}
+  buildCrumb(); persistNav(); window.scrollTo(0,0);
+}
+function go(v){V.view=v; render();}
+$$('[data-go]').forEach(function(b){b.addEventListener('click',function(){
+  var v=b.getAttribute('data-go'),mode=b.getAttribute('data-mode'),sub=b.getAttribute('data-sub');
+  if(mode)V.mode=mode; if(sub)V.tsub=sub; go(v);});});
+
+/* ===== CLOCK ===== */
+function tick(){var d=new Date(),p=function(n){return(n<10?'0':'')+n;},c=$('#clock'); if(c)c.textContent=p(d.getHours())+':'+p(d.getMinutes());}
+tick(); setInterval(tick,15000);
+
+/* ================= CUTTING VALUES ================= */
+var millFields=[['Dc','Ø fresa','mm'],['z','N° taglienti','z'],['vc','Vel. taglio Vc','m/min'],['n','Giri mandrino n','rpm'],
+  ['fz','Avanz./dente fz','mm'],['vf','Avanz. tavola Vf','mm/min'],['ap','Prof. assiale aₚ','mm'],['ae','Prof. radiale aₑ','mm'],
+  ['kr','Angolo κr','°'],['re','Raggio punta rₑ','mm']];
+var turnFields=[['Dc','Ø pezzo','mm'],['vc','Vel. taglio Vc','m/min'],['n','Giri mandrino n','rpm'],
+  ['fn','Avanz./giro fn','mm'],['ap','Prof. taglio aₚ','mm'],['re','Raggio punta rₑ','mm']];
+var drillFields=[['Dc','Ø punta','mm'],['vc','Vel. taglio Vc','m/min'],['n','Giri mandrino n','rpm'],
+  ['fn','Avanz./giro fn','mm'],['z','N° taglienti','z']];
+var tapFields=[['preset','Filetto','',{type:'preset'}],['Dc','Ø nominale','mm'],['P','Passo p','mm'],
+  ['vc','Vel. taglio Vc','m/min'],['n','Giri mandrino n','rpm']];
+var CUTFIELDS={mill:millFields,turn:turnFields,drill:drillFields,tap:tapFields};
+var MODE_LBL={mill:'FRESATURA',turn:'TORNITURA',drill:'FORATURA',tap:'FILETTATURA'};
+var MODE_TITLE={mill:'Fresatura',turn:'Tornitura',drill:'Foratura',tap:'Filettatura'};
+var MODE_TAG={mill:'Dc / z / Vc / fz',turn:'Dc / Vc / fn',drill:'Dc / Vc / fn',tap:'filetto · p / Vc'};
+var MODE_DESC={mill:'Vc, n, avanzamenti, MRR, spessore truciolo e Ra teorica',turn:'Vc, n, avanzamento, MRR e Ra teorica',
+  drill:'Vc, n, penetrazione e MRR · punta a 2 taglienti',tap:'maschiatura · avanzamento bloccato al passo (Vf = p·n)'};
+var cut={mode:'mill',
+  mill:{Dc:0,z:0,vc:0,n:0,fz:0,vf:0,ap:0,ae:0,kr:0,re:0},
+  turn:{Dc:0,vc:0,n:0,fn:0,ap:0,re:0},
+  drill:{Dc:0,vc:0,n:0,fn:0,z:0},
+  tap:{Dc:0,P:0,vc:0,n:0},
+  pw:{kc:0,eta:0,L:0,np:0,rate:0,tool:0},cmp:{A:null,B:null},cmpNames:{A:'',B:''},lastSpeed:'vc',lastFeed:'fz'};
+var CUTLAST=null;
+var PH={kr:'90',re:'0.8',eta:'0.8',np:'1'};
+function buildCutInputs(){
+  var m=cut.mode,fields=CUTFIELDS[m],data=cut[m],g=$('#inGrid'); g.innerHTML='';
+  fields.forEach(function(f){
+    var key=f[0],d=el('div',{'class':'f'});
+    if(f[3]&&f[3].type==='preset'){
+      d.innerHTML='<label>'+f[1]+'</label>';
+      var sel=el('select',{id:'c_'+key}); sel.appendChild(el('option',{value:''},'— manuale —'));
+      FAM_ORDER.forEach(function(fo){var grp=el('optgroup',{label:fo[1]});
+        THR.fam[fo[0]].rows.forEach(function(r,ri){var oc=thr_compute(fo[0],r);
+          var opt=el('option',{value:fo[0]+':'+ri}); opt.textContent=oc.label+'  ·  p '+itc(fmt(oc.P,3));
+          if(Math.abs(oc.d-data.Dc)<1e-6&&Math.abs(oc.P-data.P)<1e-6)opt.selected=true;
+          grp.appendChild(opt);});
+        sel.appendChild(grp);});
+      d.appendChild(sel); g.appendChild(d);
+      sel.addEventListener('change',function(){var v=sel.value; if(v){var pr=v.split(':'),oc=thr_compute(pr[0],THR.fam[pr[0]].rows[+pr[1]]); data.Dc=oc.d; data.P=oc.P; if($('#c_Dc'))$('#c_Dc').value=fmt(oc.d,2); if($('#c_P'))$('#c_P').value=fmt(oc.P,3);} recompute(null);});
+      return;
+    }
+    d.innerHTML='<label>'+f[1]+' <span class="u">'+f[2]+'</span></label>';
+    var inp=el('input',{type:'number',id:'c_'+key,step:'any'}); if(PH[key])inp.placeholder=PH[key]; inp.value=data[key]?data[key]:''; d.appendChild(inp); g.appendChild(d);
+    inp.addEventListener('input',(function(k){return function(){onCutInput(k);};})(key));
+  });
+  $('#inHdr').textContent='Ingressi'; $('#inTag').textContent=MODE_TAG[m]; $('#roMode').textContent=MODE_LBL[m];
+  $('#calcTitle').textContent=MODE_TITLE[m]; $('#calcSub').textContent=MODE_DESC[m];
+}
+var PWF=[['kc','Forza taglio kc','N/mm²'],['eta','Rendimento η','–'],['L','Lungh. taglio L','mm'],['np','N° passate','×'],['rate','Tariffa al minuto','€/min'],['tool','Costo utens./pz','€']];
+function buildPwInputs(){var g=$('#pwGrid'); if(!g)return; g.innerHTML=''; PWF.forEach(function(f){var key=f[0],d=el('div',{'class':'f'});
+  d.innerHTML='<label>'+f[1]+' <span class="u">'+f[2]+'</span></label>';
+  var inp=el('input',{type:'number',id:'p_'+key,step:'any'}); if(PH[key])inp.placeholder=PH[key]; inp.value=cut.pw[key]?cut.pw[key]:''; d.appendChild(inp); g.appendChild(d);
+  inp.addEventListener('input',function(){cut.pw[key]=num(inp.value); recompute(null);});});}
+function onCutInput(key){var data=cut[cut.mode]; data[key]=num($('#c_'+key).value);
+  if(key==='vc')cut.lastSpeed='vc'; if(key==='n')cut.lastSpeed='n'; if(key==='fz')cut.lastFeed='fz'; if(key==='vf')cut.lastFeed='vf'; recompute(key);}
+function cell(k,v,u,cls){return '<div class="rcell '+(cls||'')+'"><div class="k">'+k+'</div><div class="v">'+v+(u?' <small>'+u+'</small>':'')+'</div></div>';}
+function recompute(edited){
+  var m=cut.mode,d=cut[m],PI=Math.PI;
+  if(!(num(d.Dc)>0&&(num(d.vc)>0||num(d.n)>0))){if($('#rgrid'))$('#rgrid').innerHTML='';if($('#pwgrid'))$('#pwgrid').innerHTML='';CUTLAST=null;persistCut();return;}
+  var Dc=d.Dc,vc=d.vc,n=d.n;
+  if(cut.lastSpeed==='vc'){n=Dc>0?vc*1000/(PI*Dc):0; d.n=n;} else {vc=PI*Dc*n/1000; d.vc=vc;}
+  if(edited!=='n'&&$('#c_n'))$('#c_n').value=fmt(n,n>=1000?0:1);
+  if(edited!=='vc'&&$('#c_vc'))$('#c_vc').value=fmt(vc,1);
+  var h='',fz,vf,fn,Q,hm,hex,Ra;
+  if(m==='mill'){
+    var z=d.z||1;
+    if(cut.lastFeed==='fz'){fz=d.fz; vf=fz*z*n; d.vf=vf;} else {vf=d.vf; fz=(z*n)?vf/(z*n):0; d.fz=fz;}
+    if(edited!=='vf'&&$('#c_vf'))$('#c_vf').value=fmt(vf,0);
+    if(edited!=='fz'&&$('#c_fz'))$('#c_fz').value=fmt(fz,4);
+    fn=fz*z; var ap=d.ap,ae=d.ae,kr=(d.kr||90)*PI/180; Q=ap*ae*vf/1000;
+    var r=Dc>0?ae/Dc:0; r=Math.max(0,Math.min(1,r)); var phideg=Math.acos(1-2*r)*180/PI;
+    hm=phideg>0?(360*Math.sin(kr)*ae*fz)/(PI*Dc*phideg):0;
+    hex=(r<=0.5)?fz*Math.sin(kr)*2*Math.sqrt(Math.max(0,ae*(Dc-ae)))/Dc:fz*Math.sin(kr);
+    Ra=(fz*fz*1000)/(31.2*(d.re||0.8));
+    h=cell('n',fmt(n,n>=1000?0:1),'rpm')+cell('Vc',fmt(vc,1),'m/min')+cell('Vf',fmt(vf,0),'mm/min')+
+      cell('fz',fmt(fz,4),'mm')+cell('fn',fmt(fn,3),'mm/g')+cell('Q',fmt(Q,Q>=100?0:Q>=10?1:2),'cm³/min','alt')+
+      cell('hₘ',fmt(hm,4),'mm')+cell('hₑₓ',fmt(hex,4),'mm')+cell('Ra',fmt(Ra,2),'µm','warn');
+  } else if(m==='turn'){
+    fn=d.fn; vf=fn*n; Q=vc*d.ap*fn; Ra=(fn*fn*1000)/(31.2*(d.re||0.8));
+    h=cell('n',fmt(n,n>=1000?0:1),'rpm')+cell('Vc',fmt(vc,1),'m/min')+cell('Vf',fmt(vf,0),'mm/min')+
+      cell('fn',fmt(fn,3),'mm/g')+cell('Q',fmt(Q,Q>=100?0:Q>=10?1:2),'cm³/min','alt')+cell('Ra',fmt(Ra,2),'µm','warn');
+  } else if(m==='drill'){
+    fn=d.fn; var zd=d.z||2; vf=fn*n; fz=zd?fn/zd:0; Q=(PI/4)*Dc*Dc*vf/1000;
+    h=cell('n',fmt(n,n>=1000?0:1),'rpm')+cell('Vc',fmt(vc,1),'m/min')+cell('Vf',fmt(vf,0),'mm/min')+
+      cell('fn',fmt(fn,3),'mm/g')+cell('fz',fmt(fz,4),'mm/tagl.')+cell('Q',fmt(Q,Q>=100?0:Q>=10?1:2),'cm³/min','alt');
+  } else { var P=d.P; vf=P*n;
+    h=cell('n',fmt(n,n>=1000?0:1),'rpm')+cell('Vc',fmt(vc,1),'m/min')+cell('fn = p',itc(fmt(P,3)),'mm/g')+cell('Vf penetr.',fmt(vf,0),'mm/min','alt');
+  }
+  $('#rgrid').innerHTML=h;
+  var pw=cut.pw, Pc=(pw.kc>0&&Q)?Q*pw.kc/60000:null, Pmot=(Pc!=null)?Pc/(pw.eta||0.8):null, Mc=(Pc!=null&&n>0)?9549*Pc/n:null, Tc=(pw.L>0&&vf>0)?pw.L*(pw.np||1)/vf:null, cost=(Tc!=null&&(pw.rate>0||pw.tool>0))?Tc*(pw.rate||0)+(pw.tool||0):null;
+  var ph=cell('Pc netto',Pc==null?'—':fmt(Pc,Pc<10?2:1),Pc==null?'':'kW','alt')+cell('P motore',Pmot==null?'—':fmt(Pmot,Pmot<10?2:1),Pmot==null?'':'kW')+cell('Mc',Mc==null?'—':fmt(Mc,Mc<10?2:1),Mc==null?'':'Nm')+cell('Tc',Tc==null?'—':fmt(Tc,Tc<1?3:2),Tc==null?'':'min')+cell('Costo/pz',cost==null?'—':itc(fmt(cost,2)),cost==null?'':'€','warn');
+  if($('#pwgrid'))$('#pwgrid').innerHTML=ph;
+  CUTLAST={mode:m,Dc:Dc,vc:vc,n:n,vf:vf,Q:(Q||0),feedVal:(m==='mill'?fz:(m==='tap'?d.P:fn)),feedLbl:(m==='mill'?'fz':(m==='tap'?'p':'fn')),Pc:Pc,Mc:Mc,Tc:Tc,cost:cost};
+  persistCut();
+}
+
+var _toastT=null;
+function showToast(msg){var t=$('#toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); if(_toastT)clearTimeout(_toastT); _toastT=setTimeout(function(){t.classList.remove('show');},1900);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function persistCut(){store.set('cut',JSON.stringify({mode:cut.mode,mill:cut.mill,turn:cut.turn,drill:cut.drill,tap:cut.tap,pw:cut.pw,cmp:cut.cmp,cmpNames:cut.cmpNames,lastSpeed:cut.lastSpeed,lastFeed:cut.lastFeed}));}
+function svuotaCut(){var m=cut.mode; CUTFIELDS[m].forEach(function(f){if(f[3]&&f[3].type==='preset'){var sp=$('#c_preset'); if(sp)sp.value=''; return;} cut[m][f[0]]=0; var e=$('#c_'+f[0]); if(e)e.value='';});
+  ['kc','L','rate','tool'].forEach(function(k){cut.pw[k]=0; var e=$('#p_'+k); if(e)e.value='';});
+  CUTLAST=null; if($('#rgrid'))$('#rgrid').innerHTML=''; if($('#pwgrid'))$('#pwgrid').innerHTML=''; persistCut(); showToast('Campi svuotati');}
+function saveCmp(slot){if(!CUTLAST){showToast('Nessun dato da salvare');return;} cut.cmp[slot]=JSON.parse(JSON.stringify(CUTLAST)); renderCmp(); persistCut(); showToast(((cut.cmpNames[slot]||'').trim()||('Strategia '+slot))+' salvata');}
+function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)return; document.body.classList.toggle('cmp-active',!!(A||B)); if(!A&&!B){out.innerHTML='';return;} var nA=esc((cut.cmpNames.A||'').trim()||'A'),nB=esc((cut.cmpNames.B||'').trim()||'B');
+  var ML={mill:'Fresatura',turn:'Tornitura',drill:'Foratura',tap:'Filettatura'};
+  function R(lbl,unit,dec,key,dir){var a=A?A[key]:null,b=B?B[key]:null;
+    var ta=(a==null||isNaN(a))?'—':fmt(a,dec),tb=(b==null||isNaN(b))?'—':fmt(b,dec),wa='',wb='';
+    if(dir&&a!=null&&b!=null&&!isNaN(a)&&!isNaN(b)&&a!==b){if((dir>0&&a>b)||(dir<0&&a<b))wa=' class="win"';else wb=' class="win"';}
+    return '<tr><td class="l">'+lbl+(unit?' <span class="u">'+unit+'</span>':'')+'</td><td'+wa+'>'+ta+'</td><td'+wb+'>'+tb+'</td></tr>';}
+  function ft(S){return S?S.feedLbl+' '+itc(fmt(S.feedVal,S.feedLbl==='fz'?4:3)):'—';}
+  out.innerHTML='<div class="card"><div class="ch"><span>Confronto strategie A / B</span><span class="tag">parametri · potenza · costo</span></div>'+
+    '<div class="cb" style="padding:0"><div class="tbl-wrap"><table class="cmp"><thead><tr><th class="l">Parametro</th><th>'+nA+'</th><th>'+nB+'</th></tr></thead><tbody>'+
+    '<tr><td class="l">Operazione</td><td>'+(A?ML[A.mode]:'—')+'</td><td>'+(B?ML[B.mode]:'—')+'</td></tr>'+
+    R('Ø','mm',3,'Dc',0)+R('Vc','m/min',1,'vc',0)+R('n','rpm',0,'n',0)+
+    '<tr><td class="l">Avanzamento <span class="u">mm</span></td><td>'+ft(A)+'</td><td>'+ft(B)+'</td></tr>'+
+    R('Vf','mm/min',0,'vf',1)+R('Q (MRR)','cm³/min',2,'Q',1)+R('Pc netto','kW',2,'Pc',0)+R('Mc','Nm',2,'Mc',0)+
+    R('Tc','min',3,'Tc',-1)+R('Costo/pz','€',2,'cost',-1)+
+    '</tbody></table></div></div></div>';}
+if($('#btnClear'))$('#btnClear').addEventListener('click',svuotaCut);
+if($('#btnSaveA'))$('#btnSaveA').addEventListener('click',function(){saveCmp('A');});
+if($('#nameA'))$('#nameA').addEventListener('input',function(){cut.cmpNames.A=this.value; renderCmp(); persistCut();});
+if($('#nameB'))$('#nameB').addEventListener('input',function(){cut.cmpNames.B=this.value; renderCmp(); persistCut();});
+if($('#btnSaveB'))$('#btnSaveB').addEventListener('click',function(){saveCmp('B');});
+if($('#btnClrCmp'))$('#btnClrCmp').addEventListener('click',function(){cut.cmp={A:null,B:null}; renderCmp(); persistCut(); showToast('Confronto azzerato');});
+function doPrint(){
+  var framed=false; try{framed=(window.self!==window.top);}catch(e){framed=true;}
+  if(framed){try{
+    var clone=document.documentElement.cloneNode(true);
+    var sc=clone.getElementsByTagName('script'); while(sc.length)sc[0].parentNode.removeChild(sc[0]);
+    var w=window.open('','_blank');
+    if(w&&w.document){w.document.open(); w.document.write('<!doctype html><html>'+clone.innerHTML+'</html>'); w.document.close();
+      var go=function(){try{w.focus();w.print();}catch(e){}};
+      if(w.document.readyState==='complete')setTimeout(go,400); else {w.onload=function(){setTimeout(go,250);}; setTimeout(go,1300);}
+      return;}
+  }catch(e){}}
+  try{window.print();}catch(e){alert('Per stampare in PDF: scarica il file e aprilo con doppio clic, oppure consenti i popup del browser.');}
+}
+$$('.pdfprint').forEach(function(b){b.addEventListener('click',doPrint);});
+
+/* ================= ISO 286 ================= */
+var ISO={bounds:[[0,3],[3,6],[6,10],[10,18],[18,30],[30,50],[50,80],[80,120],[120,180],[180,250],[250,315],[315,400],[400,500]],
+  IT:{5:[4,5,6,8,9,11,13,15,18,20,23,25,27],6:[6,8,9,11,13,16,19,22,25,29,32,36,40],
+      7:[10,12,15,18,21,25,30,35,40,46,52,57,63],8:[14,18,22,27,33,39,46,54,63,72,81,89,97],
+      9:[25,30,36,43,52,62,74,87,100,115,130,140,155],10:[40,48,58,70,84,100,120,140,160,185,210,230,250],
+      11:[60,75,90,110,130,160,190,220,250,290,320,360,400],12:[100,120,150,180,210,250,300,350,400,460,520,570,630],
+      13:[140,180,220,270,330,390,460,540,630,720,810,890,970],14:[250,300,360,430,520,620,740,870,1000,1150,1300,1400,1550],
+      15:[400,480,580,700,840,1000,1200,1400,1600,1850,2100,2300,2500],16:[600,750,900,1100,1300,1600,1900,2200,2500,2900,3200,3600,4000]},
+  D_ES:[-20,-30,-40,-50,-65,-80,-100,-120,-145,-170,-190,-210,-230],P_EI:[6,12,15,18,22,26],R_EI:[10,15,19,23,28,34],S_EI:[14,19,23,28,35,43]};
+ISO.ABC={a:[[3,-270],[6,-270],[10,-280],[18,-290],[30,-300],[40,-310],[50,-320],[65,-340],[80,-360],[100,-380],[120,-410],[140,-460],[160,-520],[180,-580],[200,-660],[225,-740],[250,-820],[280,-920],[315,-1050],[355,-1200],[400,-1350],[450,-1500],[500,-1650]],
+ b:[[3,-140],[6,-140],[10,-150],[18,-150],[30,-160],[40,-170],[50,-180],[65,-190],[80,-200],[100,-220],[120,-240],[140,-260],[160,-280],[180,-310],[200,-340],[225,-380],[250,-420],[280,-480],[315,-540],[355,-600],[400,-680],[450,-760],[500,-840]],
+ c:[[3,-60],[6,-70],[10,-80],[18,-95],[30,-110],[40,-120],[50,-130],[65,-140],[80,-150],[100,-170],[120,-180],[140,-200],[160,-210],[180,-230],[200,-240],[225,-260],[250,-280],[280,-300],[315,-330],[355,-360],[400,-400],[450,-440],[500,-480]]};
+function abcES(L,d){var t=ISO.ABC[L];if(!t)return null;for(var i=0;i<t.length;i++)if(d<=t[i][0])return t[i][1];return null;}
+function isoIdx(d){for(var i=0;i<ISO.bounds.length;i++){var lo=ISO.bounds[i][0],hi=ISO.bounds[i][1]; if((d>lo||(lo===0&&d>0))&&d<=hi)return i;} return -1;}
+function isoDm(i){var lo=ISO.bounds[i][0],hi=ISO.bounds[i][1]; lo=lo>0?lo:1; return Math.sqrt(lo*hi);}
+function itVal(g,i){return ISO.IT[g]?ISO.IT[g][i]:null;}
+function shaftFD(L,i,g){var D=isoDm(i),R=Math.round;switch(L){
+  case 'h':return{t:'es',v:0}; case 'g':return{t:'es',v:R(-2.5*Math.pow(D,0.34))}; case 'f':return{t:'es',v:R(-5.5*Math.pow(D,0.41))};
+  case 'e':return{t:'es',v:R(-11*Math.pow(D,0.41))}; case 'd':return{t:'es',v:ISO.D_ES[i]}; case 'js':return{t:'js',v:0};
+  case 'k':return{t:'ei',v:(g>=4&&g<=7)?R(0.6*Math.pow(D,1/3)):0}; case 'm':return{t:'ei',v:itVal(7,i)-itVal(6,i)}; case 'n':return{t:'ei',v:R(5*Math.pow(D,0.34))};
+  case 'p':return{t:'ei',v:i<6?ISO.P_EI[i]:null}; case 'r':return{t:'ei',v:i<6?ISO.R_EI[i]:null}; case 's':return{t:'ei',v:i<6?ISO.S_EI[i]:null};
+} return null;}
+function shaftLimits(L,g,d){var i=isoIdx(d);if(i<0)return null;var it=itVal(g,i);if(it==null)return null;
+  if(L==='js'){var h=Math.round(it/2);return{es:h,ei:-h,it:it};}if('abc'.indexOf(L)>=0){var ea=abcES(L,d);if(ea==null)return null;return{es:ea,ei:ea-it,it:it};}var fd=shaftFD(L,i,g);if(!fd||fd.v==null)return null;
+  return fd.t==='es'?{es:fd.v,ei:fd.v-it,it:it}:{es:fd.v+it,ei:fd.v,it:it};}
+function holeLimits(L,g,d){var i=isoIdx(d);if(i<0)return null;var it=itVal(g,i);if(it==null)return null;
+  if(L==='H')return{ES:it,EI:0,it:it};if(L==='JS'){var h=Math.round(it/2);return{ES:h,EI:-h,it:it};}
+  var low=L.toLowerCase();
+  if('abc'.indexOf(low)>=0){var ea=abcES(low,d);if(ea==null)return null;var EIa=-ea;return{ES:EIa+it,EI:EIa,it:it};}
+  if('defg'.indexOf(low)>=0){var s=shaftFD(low,i,g);if(!s||s.v==null)return null;var EI=-s.v;return{ES:EI+it,EI:EI,it:it};}
+  var sd=shaftFD(low,i,g);if(!sd||sd.v==null||sd.t!=='ei')return null;
+  var delta=g<=8?(itVal(g,i)-itVal(g-1,i)):0;var ES=-sd.v+delta;return{ES:ES,EI:ES-it,it:it};}
+var SHAFT_CLASSES=['a','b','c','d','e','f','g','h','js','k','m','n','p','r','s'],HOLE_CLASSES=['A','B','C','D','E','F','G','H','JS','K','M','N','P','R','S'],GRADES=[5,6,7,8,9,10,11,12];
+var PREF=[['H','7','g','6'],['H','7','h','6'],['H','7','k','6'],['H','7','n','6'],['H','7','p','6'],['H','7','s','6'],['H','7','f','7'],['H','8','f','7'],['H','9','d','9'],['H','11','d','11'],['H','7','js','6']];
+function fillSel(sel,arr,def){arr.forEach(function(v){var o=el('option'); o.value=v; o.textContent=v; if(v==def)o.selected=true; sel.appendChild(o);});}
+var TOL_GRADES=[5,6,7,8,9,10,11,12,13,14];
+var TOL_PRE_S=['h7','g6','f7','e8','d9','h6','k6','m6','n6','p6','js6','h9','c11','a11'],TOL_PRE_H=['H7','H8','G7','F8','E9','D10','K7','N7','P7','JS7','H11','C11'];
+function tolSideV(){var b=$('#tolSide button.on');return b?b.getAttribute('data-s'):'albero';}
+function buildTolLetters(){var side=tolSideV(),letters=side==='albero'?SHAFT_CLASSES:HOLE_CLASSES,sL=$('#tolL'),cur=sL.value;
+  sL.innerHTML=''; letters.forEach(function(L){sL.appendChild(el('option',{value:L},L));});
+  sL.value=(letters.indexOf(cur)>=0)?cur:(side==='albero'?'h':'H');
+  var sG=$('#tolG'); if(!sG.options.length){TOL_GRADES.forEach(function(g){sG.appendChild(el('option',{value:g},'IT'+g));}); sG.value=7;}
+  var pr=$('#tolPresets'); pr.innerHTML=''; (side==='albero'?TOL_PRE_S:TOL_PRE_H).forEach(function(p){var b=el('button',null,p);
+    b.addEventListener('click',function(){var m=p.match(/^([A-Za-z]+)(\d+)$/); if(m){$('#tolL').value=m[1];$('#tolG').value=m[2];renderTol();}}); pr.appendChild(b);});}
+function renderTol(){var side=tolSideV(),d=num($('#tolD').value),L=$('#tolL').value,g=+$('#tolG').value,out=$('#tolOut');
+  if(d<=0||d>500){out.innerHTML='<div class="warnbox">Nominale fuori campo (0–500 mm).</div>';return;}
+  var lim=side==='albero'?shaftLimits(L,g,d):holeLimits(L,g,d);
+  if(!lim){out.innerHTML='<div class="warnbox">Scostamento '+L+g+' non disponibile per Ø'+D3(d)+' — verificare le sotto-fasce della norma per questa combinazione.</div>';return;}
+  var up=side==='albero'?lim.es:lim.ES,lo=side==='albero'?lim.ei:lim.EI;
+  var LSD=d+up/1000,LIS=d+lo/1000,mid=(LSD+LIS)/2,desig='Ø'+D3(d)+' '+L+g;
+  function kv(k,v){return '<div class="kv"><span>'+k+'</span><b>'+v+'</b></div>';}
+  var sgnmm=function(x){return (x>0?'+':x<0?'−':'')+D3(Math.abs(x));};
+  out.innerHTML='<div class="card tol-res"><div class="ch"><span>'+desig+'</span><span class="tag">'+(side==='albero'?'ALBERO':'FORO')+' · mm</span></div>'+
+  '<div class="tol-hero"><div class="tol-dk">scostamenti</div><div class="tol-dev">'+sgnmm(up/1000)+' / '+sgnmm(lo/1000)+'<span>mm</span></div></div>'+
+  '<div class="tol-lims">'+
+  '<div class="tl hi"><div class="k">LSD · Ø max</div><div class="v">'+D3(LSD)+' <small>mm</small></div></div>'+
+  '<div class="tl hi"><div class="k">LIS · Ø min</div><div class="v">'+D3(LIS)+' <small>mm</small></div></div>'+
+  '<div class="tl"><div class="k">Valore medio</div><div class="v">'+D3(mid)+' <small>mm</small></div></div>'+
+  '<div class="tl"><div class="k">IT'+g+'</div><div class="v">'+D3(lim.it/1000)+' <small>mm</small></div></div>'+
+  '</div></div>';}
+['tolD','tolL','tolG'].forEach(function(id){var e=$('#'+id);e.addEventListener('input',renderTol);e.addEventListener('change',renderTol);});
+$$('#tolSide button').forEach(function(b){b.addEventListener('click',function(){$$('#tolSide button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); buildTolLetters(); renderTol();});});
+function buildITTable(){var grades=[5,6,7,8,9,10,11,12,13,14,15,16];
+  var hr='<tr><th class="l">Campo Ø<span class="u">mm</span></th>'; grades.forEach(function(g){hr+='<th>IT'+g+'</th>';}); hr+='</tr>'; $('#itTable thead').innerHTML=hr;
+  $('#itTable tbody').innerHTML=ISO.bounds.map(function(b,i){var r='<tr><td class="l key">'+(b[0]===0?'≤ '+b[1]:b[0]+'–'+b[1])+'</td>';
+    grades.forEach(function(g){r+='<td>'+ISO.IT[g][i]+'</td>';}); return r+'</tr>';}).join('');}
+
+/* ================= THREADS ================= */
+function trAc(P){return P<=1.5?0.15:P<=5?0.25:P<=12?0.5:1;}
+var THR={clr:{1.6:1.8,2:2.4,2.5:2.9,3:3.4,3.5:3.9,4:4.5,5:5.5,6:6.6,8:9,10:11,12:13.5,14:15.5,16:17.5,18:20,20:22,22:24,24:26,27:30,30:33,33:36,36:39,39:42,42:45,45:48,48:52},
+ fam:{
+  mc:{form:'V',angle:60,type:'metric',rows:[[1.6,0.35],[2,0.4],[2.5,0.45],[3,0.5],[3.5,0.6],[4,0.7],[5,0.8],[6,1],[8,1.25],[10,1.5],[12,1.75],[14,2],[16,2],[18,2.5],[20,2.5],[22,2.5],[24,3],[27,3],[30,3.5],[33,3.5],[36,4],[39,4],[42,4.5],[45,4.5],[48,5],[52,5],[56,5.5],[60,5.5],[64,6]]},
+  mf:{form:'V',angle:60,type:'metric',rows:[[6,0.75],[8,1],[8,0.75],[10,1.25],[10,1],[10,0.75],[12,1.5],[12,1.25],[12,1],[14,1.5],[16,1.5],[18,2],[18,1.5],[20,2],[20,1.5],[22,1.5],[24,2],[24,1.5],[27,2],[30,2],[30,1.5],[33,2],[36,3],[36,2],[39,3],[42,3],[45,3],[48,3],[48,2]]},
+  tr:{form:'trap',angle:30,type:'trap',rows:[[8,1.5],[10,2],[12,3],[14,3],[16,4],[18,4],[20,4],[22,5],[24,5],[26,5],[28,5],[30,6],[32,6],[36,6],[40,7],[44,7],[48,8],[50,8],[55,9],[60,9],[65,10],[70,10],[80,10],[90,12],[100,12]]},
+  bsw:{form:'whit',angle:55,type:'inch',rows:[['1/8"',40,0.125],['3/16"',24,0.1875],['1/4"',20,0.25],['5/16"',18,0.3125],['3/8"',16,0.375],['7/16"',14,0.4375],['1/2"',12,0.5],['9/16"',12,0.5625],['5/8"',11,0.625],['3/4"',10,0.75],['7/8"',9,0.875],['1"',8,1],['1.1/4"',7,1.25],['1.1/2"',6,1.5]]},
+  bsp:{form:'whit',angle:55,type:'pipe',rows:[['G1/8',28,9.728],['G1/4',19,13.157],['G3/8',19,16.662],['G1/2',14,20.955],['G5/8',14,22.911],['G3/4',14,26.441],['G7/8',14,30.201],['G1',11,33.249],['G1.1/4',11,41.910],['G1.1/2',11,47.803],['G2',11,59.614],['G2.1/2',11,75.184],['G3',11,87.884]]},
+  un:{form:'V',angle:60,type:'inch',rows:[['1/4"-20',20,0.25,'UNC'],['5/16"-18',18,0.3125,'UNC'],['3/8"-16',16,0.375,'UNC'],['7/16"-14',14,0.4375,'UNC'],['1/2"-13',13,0.5,'UNC'],['9/16"-12',12,0.5625,'UNC'],['5/8"-11',11,0.625,'UNC'],['3/4"-10',10,0.75,'UNC'],['7/8"-9',9,0.875,'UNC'],['1"-8',8,1,'UNC'],['1/4"-28',28,0.25,'UNF'],['5/16"-24',24,0.3125,'UNF'],['3/8"-24',24,0.375,'UNF'],['7/16"-20',20,0.4375,'UNF'],['1/2"-20',20,0.5,'UNF'],['9/16"-18',18,0.5625,'UNF'],['5/8"-18',18,0.625,'UNF'],['3/4"-16',16,0.75,'UNF'],['1"-12',12,1,'UNF'],['1/4"-32',32,0.25,'UNEF'],['3/8"-32',32,0.375,'UNEF'],['1/2"-28',28,0.5,'UNEF'],['5/8"-24',24,0.625,'UNEF'],['3/4"-20',20,0.75,'UNEF'],['1"-20',20,1,'UNEF']]},
+  r:{form:'whit',angle:55,type:'pipe',taper:true,rows:[['R1/8',28,9.728],['R1/4',19,13.157],['R3/8',19,16.662],['R1/2',14,20.955],['R3/4',14,26.441],['R1',11,33.249],['R1.1/4',11,41.910],['R1.1/2',11,47.803],['R2',11,59.614]]},
+  npt:{form:'V',angle:60,type:'npt',taper:true,rows:[['1/8',27,10.287],['1/4',18,13.716],['3/8',18,17.145],['1/2',14,21.336],['3/4',14,26.670],['1',11.5,33.401],['1.1/4',11.5,42.164],['1.1/2',11.5,48.260],['2',11.5,60.325]]}
+ }};
+function thr_compute(fk,row){var F=THR.fam[fk],o={form:F.form,angle:F.angle,fam:fk};
+  if(F.type==='metric'){var D=row[0],P=row[1]; o.label='M'+itc(D)+(fk==='mf'?'×'+itc(P):''); o.d=D; o.P=P; o.d2=D-0.6495*P; o.D1=D-1.0825*P; o.d3=D-1.2269*P; o.As=Math.PI/4*Math.pow((o.d2+o.d3)/2,2); o.tap=D-P; o.r=0.144338*P; o.clr=THR.clr[D];}
+  else if(F.type==='trap'){var D=row[0],P=row[1],a=trAc(P); o.label='Tr'+itc(D)+'×'+itc(P); o.d=D; o.P=P; o.d2=D-0.5*P; o.d3=D-2*(0.5*P+a); o.D1=D-P; o.D4=D+2*a; o.tap=D-P;}
+  else if(F.type==='inch'){var lab=row[0],tpi=row[1],inch=row[2]; var maj=inch*25.4,P=25.4/tpi; o.label=lab; o.d=maj; o.P=P; o.tpi=tpi; o.series=row[3]||''; if(F.form==='whit'){var h=0.6403*P; o.d2=maj-h; o.d3=maj-2*h;} else {o.d2=maj-0.6495*P; o.d3=maj-1.2269*P; o.D1=maj-1.0825*P;} o.As=Math.PI/4*Math.pow((o.d2+o.d3)/2,2); o.tap=maj-P; o.r=(F.form==='whit'?0.137329:0.144338)*P;}
+  else if(F.type==='npt'){var lab=row[0],tpi=row[1],od=row[2]; var P=25.4/tpi,h=0.8*P; o.label='NPT '+lab; o.d=od; o.P=P; o.tpi=tpi; o.d2=od-h; o.d3=od-2*h; o.tap=od-P; o.conic=true;}
+  else {var lab=row[0],tpi=row[1],maj=row[2]; var P=25.4/tpi,h=0.6403*P; o.label=lab; o.d=maj; o.P=P; o.tpi=tpi; o.d2=maj-h; o.d3=maj-2*h; o.r=0.137329*P; o.tap=maj-P; if(F.taper)o.conic=true;}
+  return o;}
+function threadSVG(g){
+  var W=720,H=360,X0=165,X1=545,nP=4,Ppx=(X1-X0)/nP;
+  var yMaj=120,depth=86,yBR=yMaj+depth,yAX=300,yTop=64;
+  var half=g.angle/2*Math.PI/180,t=Math.tan(half);
+  var dr=(g.d-g.d3),pitchFrac=(g.d-g.d2)/dr,nutFrac=(g.D1!=null)?(g.d-g.D1)/dr:0.86;
+  var yPitch=yMaj+pitchFrac*depth,yD1=yMaj+nutFrac*depth;
+  var taper=g.conic?26:0,sl=taper/(X1-X0);
+  function tpf(x){return sl*(x-X0);}
+  var flankRun=depth*t,rest=Ppx-2*flankRun,crestFlat,rootFlat;
+  if(g.form==='V'){crestFlat=rest/3; rootFlat=2*rest/3;} else {crestFlat=rest/2; rootFlat=rest/2;}
+  var pts=[],x=X0-crestFlat; pts.push([x,yMaj]);
+  while(x<X1+Ppx){x+=crestFlat;pts.push([x,yMaj]); x+=flankRun;pts.push([x,yBR]); x+=rootFlat;pts.push([x,yBR]); x+=flankRun;pts.push([x,yMaj]);}
+  function clipX(P){var r=[];for(var i=0;i<P.length;i++){var c=P[i];if(i>0){var p=P[i-1];
+      if((p[0]-X0)*(c[0]-X0)<0){var tt=(X0-p[0])/(c[0]-p[0]);r.push([X0,p[1]+tt*(c[1]-p[1])]);}
+      if((p[0]-X1)*(c[0]-X1)<0){var tt=(X1-p[0])/(c[0]-p[0]);r.push([X1,p[1]+tt*(c[1]-p[1])]);}}
+      if(c[0]>=X0&&c[0]<=X1)r.push(c);}return r;}
+  function clampDown(P,yc){var r=[];for(var i=0;i<P.length;i++){var c=P[i];if(i>0){var p=P[i-1];if((p[1]-yc)*(c[1]-yc)<0){var tt=(yc-p[1])/(c[1]-p[1]);r.push([p[0]+tt*(c[0]-p[0]),yc]);}}r.push([c[0],Math.min(c[1],yc)]);}return r;}
+  function PP(a){return a.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');}
+  var bolt=clipX(pts).map(function(p){return [p[0],p[1]+tpf(p[0])];});
+  var nutRaw=clampDown(clipX(pts),yD1).map(function(p){return [p[0],p[1]+tpf(p[0])];});
+  var boltPoly=PP(bolt)+' '+X1+','+yAX+' '+X0+','+yAX;
+  var nutPoly=PP(nutRaw)+' '+X1+','+yTop+' '+X0+','+yTop;
+  var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Courier New,monospace">';
+  s+='<defs><pattern id="hb" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#EFF1F4"/><line x1="0" y1="0" x2="0" y2="7" stroke="#C2C7D0" stroke-width="1"/></pattern>'
+    +'<pattern id="hn" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="7" height="7" fill="#F3F0EA"/><line x1="0" y1="0" x2="0" y2="7" stroke="#CDBFA6" stroke-width="1"/></pattern></defs>';
+  s+='<polygon points="'+nutPoly+'" fill="url(#hn)"/><polygon points="'+boltPoly+'" fill="url(#hb)"/>';
+  s+='<polyline points="'+PP(nutRaw)+'" fill="none" stroke="#17181A" stroke-width="1.5" stroke-linejoin="round"/>';
+  s+='<polyline points="'+PP(bolt)+'" fill="none" stroke="#17181A" stroke-width="1.7" stroke-linejoin="round"/>';
+  s+='<path d="M'+X0+' '+yTop+' q 10 7 20 0 t 20 0 t 20 0 t 20 0 t 20 0 t 20 0 t 20 0 t 20 0 t 20 0 t 20 0 t 20 0" fill="none" stroke="#17181A" stroke-width="1.2"/>';
+  s+='<line x1="'+X0+'" y1="'+yTop+'" x2="'+X0+'" y2="'+yAX+'" stroke="#17181A" stroke-width="1.2"/><line x1="'+X1+'" y1="'+yTop+'" x2="'+X1+'" y2="'+yAX+'" stroke="#17181A" stroke-width="1.2"/>';
+  s+='<line x1="'+(X0-95)+'" y1="'+yAX+'" x2="'+(X1+72)+'" y2="'+yAX+'" stroke="#9A9DA6" stroke-width="1" stroke-dasharray="16 3 3 3"/>';
+  function vL(xc,yl,lab){var g2='';
+    g2+='<line x1="'+xc+'" y1="'+yAX+'" x2="'+xc+'" y2="'+yl+'" stroke="#B45309" stroke-width="1"/>';
+    g2+='<line x1="'+(xc-3)+'" y1="'+yAX+'" x2="'+(xc+3)+'" y2="'+yAX+'" stroke="#B45309" stroke-width="1"/><line x1="'+(xc-3)+'" y1="'+yl+'" x2="'+(xc+3)+'" y2="'+yl+'" stroke="#B45309" stroke-width="1"/>';
+    g2+='<line x1="'+xc+'" y1="'+yl+'" x2="'+(X0-2)+'" y2="'+yl+'" stroke="#C9A56A" stroke-width="0.7" stroke-dasharray="3 2"/>';
+    g2+='<text x="'+(xc-6)+'" y="'+((yAX+yl)/2)+'" font-size="12.5" fill="#8F4E09" text-anchor="middle" transform="rotate(-90 '+(xc-6)+' '+((yAX+yl)/2)+')">'+lab+'</text>';return g2;}
+  s+=vL(X0-28,yBR,'d₃ '+D3(g.d3));
+  s+=vL(X0-52,yPitch,'d₂=D₂ '+D3(g.d2));
+  s+=vL(X0-76,yMaj,'d=D '+D3(g.d));
+  function vR(xc,y1,y2,lab,c){var g2='';
+    g2+='<line x1="'+xc+'" y1="'+y1+'" x2="'+xc+'" y2="'+y2+'" stroke="'+c+'" stroke-width="1"/>';
+    g2+='<line x1="'+(xc-3)+'" y1="'+y1+'" x2="'+(xc+3)+'" y2="'+y1+'" stroke="'+c+'" stroke-width="1"/><line x1="'+(xc-3)+'" y1="'+y2+'" x2="'+(xc+3)+'" y2="'+y2+'" stroke="'+c+'" stroke-width="1"/>';
+    g2+='<text x="'+(xc+6)+'" y="'+((y1+y2)/2+4)+'" font-size="12.5" fill="'+c+'">'+lab+'</text>';return g2;}
+  s+='<line x1="'+X1+'" y1="'+yD1+'" x2="'+(X1+30)+'" y2="'+yD1+'" stroke="#178A4C" stroke-width="0.7" stroke-dasharray="3 2"/>';
+  s+=vR(X1+30,yAX,yD1,'D₁ '+D3(g.D1!=null?g.D1:g.d3),'#178A4C');
+  s+=vR(X1+30,yMaj,yD1,'H₁','#6B6E76');
+  var c1=X0+crestFlat,c2=c1+Ppx;
+  s+='<line x1="'+c1+'" y1="'+(yMaj-14)+'" x2="'+c2+'" y2="'+(yMaj-14)+'" stroke="#17181A" stroke-width="1"/>';
+  s+='<line x1="'+c1+'" y1="'+(yMaj-18)+'" x2="'+c1+'" y2="'+(yMaj-10)+'" stroke="#17181A" stroke-width="1"/><line x1="'+c2+'" y1="'+(yMaj-18)+'" x2="'+c2+'" y2="'+(yMaj-10)+'" stroke="#17181A" stroke-width="1"/>';
+  s+='<text x="'+((c1+c2)/2)+'" y="'+(yMaj-20)+'" font-size="12.5" fill="#17181A" text-anchor="middle">p = '+itc(fmt(g.P,3))+'</text>';
+  var ax3=X0+crestFlat+Ppx*2+crestFlat/2,apexY=yMaj+tpf(ax3)-(crestFlat/2)/t,lxx=ax3-crestFlat/2,rxx=ax3+crestFlat/2;
+  if(g.form!=='trap'&&apexY>=yMaj-46){
+    s+='<line x1="'+lxx+'" y1="'+(yMaj+tpf(lxx))+'" x2="'+ax3+'" y2="'+apexY+'" stroke="#6B6E76" stroke-width="0.8" stroke-dasharray="3 2"/>';
+    s+='<line x1="'+rxx+'" y1="'+(yMaj+tpf(rxx))+'" x2="'+ax3+'" y2="'+apexY+'" stroke="#6B6E76" stroke-width="0.8" stroke-dasharray="3 2"/>';
+    var rr=15,aL=ax3-rr*Math.sin(half),aR=ax3+rr*Math.sin(half),ay=apexY+rr*Math.cos(half);
+    s+='<path d="M '+aR.toFixed(1)+' '+ay.toFixed(1)+' A '+rr+' '+rr+' 0 0 1 '+aL.toFixed(1)+' '+ay.toFixed(1)+'" fill="none" stroke="#6B6E76" stroke-width="0.9"/>';
+    s+='<text x="'+ax3+'" y="'+(apexY-6)+'" font-size="11.5" fill="#17181A" text-anchor="middle">'+g.angle+'°</text>';
+  } else { s+='<text x="'+(X1-26)+'" y="'+(yBR-6)+'" font-size="11.5" fill="#17181A" text-anchor="end">'+g.angle+'°</text>'; }
+  if(g.r!=null){var rx0=X0+crestFlat+flankRun+rootFlat/2,ry0=yBR+tpf(rx0);s+='<path d="M'+(rx0-7)+' '+(ry0-1)+' A 8 8 0 0 1 '+(rx0+7)+' '+(ry0-1)+'" fill="none" stroke="#6B6E76" stroke-width="0.9"/>';s+='<line x1="'+rx0+'" y1="'+ry0+'" x2="'+(rx0+20)+'" y2="'+(ry0+20)+'" stroke="#6B6E76" stroke-width="0.8"/><text x="'+(rx0+23)+'" y="'+(ry0+24)+'" font-size="11.5" fill="#6B6E76">r = '+D3(g.r)+'</text>';}
+  if(taper){s+='<text x="'+((X0+X1)/2)+'" y="'+(yAX+26)+'" font-size="11.5" fill="#8F4E09" text-anchor="middle">conicità 1:16 (semicono ≈ 1°47′) · Ø al piano di riferimento</text>';}
+  else {s+='<text x="'+((X0+X1)/2)+'" y="'+(yAX+26)+'" font-size="11" fill="#9A9DA6" text-anchor="middle">sezione vite / madrevite · profilo ingrandito (non in scala radiale)</text>';}
+  s+='</svg>'; return s;}
+function metricRow(o){return '<tr data-k="'+o.label.toLowerCase()+'"><td class="l key">'+o.label+'</td><td>'+itc(o.P)+'</td><td class="pf">'+itc(fmt(o.tap,2))+'</td><td>'+D3(o.d2)+'</td><td>'+D3(o.d3)+'</td><td>'+D3(o.D1)+'</td><td>'+fmt(o.As,o.As<100?1:0)+'</td><td>'+(o.clr?itc(o.clr):'–')+'</td></tr>';}
+function trapRow(o){return '<tr data-k="'+o.label.toLowerCase()+'"><td class="l key">'+o.label+'</td><td>'+itc(o.P)+'</td><td class="pf">'+itc(fmt(o.tap,2))+'</td><td>'+D3(o.d2)+'</td><td>'+D3(o.d3)+'</td><td>'+D3(o.D1)+'</td><td>'+D3(o.D4)+'</td></tr>';}
+function inchRow(o,ws){return '<tr data-k="'+(o.label+' '+(o.series||'')).toLowerCase()+'"><td class="l key">'+o.label+'</td><td>'+o.tpi+'</td><td class="pf">'+itc(fmt(o.tap,2))+'</td><td>'+D3(o.P)+'</td><td>'+D3(o.d)+'</td><td>'+D3(o.d2)+'</td><td>'+D3(o.d3)+'</td><td>'+fmt(o.As,o.As<100?1:0)+'</td>'+(ws?'<td>'+o.series+'</td>':'')+'</tr>';}
+function pipeRow(o){return '<tr data-k="'+o.label.toLowerCase()+'"><td class="l key">'+o.label+'</td><td>'+o.tpi+'</td><td class="pf">'+itc(fmt(o.tap,2))+'</td><td>'+D3(o.P)+'</td><td>'+D3(o.d)+'</td><td>'+D3(o.d2)+'</td><td>'+D3(o.d3)+'</td></tr>';}
+function buildThreadFamilies(){
+  var mh='<tr><th class="l">Filetto</th><th>Passo<span class="u">mm</span></th><th class="pf">Preforo<span class="u">mm</span></th><th>d₂<span class="u">medio</span></th><th>d₃<span class="u">nocciolo</span></th><th>D₁<span class="u">madrev.</span></th><th>Aₛ<span class="u">mm²</span></th><th>Foro p.<span class="u">mm</span></th></tr>';
+  $('#t_mc thead').innerHTML=mh; $('#t_mc tbody').innerHTML=THR.fam.mc.rows.map(function(r){return metricRow(thr_compute('mc',r));}).join('');
+  $('#t_mf thead').innerHTML=mh; $('#t_mf tbody').innerHTML=THR.fam.mf.rows.map(function(r){return metricRow(thr_compute('mf',r));}).join('');
+  var th='<tr><th class="l">Filetto</th><th>Passo<span class="u">mm</span></th><th class="pf">Preforo<span class="u">mm</span></th><th>d₂<span class="u">medio</span></th><th>d₃<span class="u">vite</span></th><th>D₁<span class="u">madrev.</span></th><th>D₄<span class="u">est.mad.</span></th></tr>';
+  $('#t_tr thead').innerHTML=th; $('#t_tr tbody').innerHTML=THR.fam.tr.rows.map(function(r){return trapRow(thr_compute('tr',r));}).join('');
+  var ih='<tr><th class="l">Filetto</th><th>TPI</th><th class="pf">Preforo<span class="u">mm</span></th><th>Passo<span class="u">mm</span></th><th>Ø magg.<span class="u">mm</span></th><th>d₂</th><th>d₃</th><th>Aₛ<span class="u">mm²</span></th></tr>';
+  $('#t_bsw thead').innerHTML=ih; $('#t_bsw tbody').innerHTML=THR.fam.bsw.rows.map(function(r){return inchRow(thr_compute('bsw',r),false);}).join('');
+  var ih2='<tr><th class="l">Filetto</th><th>TPI</th><th class="pf">Preforo<span class="u">mm</span></th><th>Passo<span class="u">mm</span></th><th>Ø magg.<span class="u">mm</span></th><th>d₂</th><th>d₃</th><th>Aₛ<span class="u">mm²</span></th><th>Serie</th></tr>';
+  $('#t_un thead').innerHTML=ih2; $('#t_un tbody').innerHTML=THR.fam.un.rows.map(function(r){return inchRow(thr_compute('un',r),true);}).join('');
+  var ph='<tr><th class="l">Filetto</th><th>TPI</th><th class="pf">Preforo<span class="u">mm</span></th><th>Passo<span class="u">mm</span></th><th>Ø magg.<span class="u">mm</span></th><th>d₂<span class="u">medio</span></th><th>d₃<span class="u">nocciolo</span></th></tr>';
+  $('#t_bsp thead').innerHTML=ph; $('#t_bsp tbody').innerHTML=THR.fam.bsp.rows.map(function(r){return pipeRow(thr_compute('bsp',r));}).join('');
+  $('#t_r thead').innerHTML=ph; $('#t_r tbody').innerHTML=THR.fam.r.rows.map(function(r){return pipeRow(thr_compute('r',r));}).join('');
+  $('#t_npt thead').innerHTML=ph; $('#t_npt tbody').innerHTML=THR.fam.npt.rows.map(function(r){return pipeRow(thr_compute('npt',r));}).join('');
+}
+var FAM_ORDER=[['mc','Metrica passo grosso'],['mf','Metrica passo fine'],['tr','Trapezia (Tr)'],['bsw','Whitworth (BSW)'],['bsp','Gas G (BSP)'],['un','Unificata (UN)'],['r','Gas conica R/Rc'],['npt','NPT conica']];
+var FAM_TAG={mc:'ISO 68 · 60°',mf:'ISO 68 · 60°',tr:'ISO 2904 · 30°',bsw:'BS 84 · 55°',bsp:'ISO 228 · 55°',un:'ASME B1.1 · 60°',r:'ISO 7 · 55° · 1:16',npt:'ASME B1.20.1 · 60° · 1:16'};
+function fillDrawFam(){var s=$('#drawFam'); s.innerHTML=''; FAM_ORDER.forEach(function(f){s.appendChild(el('option',{value:f[0]},f[1]));}); s.value='mc';}
+function fillDrawSize(fam){var s=$('#drawSize'); s.innerHTML=''; THR.fam[fam].rows.forEach(function(r,i){s.appendChild(el('option',{value:i},thr_compute(fam,r).label));});}
+function renderDraw(){var fam=$('#drawFam').value,i=+$('#drawSize').value||0,o=thr_compute(fam,THR.fam[fam].rows[i]);
+  $('#drawTag').textContent=FAM_TAG[fam]; $('#drawSvg').innerHTML=threadSVG(o);
+  function tp(k,v,u,hi){return '<div class="tp'+(hi?(hi===true?' hi':' '+hi):'')+'"><div class="k">'+k+'</div><div class="v">'+v+(u?' <small>'+u+'</small>':'')+'</div></div>';}
+  var isInch=(fam==='bsw'||fam==='bsp'||fam==='un');
+  var p=tp('Filetto',o.label,'')+tp('Passo p',itc(fmt(o.P,3)),'mm',true)+tp(isInch?'Ø magg. d':'Ø nom. d',D3(o.d),'mm')+tp('d₂ medio',D3(o.d2),'mm')+tp('d₃ nocciolo',D3(o.d3),'mm'); if(o.r!=null)p+=tp('Raggio fondo r',D3(o.r),'mm');
+  if(o.D1!=null)p+=tp('D₁ madrev.',D3(o.D1),'mm'); if(o.D4!=null)p+=tp('D₄ est.mad.',D3(o.D4),'mm');
+  if(o.As!=null)p+=tp('Aₛ sez.res.',fmt(o.As,o.As<100?1:0),'mm²'); if(o.tap!=null)p+=tp('Preforo',itc(fmt(o.tap,2)),'mm','pf');
+  p+=tp('Angolo',o.angle+'°',''); if(o.conic)p+=tp('Conicità','1:16',''); $('#drawParams').innerHTML=p; showFamilyTable(fam);}
+$('#drawFam').addEventListener('change',function(){fillDrawSize($('#drawFam').value); $('#drawSize').value=0; var ts=$('#thrSearch'); if(ts)ts.value=''; renderDraw();});
+$('#drawSize').addEventListener('change',renderDraw);
+function selectThread(fam,i){$('#drawFam').value=fam; fillDrawSize(fam); $('#drawSize').value=i; renderDraw(); var c=document.querySelector('.thr-draw'); if(c)c.scrollIntoView({behavior:'smooth',block:'start'});}
+function wireThreadRows(){var mp={mc:'#t_mc',mf:'#t_mf',tr:'#t_tr',bsw:'#t_bsw',bsp:'#t_bsp',r:'#t_r',npt:'#t_npt',un:'#t_un'};Object.keys(mp).forEach(function(fam){$$(mp[fam]+' tbody tr').forEach(function(tr,i){tr.classList.add('clk'); tr.setAttribute('data-fam',fam); tr.setAttribute('data-i',i);});});}
+$('#tab-thread').addEventListener('click',function(e){var tr=e.target.closest('tr[data-fam]'); if(tr)selectThread(tr.getAttribute('data-fam'),+tr.getAttribute('data-i'));});
+var FAM_TABLE={mc:'t_mc',mf:'t_mf',tr:'t_tr',bsw:'t_bsw',bsp:'t_bsp',r:'t_r',npt:'t_npt',un:'t_un'};
+function showFamilyTable(fam){for(var f in FAM_TABLE){var t=document.getElementById(FAM_TABLE[f]); if(t){var card=t.closest('.thrcard'); if(card)card.style.display=(f===fam)?'':'none';}}}
+$('#thrSearch').addEventListener('input',function(){var q=this.value.trim().toLowerCase(),fam=$('#drawFam').value,t=document.getElementById(FAM_TABLE[fam]); if(!t)return; var card=t.closest('.thrcard');
+  $$('tbody tr',card).forEach(function(tr){var k=tr.getAttribute('data-k')||tr.textContent.toLowerCase(); tr.style.display=(!q||k.indexOf(q)>=0)?'':'none';});});
+
+/* ================= TORQUE ================= */
+var TORQUE=[['M4',3.0,4.4,5.1],['M5',5.9,8.7,10],['M6',10,15,18],['M8',25,36,43],['M10',49,72,84],['M12',85,125,145],
+  ['M14',135,200,235],['M16',210,310,365],['M18',290,405,485],['M20',410,580,690],['M22',550,780,930],['M24',710,1000,1200],['M27',1050,1500,1800],['M30',1450,2000,2400]];
+function buildTorque(){$('#tTorque thead').innerHTML='<tr><th class="l">Vite</th><th>8.8<span class="u">Nm</span></th><th>10.9<span class="u">Nm</span></th><th>12.9<span class="u">Nm</span></th></tr>';
+  $('#tTorque tbody').innerHTML=TORQUE.map(function(r){return '<tr><td class="l key">'+r[0]+'</td><td>'+itc(r[1])+'</td><td>'+itc(r[2])+'</td><td>'+itc(r[3])+'</td></tr>';}).join('');}
+
+/* ================= INIT ================= */
+(function(){
+  var nv=store.get('nav'); if(nv){try{var n2=JSON.parse(nv); if(n2.mode)V.mode=n2.mode; if(n2.tsub)V.tsub=n2.tsub;}catch(e){}} if(V.tsub!=='tol'&&V.tsub!=='thread')V.tsub='tol';})();
+
+buildTolLetters(); renderTol(); buildThreadFamilies(); fillDrawFam(); fillDrawSize('mc'); (function(){var rs=THR.fam.mc.rows; for(var i=0;i<rs.length;i++){if(rs[i][0]===8&&rs[i][1]===1.25){$('#drawSize').value=i;break;}}})(); renderDraw(); wireThreadRows(); renderCmp();
+go('home');
+})();
+</script>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- Registrazione service worker per il funzionamento offline / installazione PWA -->
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(err){
+      console.warn('Service worker non registrato:',err);
+    });
+  });
+}
+</script>
+</body>
+</html>
