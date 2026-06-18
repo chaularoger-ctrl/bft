@@ -1,11 +1,12 @@
 /* Service worker BFT CALC — funzionamento offline e installazione PWA.
  * Cambia CACHE_VERSION quando aggiorni l'app per forzare il refresh della cache. */
-const CACHE_VERSION = 'bft-calc-v2';
+const CACHE_VERSION = 'bft-calc-v3';
 
 // App shell: percorsi relativi alla posizione del service worker.
 const APP_SHELL = [
   './',
   './index.html',
+  './cloud-config.js',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',
