@@ -20,6 +20,6 @@
    ============================================================ */
 window.BFT_CLOUD = {
   provider: 'rtdb',
-  databaseURL: '',      // es. 'https://bft-archivio-test-default-rtdb.firebaseio.com'
+  databaseURL: 'https://bft-archivio-test-default-rtdb.europe-west1.firebasedatabase.app',
   collection: 'bft_tests'
 };
