@@ -101,6 +101,52 @@ main{padding:24px 0 40px}
 .hubitem .chev{color:var(--muted-2); font-size:18px; transition:transform .15s,color .15s}
 .hubitem:hover .chev{transform:translateX(3px); color:var(--yellow-text)}
 .hubhint{margin:18px 2px 0; font-size:11.5px; color:var(--muted)}
+.hubcard.wide{grid-column:1 / -1}
+.hubcard .ico.arch{background:#EEF1F6;border-color:#C9CFDA;color:#566071}
+
+/* ---------- ARCHIVIO: dati prova nel calcolatore ---------- */
+textarea{font-family:var(--mono);font-size:14px;padding:9px 10px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--text);width:100%;border-radius:var(--rs);resize:vertical}
+textarea:focus{outline:none;border-color:var(--yellow);background:#fff;box-shadow:0 0 0 3px var(--sel)}
+.f select{cursor:pointer}
+.archsave-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.archsave-row input{flex:1 1 240px;font-family:var(--sans);font-size:13px;padding:10px 12px;border:1px solid var(--line-2);background:#fff;border-radius:6px}
+.archsave-row input:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 3px var(--sel)}
+
+/* ---------- ARCHIVIO: vista ---------- */
+.arch-toolbar{display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
+.arch-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.arch-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1 1 auto}
+.arch-filters select{font-family:var(--sans);font-size:12.5px;padding:8px 28px 8px 11px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--text);border-radius:6px;-webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.arch-filters select:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 3px var(--sel)}
+.arch-actions{display:flex;gap:8px;flex-wrap:wrap}
+.arch-count{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin:2px 2px 14px}
+.arch-empty{border:1px dashed var(--line-2);border-radius:8px;padding:30px 22px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7;background:var(--surface)}
+.arch-empty b{color:var(--text)}
+.arec{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:12px;overflow:hidden}
+.arec:hover{border-color:var(--line-2)}
+.arec .arh{display:flex;align-items:center;gap:9px;padding:11px 14px;background:var(--panel-2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.arec .arh .ttl{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:16px;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.arec .arh .when{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap}
+.badge{font-family:var(--sans);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:3px 8px;border-radius:20px;border:1px solid var(--line-2);color:var(--muted);background:#fff;white-space:nowrap}
+.badge.mode{color:var(--yellow-text);border-color:var(--yellow-dim);background:var(--sel)}
+.badge.ok{color:#0f6b3a;border-color:#9fd6b4;background:#E3F2EA}
+.badge.no{color:#9a2d20;border-color:#e3b1a9;background:#FBE9E6}
+.badge.rev{color:#8a6d1b;border-color:#e0c98c;background:#FBF3D9}
+.arec .arb{padding:12px 14px}
+.arec .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.arec .pc{background:#fff;padding:8px 11px}
+.arec .pc .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);font-weight:600}
+.arec .pc .v{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text);margin-top:2px}
+.arec .meta{display:flex;flex-wrap:wrap;gap:5px 18px;margin-top:11px;font-size:12px;color:var(--text)}
+.arec .meta span{color:var(--muted)}
+.arec .notes{margin-top:9px;font-size:12px;color:var(--text);background:var(--surface);border-left:3px solid var(--line-2);padding:8px 11px;border-radius:4px;white-space:pre-wrap}
+.arec .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.arec .acts button{font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 12px;border:1px solid var(--line);background:#fff;border-radius:6px;color:var(--text)}
+.arec .acts .open{box-shadow:inset 0 -2px 0 var(--yellow)}
+.arec .acts .open:hover{background:var(--sel)}
+.arec .acts .del{color:var(--red)}
+.arec .acts .del:hover{background:#FBE9E6;border-color:#e3b1a9}
 
 /* ---------- CARDS ---------- */
 .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); margin-bottom:16px; overflow:hidden}
@@ -232,7 +278,8 @@ table td.pf{background:#FFFBE8;color:var(--yellow-text);font-weight:700;text-dec
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   @page{margin:13mm}
   body{background:#fff}
-  .subnav,.pdfbtn,.hstatus,.ctools,.cthint,.tbl-foot,#thrSearch,.rowhint,.back{display:none !important}
+  .subnav,.pdfbtn,.hstatus,.ctools,.cthint,.tbl-foot,#thrSearch,.rowhint,.back,.arch-toolbar,.arch-count,#archCard,.arec .acts{display:none !important}
+  .arec{break-inside:avoid;page-break-inside:avoid}
   .masthead{position:static;box-shadow:none;border-bottom:1.5px solid #111}
   .wrap{max-width:none;margin:0}
   .tbl-wrap{max-height:none !important;overflow:visible !important}
@@ -327,8 +374,19 @@ footer b{color:var(--text)}
       </div>
     </div>
 
+    <div class="hubcard wide">
+      <button class="top" data-go="archive">
+        <span class="ico arch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5h18M4.5 7.5V19a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5V7.5"/><path d="M3 4.5h18v3H3z"/><path d="M9.5 11.5h5"/></svg></span>
+        <span class="ttx"><span class="h">Archivio</span><span class="p">Registro delle prove salvate · ricerca e filtri</span></span>
+        <span class="arr">›</span>
+      </button>
+      <div class="hubitems">
+        <button class="hubitem" data-go="archive"><span class="dot"></span><span class="lab">Apri archivio</span><span class="desc" id="archHomeCount">0 prove</span><span class="chev">›</span></button>
+      </div>
+    </div>
+
   </div>
-  <div class="hubhint">Suggerimento: dalla card puoi aprire direttamente la singola lavorazione o tabella.</div>
+  <div class="hubhint">Suggerimento: salva una prova dalla <b>Calcolatrice</b> (sezione “Dati prova”) per ritrovarla qui nell’archivio.</div>
 </section>
 
 <!-- ===================== CALCOLATRICE ===================== -->
@@ -363,7 +421,55 @@ footer b{color:var(--text)}
   </div>
   <div class="note"><span>kc = forza di taglio specifica del materiale (indicativi: acciaio ~1500–3000 · ghisa ~800–1500 · alluminio ~400–900 · inox/leghe ~1800–3000 N/mm²). Pc = potenza netta · P motore = Pc/η · Mc = coppia mandrino · Costo pezzo = Tc × tariffa(€/min) + utensile/pz. In filettatura Pc/Mc non applicabili (dominati dalla coppia di avvitamento).</span></div>
   <div id="cmpOut"></div>
-  <div class="note" id="cutNote"><span>Ra teorica da raggio di punta · hₘ spessore truciolo medio, hₑₓ massimo (validi per κr e ingaggio impostati). In filettatura l'avanzamento è bloccato al passo.</span></div>
+
+  <div class="card" id="archCard">
+    <div class="ch"><span>Dati prova &amp; archivio</span><span class="tag">salva nel registro</span></div>
+    <div class="cb">
+      <div class="grid">
+        <div class="f"><label>Codice articolo testato</label><input id="a_article" type="text" placeholder="es. ART-1234"></div>
+        <div class="f"><label>Materiale</label><select id="a_material"></select></div>
+        <div class="f"><label>Macchina</label><input id="a_machine" type="text" placeholder="es. DMG NLX 2500"></div>
+        <div class="f"><label>Utensile</label><input id="a_tool" type="text" placeholder="codice / descrizione"></div>
+        <div class="f"><label>Applicazione</label><select id="a_application"></select></div>
+        <div class="f"><label>Esito</label><select id="a_result"></select></div>
+      </div>
+      <div class="f" style="margin-top:12px"><label>Note</label><textarea id="a_notes" rows="2" placeholder="osservazioni, problemi riscontrati, regolazioni…"></textarea></div>
+      <div class="archsave-row">
+        <input id="a_name" type="text" placeholder="Nome prova (facoltativo)" maxlength="40">
+        <button class="ctbtn prim" id="btnArchiveSave">＋ Salva in archivio</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" id="cutNote"><span>Ra teorica da raggio di punta · hₘ spessore truciolo medio, hₑₓ massimo (validi per κr e ingaggio impostati). In filettatura l'avanzamento è bloccato al passo. La prova salva i parametri correnti + i dati qui sopra nell'archivio (memoria locale del dispositivo).</span></div>
+</section>
+
+<!-- ===================== ARCHIVIO ===================== -->
+<section id="view-archive" class="view">
+  <div class="sechead">
+    <span class="eyebrow">Archivio</span>
+    <h2>Archivio prove</h2>
+    <span class="sub">registro di tutte le prove salvate · ricerca e filtri</span>
+  </div>
+  <div class="arch-toolbar">
+    <input class="search-in" id="archSearch" placeholder="Cerca: articolo, materiale, macchina, utensile, note…" autocomplete="off">
+    <div class="arch-row">
+      <div class="arch-filters">
+        <select id="fMode"></select>
+        <select id="fMaterial"></select>
+        <select id="fResult"></select>
+        <button class="ctbtn ghost" id="archClear">Azzera filtri</button>
+      </div>
+      <div class="arch-actions">
+        <button class="ctbtn" id="archExport">⤓ Esporta</button>
+        <button class="ctbtn" id="archImport">⤒ Importa</button>
+        <input type="file" id="archFile" accept="application/json,.json" hidden>
+      </div>
+    </div>
+  </div>
+  <div class="arch-count" id="archCount"></div>
+  <div id="archList"></div>
+  <div class="tbl-foot"><button class="pdfbtn pdfprint" title="Stampa / salva come PDF">⎙ PDF</button></div>
 </section>
 
 <!-- ===================== TABELLE ===================== -->
@@ -453,6 +559,7 @@ function persistNav(){store.set('nav',JSON.stringify({mode:V.mode,tsub:V.tsub}))
 function buildCrumb(){var c=$('#crumb');
   if(V.view==='home'){c.textContent='Officina · Calc'; return;}
   if(V.view==='calc'){c.textContent='Calcolatrice'; return;}
+  if(V.view==='archive'){c.textContent='Archivio'; return;}
   var name={tol:'Tolleranze',thread:'Filettature'}[V.tsub];
   c.innerHTML='Tabelle<span class="sep">/</span><span class="dim">'+name+'</span>';}
 function render(){
@@ -461,6 +568,7 @@ function render(){
   if(V.view==='home'){sn.classList.add('hidden'); buildCrumb(); persistNav(); window.scrollTo(0,0); return;}
   sn.classList.remove('hidden');
   var st=$('#subtabs'); st.innerHTML='';
+  if(V.view==='archive'){ renderArchive(); buildCrumb(); persistNav(); window.scrollTo(0,0); return; }
   var tabs=V.view==='calc'?CALC_TABS:TABLE_TABS, active=V.view==='calc'?V.mode:V.tsub;
   tabs.forEach(function(t){var b=el('button',{'class':'stab'+(t[0]===active?' on':'')},t[1]);
     b.addEventListener('click',function(){ if(V.view==='calc')V.mode=t[0]; else V.tsub=t[0]; render(); });
@@ -814,11 +922,126 @@ var TORQUE=[['M4',3.0,4.4,5.1],['M5',5.9,8.7,10],['M6',10,15,18],['M8',25,36,43]
 function buildTorque(){$('#tTorque thead').innerHTML='<tr><th class="l">Vite</th><th>8.8<span class="u">Nm</span></th><th>10.9<span class="u">Nm</span></th><th>12.9<span class="u">Nm</span></th></tr>';
   $('#tTorque tbody').innerHTML=TORQUE.map(function(r){return '<tr><td class="l key">'+r[0]+'</td><td>'+itc(r[1])+'</td><td>'+itc(r[2])+'</td><td>'+itc(r[3])+'</td></tr>';}).join('');}
 
+/* ================= ARCHIVIO ================= */
+var ARCH_KEY='archive';
+var MATERIALS=['Acciaio','Acciaio inox','Ghisa','Alluminio','Titanio/Superleghe','Rame/Ottone','Plastica/Composito','Altro'];
+var APPS=['Sgrossatura','Semifinitura','Finitura','Foratura','Filettatura','Troncatura','Scanalatura','Altro'];
+var RESULTS=['Positivo','Negativo','Da rivedere'];
+function archLoad(){try{var a=JSON.parse(store.get(ARCH_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+function archStore(list){store.set(ARCH_KEY,JSON.stringify(list));}
+function gv(sel){var e=$(sel);return e?(''+e.value).trim():'';}
+function sv(sel,v){var e=$(sel);if(e)e.value=(v==null?'':v);}
+function optS(v,t){return '<option value="'+esc(v)+'">'+esc(t==null?v:t)+'</option>';}
+function fillArchSelects(){
+  var aM=$('#a_material'); if(aM&&!aM.options.length)aM.innerHTML=optS('','— materiale —')+MATERIALS.map(function(x){return optS(x);}).join('');
+  var aA=$('#a_application'); if(aA&&!aA.options.length)aA.innerHTML=optS('','— applicazione —')+APPS.map(function(x){return optS(x);}).join('');
+  var aR=$('#a_result'); if(aR&&!aR.options.length)aR.innerHTML=optS('','— esito —')+RESULTS.map(function(x){return optS(x);}).join('');
+  var fM=$('#fMode'); if(fM&&!fM.options.length)fM.innerHTML=optS('','Tutte le lavorazioni')+CALC_TABS.map(function(t){return optS(t[0],t[1]);}).join('');
+  var fMat=$('#fMaterial'); if(fMat&&!fMat.options.length)fMat.innerHTML=optS('','Tutti i materiali')+MATERIALS.map(function(x){return optS(x);}).join('');
+  var fR=$('#fResult'); if(fR&&!fR.options.length)fR.innerHTML=optS('','Tutti gli esiti')+RESULTS.map(function(x){return optS(x);}).join('');
+}
+function updateArchCount(){var n=archLoad().length,e=$('#archHomeCount'); if(e)e.textContent=n+(n===1?' prova':' prove');}
+function archiveCurrent(){
+  if(!CUTLAST){showToast('Inserisci prima i dati di taglio');return;}
+  var m=cut.mode;
+  var rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:new Date().toISOString(),
+    name:gv('#a_name'),mode:m,
+    inputs:JSON.parse(JSON.stringify(cut[m])),pw:JSON.parse(JSON.stringify(cut.pw)),
+    out:JSON.parse(JSON.stringify(CUTLAST)),
+    meta:{article:gv('#a_article'),material:gv('#a_material'),machine:gv('#a_machine'),tool:gv('#a_tool'),application:gv('#a_application'),result:gv('#a_result'),notes:gv('#a_notes')}};
+  var list=archLoad(); list.unshift(rec); archStore(list); updateArchCount();
+  showToast('Salvato in archivio'+(rec.name?' · '+rec.name:''));
+}
+function archFmtDate(iso){var d=new Date(iso); if(isNaN(d))return ''; function p(n){return(n<10?'0':'')+n;} return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes());}
+function badgeRes(res){var c=res==='Positivo'?'ok':res==='Negativo'?'no':res==='Da rivedere'?'rev':''; return res?'<span class="badge '+c+'">'+esc(res)+'</span>':'';}
+function archPC(k,v){return (v==null||v===''||v==='—')?'':'<div class="pc"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>';}
+function archCardHTML(r){
+  var o=r.out||{},m=r.mode,mt=MODE_TITLE[m]||m;
+  var title=esc(r.name||(r.meta&&r.meta.article)||mt);
+  var feed=o.feedLbl?(o.feedLbl+' '+itc(fmt(o.feedVal,o.feedLbl==='fz'?4:3))):'';
+  var params=archPC('Ø mm',o.Dc!=null?fmt(o.Dc,2):'')+archPC('Vc',o.vc!=null?fmt(o.vc,1):'')+archPC('n rpm',o.n!=null?fmt(o.n,0):'')+
+    archPC('Vf',o.vf!=null?fmt(o.vf,0):'')+archPC('Avanz.',feed)+archPC('Q',o.Q?fmt(o.Q,2):'')+
+    archPC('Pc kW',o.Pc!=null?fmt(o.Pc,2):'')+archPC('Costo €',o.cost!=null?itc(fmt(o.cost,2)):'');
+  var me=r.meta||{};
+  function mi(lbl,v){return v?'<div><span>'+lbl+':</span> '+esc(v)+'</div>':'';}
+  var meta=mi('Materiale',me.material)+mi('Macchina',me.machine)+mi('Utensile',me.tool)+mi('Applicazione',me.application)+mi('Articolo',me.article);
+  var notes=me.notes?'<div class="notes">'+esc(me.notes)+'</div>':'';
+  return '<div class="arec"><div class="arh"><span class="ttl">'+title+'</span><span class="badge mode">'+esc(mt)+'</span>'+badgeRes(me.result)+'<span class="when">'+archFmtDate(r.date)+'</span></div>'+
+    '<div class="arb"><div class="pgrid">'+params+'</div>'+(meta?'<div class="meta">'+meta+'</div>':'')+notes+
+    '<div class="acts"><button class="open" data-act="open" data-id="'+r.id+'">↗ Apri nel calcolatore</button><button class="del" data-act="del" data-id="'+r.id+'">Elimina</button></div></div></div>';
+}
+function recMatches(r,f){
+  if(f.mode&&r.mode!==f.mode)return false;
+  var me=r.meta||{};
+  if(f.material&&me.material!==f.material)return false;
+  if(f.result&&me.result!==f.result)return false;
+  if(f.q){var hay=[r.name,me.article,me.material,me.machine,me.tool,me.application,me.notes,MODE_TITLE[r.mode]].join(' ').toLowerCase();
+    if(hay.indexOf(f.q)<0)return false;}
+  return true;
+}
+function renderArchive(){
+  fillArchSelects();
+  var list=archLoad();
+  var f={q:gv('#archSearch').toLowerCase(),mode:gv('#fMode'),material:gv('#fMaterial'),result:gv('#fResult')};
+  var shown=list.filter(function(r){return recMatches(r,f);});
+  var c=$('#archCount'); if(c)c.textContent=list.length?(shown.length+' di '+list.length+(list.length===1?' prova':' prove')):'';
+  var out=$('#archList'); if(!out)return;
+  if(!list.length){out.innerHTML='<div class="arch-empty">Nessuna prova in archivio.<br>Vai nella <b>Calcolatrice</b>, compila i campi e premi <b>Salva in archivio</b>.</div>';return;}
+  if(!shown.length){out.innerHTML='<div class="arch-empty">Nessun risultato per la ricerca o i filtri impostati.</div>';return;}
+  out.innerHTML=shown.map(archCardHTML).join('');
+}
+function openRecord(id){
+  var r=null,list=archLoad(); for(var i=0;i<list.length;i++)if(list[i].id===id){r=list[i];break;} if(!r)return;
+  cut.mode=r.mode; V.mode=r.mode;
+  cut[r.mode]=JSON.parse(JSON.stringify(r.inputs||{}));
+  if(r.pw)cut.pw=JSON.parse(JSON.stringify(r.pw));
+  cut.lastSpeed='vc'; cut.lastFeed='fz';
+  go('calc');
+  var me=r.meta||{};
+  sv('#a_name',r.name); sv('#a_article',me.article); sv('#a_material',me.material); sv('#a_machine',me.machine);
+  sv('#a_tool',me.tool); sv('#a_application',me.application); sv('#a_result',me.result); sv('#a_notes',me.notes);
+  showToast('Prova caricata nel calcolatore');
+}
+function deleteRecord(id){
+  if(!window.confirm('Eliminare questa prova dall’archivio?'))return;
+  archStore(archLoad().filter(function(x){return x.id!==id;}));
+  renderArchive(); updateArchCount(); showToast('Prova eliminata');
+}
+function exportArchive(){
+  var data=store.get(ARCH_KEY)||'[]';
+  try{var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));
+    a.download='bft-archivio-'+new Date().toISOString().slice(0,10)+'.json'; document.body.appendChild(a); a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href); a.remove();},1500);}catch(e){showToast('Esportazione non riuscita');}
+}
+function importArchive(file){
+  var rd=new FileReader();
+  rd.onload=function(){try{
+    var inc=JSON.parse(rd.result); if(!Array.isArray(inc))throw 0;
+    var cur=archLoad(),ids={}; cur.forEach(function(r){ids[r.id]=1;});
+    var added=0; inc.forEach(function(r){ if(r&&r.id&&!ids[r.id]){cur.push(r); ids[r.id]=1; added++;} });
+    cur.sort(function(a,b){return (''+(b.date||'')).localeCompare(''+(a.date||''));});
+    archStore(cur); renderArchive(); updateArchCount(); showToast(added?('Importate '+added+' prove'):'Nessuna nuova prova');
+  }catch(e){showToast('File non valido');}};
+  rd.readAsText(file);
+}
+function archInit(){
+  fillArchSelects(); updateArchCount();
+  if($('#btnArchiveSave'))$('#btnArchiveSave').addEventListener('click',archiveCurrent);
+  if($('#archSearch'))$('#archSearch').addEventListener('input',renderArchive);
+  ['#fMode','#fMaterial','#fResult'].forEach(function(s){var e=$(s); if(e)e.addEventListener('change',renderArchive);});
+  if($('#archClear'))$('#archClear').addEventListener('click',function(){sv('#archSearch','');sv('#fMode','');sv('#fMaterial','');sv('#fResult','');renderArchive();});
+  if($('#archExport'))$('#archExport').addEventListener('click',exportArchive);
+  if($('#archImport'))$('#archImport').addEventListener('click',function(){var f=$('#archFile'); if(f)f.click();});
+  if($('#archFile'))$('#archFile').addEventListener('change',function(){ if(this.files&&this.files[0])importArchive(this.files[0]); this.value=''; });
+  if($('#archList'))$('#archList').addEventListener('click',function(e){var b=e.target.closest('button[data-act]'); if(!b)return;
+    var act=b.getAttribute('data-act'),id=b.getAttribute('data-id'); if(act==='open')openRecord(id); else if(act==='del')deleteRecord(id);});
+}
+
 /* ================= INIT ================= */
 (function(){
   var nv=store.get('nav'); if(nv){try{var n2=JSON.parse(nv); if(n2.mode)V.mode=n2.mode; if(n2.tsub)V.tsub=n2.tsub;}catch(e){}} if(V.tsub!=='tol'&&V.tsub!=='thread')V.tsub='tol';})();
 
-buildTolLetters(); renderTol(); buildThreadFamilies(); fillDrawFam(); fillDrawSize('mc'); (function(){var rs=THR.fam.mc.rows; for(var i=0;i<rs.length;i++){if(rs[i][0]===8&&rs[i][1]===1.25){$('#drawSize').value=i;break;}}})(); renderDraw(); wireThreadRows(); renderCmp();
+buildTolLetters(); renderTol(); buildThreadFamilies(); fillDrawFam(); fillDrawSize('mc'); (function(){var rs=THR.fam.mc.rows; for(var i=0;i<rs.length;i++){if(rs[i][0]===8&&rs[i][1]===1.25){$('#drawSize').value=i;break;}}})(); renderDraw(); wireThreadRows(); renderCmp(); archInit();
 go('home');
 })();
 </script>
