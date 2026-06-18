@@ -21,7 +21,7 @@
    ============================================================ */
 window.BFT_CLOUD = {
   provider: 'firestore',
-  projectId: '',        // es. 'bft-officina'
-  apiKey: '',           // es. 'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXX'
+  projectId: 'bft-archivio-test',
+  apiKey: 'AIzaSyBX8haKQTRX6NPs29-AXyLMoexJxNVR7AQ',
   collection: 'bft_tests'
 };
