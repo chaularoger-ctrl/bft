@@ -8,6 +8,7 @@
 <meta name="description" content="Calcolatrice parametri di taglio (fresatura, tornitura, foratura, filettatura) e tabelle tecniche d'officina (tolleranze ISO 286, filettature). 100% offline.">
 <!-- PWA / installabile su PC e tablet -->
 <link rel="manifest" href="manifest.webmanifest">
+<script src="cloud-config.js"></script>
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
@@ -147,6 +148,26 @@ textarea:focus{outline:none;border-color:var(--yellow);background:#fff;box-shado
 .arec .acts .open:hover{background:var(--sel)}
 .arec .acts .del{color:var(--red)}
 .arec .acts .del:hover{background:#FBE9E6;border-color:#e3b1a9}
+.arch-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.arch-row .search-in{flex:1 1 240px}
+.arch-filters select,.arch-filters .fdate input{font-family:var(--sans);font-size:12.5px;padding:8px 10px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--text);border-radius:6px}
+.arch-filters select{padding-right:28px;-webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.arch-filters select:focus,.arch-filters .fdate input:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 3px var(--sel)}
+.arch-filters .fdate{display:inline-flex;align-items:center;gap:5px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600}
+.sync{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.3px;padding:5px 10px;border-radius:20px;border:1px solid var(--line-2);white-space:nowrap;color:var(--muted);background:#fff}
+.sync.ok{color:#0f6b3a;border-color:#9fd6b4;background:#E9F6EE}
+.sync.sync{color:var(--yellow-text);border-color:var(--yellow-dim);background:var(--sel)}
+.sync.err{color:#9a2d20;border-color:#e3b1a9;background:#FBE9E6}
+.sync.off{color:var(--muted)}
+.cloud-cfg{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:13px 14px;margin-top:2px}
+.cloud-cfg .cc-h{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:14px;color:var(--text);margin-bottom:10px}
+.cloud-cfg .cc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.cloud-cfg input{font-family:var(--mono);font-size:13px;padding:8px 10px;border:1px solid var(--line-2);background:#fff;border-radius:6px;width:100%}
+.cloud-cfg input:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 3px var(--sel)}
+.cloud-cfg .cc-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:11px}
+.cloud-cfg .cc-hint{font-size:11px;color:var(--muted);flex:1 1 200px}
+.arec .arh .who{font-family:var(--mono);font-size:11px;color:var(--muted)}
 
 /* ---------- CARDS ---------- */
 .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); margin-bottom:16px; overflow:hidden}
@@ -432,6 +453,9 @@ footer b{color:var(--text)}
         <div class="f"><label>Utensile</label><input id="a_tool" type="text" placeholder="codice / descrizione"></div>
         <div class="f"><label>Applicazione</label><select id="a_application"></select></div>
         <div class="f"><label>Esito</label><select id="a_result"></select></div>
+        <div class="f"><label>Operatore</label><input id="a_operator" type="text" placeholder="nome / iniziali"></div>
+        <div class="f"><label>Refrigerante</label><select id="a_coolant"></select></div>
+        <div class="f"><label>Vita utensile <span class="u">min/pz</span></label><input id="a_toollife" type="text" placeholder="es. 45 min · 120 pz"></div>
       </div>
       <div class="f" style="margin-top:12px"><label>Note</label><textarea id="a_notes" rows="2" placeholder="osservazioni, problemi riscontrati, regolazioni…"></textarea></div>
       <div class="archsave-row">
@@ -452,18 +476,44 @@ footer b{color:var(--text)}
     <span class="sub">registro di tutte le prove salvate · ricerca e filtri</span>
   </div>
   <div class="arch-toolbar">
-    <input class="search-in" id="archSearch" placeholder="Cerca: articolo, materiale, macchina, utensile, note…" autocomplete="off">
     <div class="arch-row">
-      <div class="arch-filters">
-        <select id="fMode"></select>
-        <select id="fMaterial"></select>
-        <select id="fResult"></select>
-        <button class="ctbtn ghost" id="archClear">Azzera filtri</button>
-      </div>
+      <input class="search-in" id="archSearch" placeholder="Cerca: articolo, materiale, macchina, utensile, operatore, note…" autocomplete="off">
+      <span class="sync" id="syncStat" title="Stato sincronizzazione cloud"></span>
+    </div>
+    <div class="arch-filters" id="archFilters">
+      <select id="fMode"></select>
+      <select id="fMaterial"></select>
+      <select id="fResult"></select>
+      <select id="fApplication"></select>
+      <select id="fMachine"></select>
+      <select id="fTool"></select>
+      <select id="fOperator"></select>
+      <select id="fCoolant"></select>
+      <label class="fdate">Da <input type="date" id="fFrom"></label>
+      <label class="fdate">A <input type="date" id="fTo"></label>
+      <select id="fSort"></select>
+      <button class="ctbtn ghost" id="archClear">Azzera filtri</button>
+    </div>
+    <div class="arch-row">
       <div class="arch-actions">
+        <button class="ctbtn" id="archSyncBtn">⟳ Sincronizza</button>
         <button class="ctbtn" id="archExport">⤓ Esporta</button>
         <button class="ctbtn" id="archImport">⤒ Importa</button>
         <input type="file" id="archFile" accept="application/json,.json" hidden>
+        <button class="ctbtn ghost" id="archCfgBtn">☁ Cloud…</button>
+      </div>
+    </div>
+    <div class="cloud-cfg" id="cloudCfg" hidden>
+      <div class="cc-h">Configurazione cloud (Firebase Firestore)</div>
+      <div class="cc-grid">
+        <div class="f"><label>Project ID</label><input id="cfgProject" type="text" placeholder="es. bft-officina"></div>
+        <div class="f"><label>Web API key</label><input id="cfgKey" type="text" placeholder="AIzaSy…"></div>
+        <div class="f"><label>Collezione</label><input id="cfgColl" type="text" placeholder="bft_tests"></div>
+      </div>
+      <div class="cc-actions">
+        <button class="ctbtn prim" id="cfgSave">Salva &amp; sincronizza</button>
+        <button class="ctbtn ghost" id="cfgClear">Rimuovi</button>
+        <span class="cc-hint">Consigliato: compilare <b>cloud-config.js</b> e fare commit, così vale per tutti i dispositivi. Qui è per prova locale.</span>
       </div>
     </div>
   </div>
@@ -927,29 +977,41 @@ var ARCH_KEY='archive';
 var MATERIALS=['Acciaio','Acciaio inox','Ghisa','Alluminio','Titanio/Superleghe','Rame/Ottone','Plastica/Composito','Altro'];
 var APPS=['Sgrossatura','Semifinitura','Finitura','Foratura','Filettatura','Troncatura','Scanalatura','Altro'];
 var RESULTS=['Positivo','Negativo','Da rivedere'];
+var COOLANTS=['Emulsione','Olio intero','Aria','MQL (lubr. minimale)','A secco','Altro'];
+var SORTS=[['date_desc','Più recenti'],['date_asc','Più vecchi'],['dc_desc','Ø maggiore'],['vc_desc','Vc maggiore'],['q_desc','MRR maggiore'],['cost_asc','Costo minore']];
 function archLoad(){try{var a=JSON.parse(store.get(ARCH_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
 function archStore(list){store.set(ARCH_KEY,JSON.stringify(list));}
 function gv(sel){var e=$(sel);return e?(''+e.value).trim():'';}
 function sv(sel,v){var e=$(sel);if(e)e.value=(v==null?'':v);}
 function optS(v,t){return '<option value="'+esc(v)+'">'+esc(t==null?v:t)+'</option>';}
+function setOnce(sel,label,arr,pair){var e=$(sel); if(!e||e.options.length)return; e.innerHTML=optS('',label)+arr.map(function(x){return pair?optS(x[0],x[1]):optS(x);}).join('');}
 function fillArchSelects(){
-  var aM=$('#a_material'); if(aM&&!aM.options.length)aM.innerHTML=optS('','— materiale —')+MATERIALS.map(function(x){return optS(x);}).join('');
-  var aA=$('#a_application'); if(aA&&!aA.options.length)aA.innerHTML=optS('','— applicazione —')+APPS.map(function(x){return optS(x);}).join('');
-  var aR=$('#a_result'); if(aR&&!aR.options.length)aR.innerHTML=optS('','— esito —')+RESULTS.map(function(x){return optS(x);}).join('');
-  var fM=$('#fMode'); if(fM&&!fM.options.length)fM.innerHTML=optS('','Tutte le lavorazioni')+CALC_TABS.map(function(t){return optS(t[0],t[1]);}).join('');
-  var fMat=$('#fMaterial'); if(fMat&&!fMat.options.length)fMat.innerHTML=optS('','Tutti i materiali')+MATERIALS.map(function(x){return optS(x);}).join('');
-  var fR=$('#fResult'); if(fR&&!fR.options.length)fR.innerHTML=optS('','Tutti gli esiti')+RESULTS.map(function(x){return optS(x);}).join('');
+  setOnce('#a_material','— materiale —',MATERIALS); setOnce('#a_application','— applicazione —',APPS);
+  setOnce('#a_result','— esito —',RESULTS); setOnce('#a_coolant','— refrigerante —',COOLANTS);
+  setOnce('#fMode','Tutte le lavorazioni',CALC_TABS,true); setOnce('#fMaterial','Tutti i materiali',MATERIALS);
+  setOnce('#fResult','Tutti gli esiti',RESULTS); setOnce('#fApplication','Tutte le applicazioni',APPS);
+  setOnce('#fCoolant','Tutti i refrigeranti',COOLANTS);
+  var fs=$('#fSort'); if(fs&&!fs.options.length)fs.innerHTML=SORTS.map(function(t){return optS(t[0],t[1]);}).join('');
+}
+function uniqVals(list,getter){var seen={},out=[]; list.forEach(function(r){var v=((getter(r)||'')+'').trim(); if(v&&!seen[v]){seen[v]=1;out.push(v);}}); out.sort(function(a,b){return a.localeCompare(b);}); return out;}
+function fillDynSel(sel,label,values){var s=$(sel); if(!s)return; var cur=s.value; s.innerHTML=optS('',label)+values.map(function(x){return optS(x);}).join(''); s.value=(values.indexOf(cur)>=0)?cur:'';}
+function fillDynFilters(list){
+  fillDynSel('#fMachine','Tutte le macchine',uniqVals(list,function(r){return (r.meta||{}).machine;}));
+  fillDynSel('#fTool','Tutti gli utensili',uniqVals(list,function(r){return (r.meta||{}).tool;}));
+  fillDynSel('#fOperator','Tutti gli operatori',uniqVals(list,function(r){return (r.meta||{}).operator;}));
 }
 function updateArchCount(){var n=archLoad().length,e=$('#archHomeCount'); if(e)e.textContent=n+(n===1?' prova':' prove');}
 function archiveCurrent(){
   if(!CUTLAST){showToast('Inserisci prima i dati di taglio');return;}
   var m=cut.mode;
-  var rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:new Date().toISOString(),
+  var rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:new Date().toISOString(),updatedAt:Date.now(),
     name:gv('#a_name'),mode:m,
     inputs:JSON.parse(JSON.stringify(cut[m])),pw:JSON.parse(JSON.stringify(cut.pw)),
     out:JSON.parse(JSON.stringify(CUTLAST)),
-    meta:{article:gv('#a_article'),material:gv('#a_material'),machine:gv('#a_machine'),tool:gv('#a_tool'),application:gv('#a_application'),result:gv('#a_result'),notes:gv('#a_notes')}};
-  var list=archLoad(); list.unshift(rec); archStore(list); updateArchCount();
+    meta:{article:gv('#a_article'),material:gv('#a_material'),machine:gv('#a_machine'),tool:gv('#a_tool'),
+      application:gv('#a_application'),result:gv('#a_result'),operator:gv('#a_operator'),coolant:gv('#a_coolant'),
+      toollife:gv('#a_toollife'),notes:gv('#a_notes')}};
+  var list=archLoad(); list.unshift(rec); archStore(list); updateArchCount(); cloudPush(rec);
   showToast('Salvato in archivio'+(rec.name?' · '+rec.name:''));
 }
 function archFmtDate(iso){var d=new Date(iso); if(isNaN(d))return ''; function p(n){return(n<10?'0':'')+n;} return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes());}
@@ -964,26 +1026,44 @@ function archCardHTML(r){
     archPC('Pc kW',o.Pc!=null?fmt(o.Pc,2):'')+archPC('Costo €',o.cost!=null?itc(fmt(o.cost,2)):'');
   var me=r.meta||{};
   function mi(lbl,v){return v?'<div><span>'+lbl+':</span> '+esc(v)+'</div>':'';}
-  var meta=mi('Materiale',me.material)+mi('Macchina',me.machine)+mi('Utensile',me.tool)+mi('Applicazione',me.application)+mi('Articolo',me.article);
+  var meta=mi('Materiale',me.material)+mi('Macchina',me.machine)+mi('Utensile',me.tool)+mi('Applicazione',me.application)+mi('Refrigerante',me.coolant)+mi('Vita utensile',me.toollife)+mi('Operatore',me.operator)+mi('Articolo',me.article);
   var notes=me.notes?'<div class="notes">'+esc(me.notes)+'</div>':'';
   return '<div class="arec"><div class="arh"><span class="ttl">'+title+'</span><span class="badge mode">'+esc(mt)+'</span>'+badgeRes(me.result)+'<span class="when">'+archFmtDate(r.date)+'</span></div>'+
     '<div class="arb"><div class="pgrid">'+params+'</div>'+(meta?'<div class="meta">'+meta+'</div>':'')+notes+
     '<div class="acts"><button class="open" data-act="open" data-id="'+r.id+'">↗ Apri nel calcolatore</button><button class="del" data-act="del" data-id="'+r.id+'">Elimina</button></div></div></div>';
 }
+function archGetFilters(){return {q:gv('#archSearch').toLowerCase(),mode:gv('#fMode'),material:gv('#fMaterial'),result:gv('#fResult'),
+  application:gv('#fApplication'),machine:gv('#fMachine'),tool:gv('#fTool'),operator:gv('#fOperator'),coolant:gv('#fCoolant'),
+  from:gv('#fFrom'),to:gv('#fTo'),sort:gv('#fSort')||'date_desc'};}
 function recMatches(r,f){
-  if(f.mode&&r.mode!==f.mode)return false;
   var me=r.meta||{};
+  if(f.mode&&r.mode!==f.mode)return false;
   if(f.material&&me.material!==f.material)return false;
   if(f.result&&me.result!==f.result)return false;
-  if(f.q){var hay=[r.name,me.article,me.material,me.machine,me.tool,me.application,me.notes,MODE_TITLE[r.mode]].join(' ').toLowerCase();
+  if(f.application&&me.application!==f.application)return false;
+  if(f.machine&&me.machine!==f.machine)return false;
+  if(f.tool&&me.tool!==f.tool)return false;
+  if(f.operator&&me.operator!==f.operator)return false;
+  if(f.coolant&&me.coolant!==f.coolant)return false;
+  if(f.from||f.to){var d=(''+(r.date||'')).slice(0,10); if(f.from&&d<f.from)return false; if(f.to&&d>f.to)return false;}
+  if(f.q){var hay=[r.name,me.article,me.material,me.machine,me.tool,me.operator,me.application,me.coolant,me.toollife,me.notes,MODE_TITLE[r.mode]].join(' ').toLowerCase();
     if(hay.indexOf(f.q)<0)return false;}
   return true;
 }
+function archSort(arr,sort){function nv(r,k){var o=r.out||{};return (o[k]==null||isNaN(o[k]))?null:o[k];}
+  return arr.sort(function(a,b){
+    if(sort==='date_asc')return (''+(a.date||'')).localeCompare(''+(b.date||''));
+    if(sort==='dc_desc')return (nv(b,'Dc')||0)-(nv(a,'Dc')||0);
+    if(sort==='vc_desc')return (nv(b,'vc')||0)-(nv(a,'vc')||0);
+    if(sort==='q_desc')return (nv(b,'Q')||0)-(nv(a,'Q')||0);
+    if(sort==='cost_asc'){var ca=nv(a,'cost'),cb=nv(b,'cost'); return (ca==null?Infinity:ca)-(cb==null?Infinity:cb);}
+    return (''+(b.date||'')).localeCompare(''+(a.date||''));
+  });}
 function renderArchive(){
   fillArchSelects();
-  var list=archLoad();
-  var f={q:gv('#archSearch').toLowerCase(),mode:gv('#fMode'),material:gv('#fMaterial'),result:gv('#fResult')};
-  var shown=list.filter(function(r){return recMatches(r,f);});
+  var list=archLoad(); fillDynFilters(list);
+  var f=archGetFilters();
+  var shown=archSort(list.filter(function(r){return recMatches(r,f);}),f.sort);
   var c=$('#archCount'); if(c)c.textContent=list.length?(shown.length+' di '+list.length+(list.length===1?' prova':' prove')):'';
   var out=$('#archList'); if(!out)return;
   if(!list.length){out.innerHTML='<div class="arch-empty">Nessuna prova in archivio.<br>Vai nella <b>Calcolatrice</b>, compila i campi e premi <b>Salva in archivio</b>.</div>';return;}
@@ -1000,11 +1080,14 @@ function openRecord(id){
   var me=r.meta||{};
   sv('#a_name',r.name); sv('#a_article',me.article); sv('#a_material',me.material); sv('#a_machine',me.machine);
   sv('#a_tool',me.tool); sv('#a_application',me.application); sv('#a_result',me.result); sv('#a_notes',me.notes);
+  sv('#a_operator',me.operator); sv('#a_coolant',me.coolant); sv('#a_toollife',me.toollife);
   showToast('Prova caricata nel calcolatore');
 }
 function deleteRecord(id){
-  if(!window.confirm('Eliminare questa prova dall’archivio?'))return;
-  archStore(archLoad().filter(function(x){return x.id!==id;}));
+  if(!window.confirm('Eliminare questa prova dall’archivio? Verrà rimossa anche dal cloud condiviso.'))return;
+  var list=archLoad(),rec=null; for(var i=0;i<list.length;i++)if(list[i].id===id){rec=list[i];break;}
+  archStore(list.filter(function(x){return x.id!==id;}));
+  cloudDelete(id,rec);
   renderArchive(); updateArchCount(); showToast('Prova eliminata');
 }
 function exportArchive(){
@@ -1020,21 +1103,91 @@ function importArchive(file){
     var cur=archLoad(),ids={}; cur.forEach(function(r){ids[r.id]=1;});
     var added=0; inc.forEach(function(r){ if(r&&r.id&&!ids[r.id]){cur.push(r); ids[r.id]=1; added++;} });
     cur.sort(function(a,b){return (''+(b.date||'')).localeCompare(''+(a.date||''));});
-    archStore(cur); renderArchive(); updateArchCount(); showToast(added?('Importate '+added+' prove'):'Nessuna nuova prova');
+    archStore(cur); renderArchive(); updateArchCount(); if(added&&cloudCfg())syncNow(); showToast(added?('Importate '+added+' prove'):'Nessuna nuova prova');
   }catch(e){showToast('File non valido');}};
   rd.readAsText(file);
 }
+/* ---- Cloud (Firebase Firestore via REST, offline-first) ---- */
+var SYNC={state:'',busy:false,last:0,timer:0};
+function cloudCfg(){
+  var ls=null; try{ls=JSON.parse(store.get('cloudcfg')||'null');}catch(e){}
+  var c=(ls&&ls.projectId&&ls.apiKey)?ls:((window.BFT_CLOUD&&window.BFT_CLOUD.projectId&&window.BFT_CLOUD.apiKey)?window.BFT_CLOUD:null);
+  return c?{projectId:c.projectId,apiKey:c.apiKey,collection:c.collection||'bft_tests'}:null;
+}
+function fsBase(c){return 'https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(c.projectId)+'/databases/(default)/documents/'+encodeURIComponent(c.collection);}
+function fsDoc(c,id){return fsBase(c)+'/'+encodeURIComponent(id)+'?key='+encodeURIComponent(c.apiKey);}
+function fsListUrl(c,tok){return fsBase(c)+'?pageSize=300&key='+encodeURIComponent(c.apiKey)+(tok?'&pageToken='+encodeURIComponent(tok):'');}
+function fsEnc(rec){return {fields:{data:{stringValue:JSON.stringify(rec)},updatedAt:{integerValue:String(rec.updatedAt||Date.parse(rec.date)||Date.now())},deleted:{booleanValue:!!rec.deleted}}};}
+function fsDec(doc){try{var f=doc.fields||{},rec=JSON.parse(f.data.stringValue);
+  rec.updatedAt=+((f.updatedAt&&f.updatedAt.integerValue)||0)||rec.updatedAt||Date.parse(rec.date)||0;
+  rec.deleted=!!(f.deleted&&f.deleted.booleanValue); return rec;}catch(e){return null;}}
+function fsPush(c,rec){return fetch(fsDoc(c,rec.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(fsEnc(rec))}).then(function(r){if(!r.ok)throw new Error('http '+r.status); return true;});}
+function fsAll(c){var out=[]; function pg(tok){return fetch(fsListUrl(c,tok)).then(function(r){if(!r.ok)throw new Error('http '+r.status); return r.json();}).then(function(j){(j.documents||[]).forEach(function(d){out.push(d);}); return j.nextPageToken?pg(j.nextPageToken):out;});} return pg('');}
+function tombLoad(){try{return JSON.parse(store.get('archtomb')||'[]')||[];}catch(e){return [];}}
+function tombStore(a){store.set('archtomb',JSON.stringify(a));}
+function tombAdd(id){var t=tombLoad(); t.push({id:id,updatedAt:Date.now()}); tombStore(t);}
+function tombDrop(id){tombStore(tombLoad().filter(function(x){return x.id!==id;}));}
+function updateSyncUI(){var e=$('#syncStat'); if(!e)return;
+  if(!cloudCfg()){e.className='sync off'; e.textContent='☁ Cloud non attivo'; return;}
+  if(SYNC.state==='sync'){e.className='sync sync'; e.textContent='⟳ Sincronizzazione…'; return;}
+  if(SYNC.state==='err'){e.className='sync err'; e.textContent=(navigator.onLine?'⚠ Errore sync':'⚠ Offline'); return;}
+  function p(n){return(n<10?'0':'')+n;} var t=SYNC.last?new Date(SYNC.last):null;
+  e.className='sync ok'; e.textContent='☁ Sincronizzato'+(t?' '+p(t.getHours())+':'+p(t.getMinutes()):'');
+}
+function setSyncState(s){SYNC.state=s; updateSyncUI();}
+function cloudPush(rec){var c=cloudCfg(); if(!c)return; setSyncState('sync'); fsPush(c,rec).then(function(){SYNC.last=Date.now(); setSyncState('ok');}).catch(function(){setSyncState('err');});}
+function cloudDelete(id,rec){tombAdd(id); var c=cloudCfg(); if(!c)return;
+  setSyncState('sync'); fsPush(c,{id:id,deleted:true,updatedAt:Date.now(),date:(rec&&rec.date)||new Date().toISOString()})
+    .then(function(){tombDrop(id); SYNC.last=Date.now(); setSyncState('ok');}).catch(function(){setSyncState('err');});}
+function syncNow(){
+  var c=cloudCfg(); if(!c){updateSyncUI(); return Promise.resolve();}
+  if(SYNC.busy)return Promise.resolve(); SYNC.busy=true; setSyncState('sync');
+  return fsAll(c).then(function(docs){
+    var cloud={}; docs.forEach(function(d){var r=fsDec(d); if(r&&r.id)cloud[r.id]=r;});
+    var local=archLoad(), byId={}; local.forEach(function(r){byId[r.id]=r;});
+    var map={}; local.forEach(function(r){map[r.id]=r;}); var changed=false;
+    Object.keys(cloud).forEach(function(id){var cr=cloud[id],lr=byId[id],lu=lr?(lr.updatedAt||Date.parse(lr.date)||0):-1;
+      if((cr.updatedAt||0)>lu){ if(cr.deleted){ if(map[id]){delete map[id]; changed=true;} } else { map[id]=cr; changed=true; } }});
+    var arr=[]; Object.keys(map).forEach(function(k){ if(!map[k].deleted)arr.push(map[k]); });
+    arr.sort(function(a,b){return (''+(b.date||'')).localeCompare(''+(a.date||''));});
+    if(changed)archStore(arr);
+    var ps=[];
+    local.forEach(function(r){ if(r.deleted)return; var cr=cloud[r.id],ru=r.updatedAt||Date.parse(r.date)||0;
+      if(!cr||ru>(cr.updatedAt||0))ps.push(fsPush(c,r).catch(function(){})); });
+    tombLoad().forEach(function(t){var cr=cloud[t.id];
+      if(cr&&cr.deleted){tombDrop(t.id);} else {ps.push(fsPush(c,{id:t.id,deleted:true,updatedAt:t.updatedAt,date:new Date(t.updatedAt).toISOString()}).then(function(){tombDrop(t.id);}).catch(function(){}));}});
+    return Promise.all(ps).then(function(){return changed;});
+  }).then(function(){ SYNC.busy=false; SYNC.last=Date.now(); setSyncState('ok'); updateArchCount(); if(V.view==='archive')renderArchive(); })
+    .catch(function(){ SYNC.busy=false; setSyncState('err'); });
+}
+function openCloudCfg(){var c=cloudCfg()||{}; sv('#cfgProject',c.projectId); sv('#cfgKey',c.apiKey); sv('#cfgColl',c.collection||'bft_tests'); var p=$('#cloudCfg'); if(p)p.hidden=!p.hidden;}
+function saveCloudCfg(){var cfg={projectId:gv('#cfgProject'),apiKey:gv('#cfgKey'),collection:gv('#cfgColl')||'bft_tests'};
+  if(!cfg.projectId||!cfg.apiKey){showToast('Inserisci Project ID e API key');return;}
+  store.set('cloudcfg',JSON.stringify(cfg)); var p=$('#cloudCfg'); if(p)p.hidden=true; updateSyncUI(); showToast('Cloud configurato'); syncNow();}
+function clearCloudCfg(){store.set('cloudcfg',''); var p=$('#cloudCfg'); if(p)p.hidden=true; updateSyncUI(); showToast('Configurazione locale rimossa');}
+
 function archInit(){
-  fillArchSelects(); updateArchCount();
+  fillArchSelects(); updateArchCount(); updateSyncUI();
   if($('#btnArchiveSave'))$('#btnArchiveSave').addEventListener('click',archiveCurrent);
   if($('#archSearch'))$('#archSearch').addEventListener('input',renderArchive);
-  ['#fMode','#fMaterial','#fResult'].forEach(function(s){var e=$(s); if(e)e.addEventListener('change',renderArchive);});
-  if($('#archClear'))$('#archClear').addEventListener('click',function(){sv('#archSearch','');sv('#fMode','');sv('#fMaterial','');sv('#fResult','');renderArchive();});
+  ['#fMode','#fMaterial','#fResult','#fApplication','#fMachine','#fTool','#fOperator','#fCoolant','#fFrom','#fTo','#fSort'].forEach(function(s){var e=$(s); if(e)e.addEventListener('change',renderArchive);});
+  if($('#archClear'))$('#archClear').addEventListener('click',function(){
+    ['#archSearch','#fMode','#fMaterial','#fResult','#fApplication','#fMachine','#fTool','#fOperator','#fCoolant','#fFrom','#fTo'].forEach(function(s){sv(s,'');});
+    var fs=$('#fSort'); if(fs)fs.value='date_desc'; renderArchive();});
   if($('#archExport'))$('#archExport').addEventListener('click',exportArchive);
   if($('#archImport'))$('#archImport').addEventListener('click',function(){var f=$('#archFile'); if(f)f.click();});
   if($('#archFile'))$('#archFile').addEventListener('change',function(){ if(this.files&&this.files[0])importArchive(this.files[0]); this.value=''; });
+  if($('#archSyncBtn'))$('#archSyncBtn').addEventListener('click',function(){syncNow();});
+  if($('#archCfgBtn'))$('#archCfgBtn').addEventListener('click',openCloudCfg);
+  if($('#cfgSave'))$('#cfgSave').addEventListener('click',saveCloudCfg);
+  if($('#cfgClear'))$('#cfgClear').addEventListener('click',clearCloudCfg);
   if($('#archList'))$('#archList').addEventListener('click',function(e){var b=e.target.closest('button[data-act]'); if(!b)return;
     var act=b.getAttribute('data-act'),id=b.getAttribute('data-id'); if(act==='open')openRecord(id); else if(act==='del')deleteRecord(id);});
+  if(cloudCfg())syncNow();
+  SYNC.timer=setInterval(function(){ if(cloudCfg()&&navigator.onLine)syncNow(); },20000);
+  window.addEventListener('online',function(){ if(cloudCfg())syncNow(); });
+  window.addEventListener('focus',function(){ if(cloudCfg())syncNow(); });
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden&&cloudCfg())syncNow(); });
 }
 
 /* ================= INIT ================= */
