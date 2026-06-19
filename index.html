@@ -504,10 +504,9 @@ footer b{color:var(--text)}
       </div>
     </div>
     <div class="cloud-cfg" id="cloudCfg" hidden>
-      <div class="cc-h">Configurazione cloud (Firebase Firestore)</div>
+      <div class="cc-h">Configurazione cloud (Firebase Realtime Database)</div>
       <div class="cc-grid">
-        <div class="f"><label>Project ID</label><input id="cfgProject" type="text" placeholder="es. bft-officina"></div>
-        <div class="f"><label>Web API key</label><input id="cfgKey" type="text" placeholder="AIzaSy…"></div>
+        <div class="f"><label>Database URL</label><input id="cfgDbUrl" type="text" placeholder="https://…-default-rtdb.firebaseio.com"></div>
         <div class="f"><label>Collezione</label><input id="cfgColl" type="text" placeholder="bft_tests"></div>
       </div>
       <div class="cc-actions">
@@ -1107,22 +1106,25 @@ function importArchive(file){
   }catch(e){showToast('File non valido');}};
   rd.readAsText(file);
 }
-/* ---- Cloud (Firebase Firestore via REST, offline-first) ---- */
+/* ---- Cloud (Firebase Realtime Database via REST, offline-first) ---- */
 var SYNC={state:'',busy:false,last:0,timer:0};
 function cloudCfg(){
   var ls=null; try{ls=JSON.parse(store.get('cloudcfg')||'null');}catch(e){}
-  var c=(ls&&ls.projectId&&ls.apiKey)?ls:((window.BFT_CLOUD&&window.BFT_CLOUD.projectId&&window.BFT_CLOUD.apiKey)?window.BFT_CLOUD:null);
-  return c?{projectId:c.projectId,apiKey:c.apiKey,collection:c.collection||'bft_tests'}:null;
+  var src=(ls&&ls.databaseURL)?ls:((window.BFT_CLOUD&&window.BFT_CLOUD.databaseURL)?window.BFT_CLOUD:null);
+  if(!src)return null;
+  var url=(''+src.databaseURL).replace(/\/+$/,'');
+  return url?{databaseURL:url,collection:src.collection||'bft_tests'}:null;
 }
-function fsBase(c){return 'https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(c.projectId)+'/databases/(default)/documents/'+encodeURIComponent(c.collection);}
-function fsDoc(c,id){return fsBase(c)+'/'+encodeURIComponent(id)+'?key='+encodeURIComponent(c.apiKey);}
-function fsListUrl(c,tok){return fsBase(c)+'?pageSize=300&key='+encodeURIComponent(c.apiKey)+(tok?'&pageToken='+encodeURIComponent(tok):'');}
-function fsEnc(rec){return {fields:{data:{stringValue:JSON.stringify(rec)},updatedAt:{integerValue:String(rec.updatedAt||Date.parse(rec.date)||Date.now())},deleted:{booleanValue:!!rec.deleted}}};}
-function fsDec(doc){try{var f=doc.fields||{},rec=JSON.parse(f.data.stringValue);
-  rec.updatedAt=+((f.updatedAt&&f.updatedAt.integerValue)||0)||rec.updatedAt||Date.parse(rec.date)||0;
-  rec.deleted=!!(f.deleted&&f.deleted.booleanValue); return rec;}catch(e){return null;}}
-function fsPush(c,rec){return fetch(fsDoc(c,rec.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(fsEnc(rec))}).then(function(r){if(!r.ok)throw new Error('http '+r.status); return true;});}
-function fsAll(c){var out=[]; function pg(tok){return fetch(fsListUrl(c,tok)).then(function(r){if(!r.ok)throw new Error('http '+r.status); return r.json();}).then(function(j){(j.documents||[]).forEach(function(d){out.push(d);}); return j.nextPageToken?pg(j.nextPageToken):out;});} return pg('');}
+function rtBase(c){return c.databaseURL+'/'+encodeURIComponent(c.collection);}
+function rtDoc(c,id){return rtBase(c)+'/'+encodeURIComponent(id)+'.json';}
+function rtListUrl(c){return rtBase(c)+'.json';}
+function rtEnc(rec){return {d:JSON.stringify(rec),u:(rec.updatedAt||Date.parse(rec.date)||Date.now()),x:!!rec.deleted};}
+function rtDec(node){try{if(!node)return null; var rec=JSON.parse(node.d);
+  rec.updatedAt=+node.u||rec.updatedAt||Date.parse(rec.date)||0;
+  rec.deleted=!!node.x; return rec;}catch(e){return null;}}
+function fsPush(c,rec){return fetch(rtDoc(c,rec.id),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(rtEnc(rec))}).then(function(r){if(!r.ok)throw new Error('http '+r.status); return true;});}
+function fsAll(c){return fetch(rtListUrl(c)).then(function(r){if(!r.ok)throw new Error('http '+r.status); return r.json();}).then(function(j){var out=[]; if(j&&typeof j==='object'){Object.keys(j).forEach(function(k){out.push(j[k]);});} return out;});}
+function fsDec(node){return rtDec(node);}
 function tombLoad(){try{return JSON.parse(store.get('archtomb')||'[]')||[];}catch(e){return [];}}
 function tombStore(a){store.set('archtomb',JSON.stringify(a));}
 function tombAdd(id){var t=tombLoad(); t.push({id:id,updatedAt:Date.now()}); tombStore(t);}
@@ -1160,9 +1162,9 @@ function syncNow(){
   }).then(function(){ SYNC.busy=false; SYNC.last=Date.now(); setSyncState('ok'); updateArchCount(); if(V.view==='archive')renderArchive(); })
     .catch(function(){ SYNC.busy=false; setSyncState('err'); });
 }
-function openCloudCfg(){var c=cloudCfg()||{}; sv('#cfgProject',c.projectId); sv('#cfgKey',c.apiKey); sv('#cfgColl',c.collection||'bft_tests'); var p=$('#cloudCfg'); if(p)p.hidden=!p.hidden;}
-function saveCloudCfg(){var cfg={projectId:gv('#cfgProject'),apiKey:gv('#cfgKey'),collection:gv('#cfgColl')||'bft_tests'};
-  if(!cfg.projectId||!cfg.apiKey){showToast('Inserisci Project ID e API key');return;}
+function openCloudCfg(){var c=cloudCfg()||{}; sv('#cfgDbUrl',c.databaseURL); sv('#cfgColl',c.collection||'bft_tests'); var p=$('#cloudCfg'); if(p)p.hidden=!p.hidden;}
+function saveCloudCfg(){var cfg={databaseURL:(gv('#cfgDbUrl')||'').replace(/\/+$/,''),collection:gv('#cfgColl')||'bft_tests'};
+  if(!cfg.databaseURL){showToast('Inserisci la Database URL');return;}
   store.set('cloudcfg',JSON.stringify(cfg)); var p=$('#cloudCfg'); if(p)p.hidden=true; updateSyncUI(); showToast('Cloud configurato'); syncNow();}
 function clearCloudCfg(){store.set('cloudcfg',''); var p=$('#cloudCfg'); if(p)p.hidden=true; updateSyncUI(); showToast('Configurazione locale rimossa');}
 
