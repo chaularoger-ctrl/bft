@@ -139,6 +139,13 @@ textarea:focus{outline:none;border-color:var(--yellow);background:#fff;box-shado
 .arec .pc{background:#fff;padding:8px 11px}
 .arec .pc .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);font-weight:600}
 .arec .pc .v{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text);margin-top:2px}
+.arec .mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:10px}
+.arec .mc{background:#fff;padding:8px 11px;min-width:0}
+.arec .mc .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);font-weight:600}
+.arec .mc .v{font-size:13.5px;font-weight:600;color:var(--text);margin-top:2px;line-height:1.3;word-break:break-word}
+.arec .mc.sev .v{color:var(--red)}
+.arec .mc.warn .v{color:#B26A00}
+.arec .mc.good .v{color:#1F7A33}
 .arec .meta{display:flex;flex-wrap:wrap;gap:5px 18px;margin-top:11px;font-size:12px;color:var(--text)}
 .arec .meta span{color:var(--muted)}
 .arec .notes{margin-top:9px;font-size:12px;color:var(--text);background:var(--surface);border-left:3px solid var(--line-2);padding:8px 11px;border-radius:4px;white-space:pre-wrap}
@@ -447,15 +454,21 @@ footer b{color:var(--text)}
     <div class="ch"><span>Dati prova &amp; archivio</span><span class="tag">salva nel registro</span></div>
     <div class="cb">
       <div class="grid">
-        <div class="f"><label>Codice articolo testato</label><input id="a_article" type="text" placeholder="es. ART-1234"></div>
+        <div class="f"><label>Codice articolo / ID test</label><input id="a_article" type="text" placeholder="es. TJN204-C45-001"></div>
         <div class="f"><label>Materiale</label><select id="a_material"></select></div>
+        <div class="f"><label>Norma</label><input id="a_norm" type="text" placeholder="EN / AISI / DIN / ASTM"></div>
+        <div class="f"><label>Durezza</label><input id="a_hardness" type="text" placeholder="es. 28 HRC · 200 HB"></div>
+        <div class="f"><label>Condizione</label><select id="a_condition"></select></div>
         <div class="f"><label>Macchina</label><input id="a_machine" type="text" placeholder="es. DMG NLX 2500"></div>
         <div class="f"><label>Utensile</label><input id="a_tool" type="text" placeholder="codice / descrizione"></div>
         <div class="f"><label>Applicazione</label><select id="a_application"></select></div>
-        <div class="f"><label>Esito</label><select id="a_result"></select></div>
-        <div class="f"><label>Operatore</label><input id="a_operator" type="text" placeholder="nome / iniziali"></div>
         <div class="f"><label>Refrigerante</label><select id="a_coolant"></select></div>
         <div class="f"><label>Vita utensile <span class="u">min/pz</span></label><input id="a_toollife" type="text" placeholder="es. 45 min · 120 pz"></div>
+        <div class="f"><label>Esito</label><select id="a_result"></select></div>
+        <div class="f"><label>Tipo usura</label><select id="a_weartype"></select></div>
+        <div class="f"><label>Entità usura</label><select id="a_wearlevel"></select></div>
+        <div class="f"><label>Competitor <span class="u">se presente</span></label><input id="a_competitor" type="text" placeholder="marca / codice"></div>
+        <div class="f"><label>Operatore</label><input id="a_operator" type="text" placeholder="nome / iniziali"></div>
       </div>
       <div class="f" style="margin-top:12px"><label>Note</label><textarea id="a_notes" rows="2" placeholder="osservazioni, problemi riscontrati, regolazioni…"></textarea></div>
       <div class="archsave-row">
@@ -489,6 +502,7 @@ footer b{color:var(--text)}
       <select id="fTool"></select>
       <select id="fOperator"></select>
       <select id="fCoolant"></select>
+      <select id="fWear"></select>
       <label class="fdate">Da <input type="date" id="fFrom"></label>
       <label class="fdate">A <input type="date" id="fTo"></label>
       <select id="fSort"></select>
@@ -976,7 +990,10 @@ var ARCH_KEY='archive';
 var MATERIALS=['Acciaio','Acciaio inox','Ghisa','Alluminio','Titanio/Superleghe','Rame/Ottone','Plastica/Composito','Altro'];
 var APPS=['Sgrossatura','Semifinitura','Finitura','Foratura','Filettatura','Troncatura','Scanalatura','Altro'];
 var RESULTS=['Positivo','Negativo','Da rivedere'];
-var COOLANTS=['Emulsione','Olio intero','Aria','MQL (lubr. minimale)','A secco','Altro'];
+var COOLANTS=['Emulsione','Olio intero','Aria','MQL (lubr. minimale)','A secco','Alta pressione','Altro'];
+var CONDITIONS=['Bonificato','Ricotto','Normalizzato','Grezzo','Forgiato','Laminato','Cementato','Temprato','Altro'];
+var WEARTYPES=['Assente','Fianchetto (VB)','Cratere (KT)','Scheggiatura','Deformazione plastica','BUE','Usura al centro','Rottura'];
+var WEARLEVELS=['Assente','Lieve','Moderata','Avanzata','Rottura'];
 var SORTS=[['date_desc','Più recenti'],['date_asc','Più vecchi'],['dc_desc','Ø maggiore'],['vc_desc','Vc maggiore'],['q_desc','MRR maggiore'],['cost_asc','Costo minore']];
 function archLoad(){try{var a=JSON.parse(store.get(ARCH_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
 function archStore(list){store.set(ARCH_KEY,JSON.stringify(list));}
@@ -987,9 +1004,11 @@ function setOnce(sel,label,arr,pair){var e=$(sel); if(!e||e.options.length)retur
 function fillArchSelects(){
   setOnce('#a_material','— materiale —',MATERIALS); setOnce('#a_application','— applicazione —',APPS);
   setOnce('#a_result','— esito —',RESULTS); setOnce('#a_coolant','— refrigerante —',COOLANTS);
+  setOnce('#a_condition','— condizione —',CONDITIONS); setOnce('#a_weartype','— tipo usura —',WEARTYPES);
+  setOnce('#a_wearlevel','— entità usura —',WEARLEVELS);
   setOnce('#fMode','Tutte le lavorazioni',CALC_TABS,true); setOnce('#fMaterial','Tutti i materiali',MATERIALS);
   setOnce('#fResult','Tutti gli esiti',RESULTS); setOnce('#fApplication','Tutte le applicazioni',APPS);
-  setOnce('#fCoolant','Tutti i refrigeranti',COOLANTS);
+  setOnce('#fCoolant','Tutti i refrigeranti',COOLANTS); setOnce('#fWear','Tutte le usure',WEARLEVELS);
   var fs=$('#fSort'); if(fs&&!fs.options.length)fs.innerHTML=SORTS.map(function(t){return optS(t[0],t[1]);}).join('');
 }
 function uniqVals(list,getter){var seen={},out=[]; list.forEach(function(r){var v=((getter(r)||'')+'').trim(); if(v&&!seen[v]){seen[v]=1;out.push(v);}}); out.sort(function(a,b){return a.localeCompare(b);}); return out;}
@@ -1007,9 +1026,11 @@ function archiveCurrent(){
     name:gv('#a_name'),mode:m,
     inputs:JSON.parse(JSON.stringify(cut[m])),pw:JSON.parse(JSON.stringify(cut.pw)),
     out:JSON.parse(JSON.stringify(CUTLAST)),
-    meta:{article:gv('#a_article'),material:gv('#a_material'),machine:gv('#a_machine'),tool:gv('#a_tool'),
+    meta:{article:gv('#a_article'),material:gv('#a_material'),norm:gv('#a_norm'),hardness:gv('#a_hardness'),
+      condition:gv('#a_condition'),machine:gv('#a_machine'),tool:gv('#a_tool'),
       application:gv('#a_application'),result:gv('#a_result'),operator:gv('#a_operator'),coolant:gv('#a_coolant'),
-      toollife:gv('#a_toollife'),notes:gv('#a_notes')}};
+      toollife:gv('#a_toollife'),weartype:gv('#a_weartype'),wearlevel:gv('#a_wearlevel'),competitor:gv('#a_competitor'),
+      notes:gv('#a_notes')}};
   var list=archLoad(); list.unshift(rec); archStore(list); updateArchCount(); cloudPush(rec);
   showToast('Salvato in archivio'+(rec.name?' · '+rec.name:''));
 }
@@ -1024,15 +1045,21 @@ function archCardHTML(r){
     archPC('Vf',o.vf!=null?fmt(o.vf,0):'')+archPC('Avanz.',feed)+archPC('Q',o.Q?fmt(o.Q,2):'')+
     archPC('Pc kW',o.Pc!=null?fmt(o.Pc,2):'')+archPC('Costo €',o.cost!=null?itc(fmt(o.cost,2)):'');
   var me=r.meta||{};
-  function mi(lbl,v){return v?'<div><span>'+lbl+':</span> '+esc(v)+'</div>':'';}
-  var meta=mi('Materiale',me.material)+mi('Macchina',me.machine)+mi('Utensile',me.tool)+mi('Applicazione',me.application)+mi('Refrigerante',me.coolant)+mi('Vita utensile',me.toollife)+mi('Operatore',me.operator)+mi('Articolo',me.article);
+  function mc(lbl,v,cls){return v?'<div class="mc'+(cls?' '+cls:'')+'"><div class="k">'+lbl+'</div><div class="v">'+esc(v)+'</div></div>':'';}
+  var wl=(me.wearlevel||'').toLowerCase();
+  var wcls=(wl==='avanzata'||wl==='rottura')?'sev':(wl==='moderata'?'warn':((wl==='assente'||wl==='lieve')?'good':''));
+  var mcells=mc('Materiale',me.material)+mc('Norma',me.norm)+mc('Durezza',me.hardness)+mc('Condizione',me.condition)+
+    mc('Macchina',me.machine)+mc('Utensile',me.tool)+mc('Applicazione',me.application)+mc('Refrigerante',me.coolant)+
+    mc('Vita utensile',me.toollife)+mc('Tipo usura',me.weartype)+mc('Entità usura',me.wearlevel,wcls)+
+    mc('Competitor',me.competitor)+mc('Articolo',me.article);
+  var operator=me.operator?'<div class="meta"><div><span>Operatore:</span> '+esc(me.operator)+'</div></div>':'';
   var notes=me.notes?'<div class="notes">'+esc(me.notes)+'</div>':'';
   return '<div class="arec"><div class="arh"><span class="ttl">'+title+'</span><span class="badge mode">'+esc(mt)+'</span>'+badgeRes(me.result)+'<span class="when">'+archFmtDate(r.date)+'</span></div>'+
-    '<div class="arb"><div class="pgrid">'+params+'</div>'+(meta?'<div class="meta">'+meta+'</div>':'')+notes+
+    '<div class="arb"><div class="pgrid">'+params+'</div>'+(mcells?'<div class="mgrid">'+mcells+'</div>':'')+operator+notes+
     '<div class="acts"><button class="open" data-act="open" data-id="'+r.id+'">↗ Apri nel calcolatore</button><button class="del" data-act="del" data-id="'+r.id+'">Elimina</button></div></div></div>';
 }
 function archGetFilters(){return {q:gv('#archSearch').toLowerCase(),mode:gv('#fMode'),material:gv('#fMaterial'),result:gv('#fResult'),
-  application:gv('#fApplication'),machine:gv('#fMachine'),tool:gv('#fTool'),operator:gv('#fOperator'),coolant:gv('#fCoolant'),
+  application:gv('#fApplication'),machine:gv('#fMachine'),tool:gv('#fTool'),operator:gv('#fOperator'),coolant:gv('#fCoolant'),wear:gv('#fWear'),
   from:gv('#fFrom'),to:gv('#fTo'),sort:gv('#fSort')||'date_desc'};}
 function recMatches(r,f){
   var me=r.meta||{};
@@ -1044,8 +1071,9 @@ function recMatches(r,f){
   if(f.tool&&me.tool!==f.tool)return false;
   if(f.operator&&me.operator!==f.operator)return false;
   if(f.coolant&&me.coolant!==f.coolant)return false;
+  if(f.wear&&me.wearlevel!==f.wear)return false;
   if(f.from||f.to){var d=(''+(r.date||'')).slice(0,10); if(f.from&&d<f.from)return false; if(f.to&&d>f.to)return false;}
-  if(f.q){var hay=[r.name,me.article,me.material,me.machine,me.tool,me.operator,me.application,me.coolant,me.toollife,me.notes,MODE_TITLE[r.mode]].join(' ').toLowerCase();
+  if(f.q){var hay=[r.name,me.article,me.material,me.norm,me.hardness,me.condition,me.machine,me.tool,me.operator,me.application,me.coolant,me.toollife,me.weartype,me.wearlevel,me.competitor,me.notes,MODE_TITLE[r.mode]].join(' ').toLowerCase();
     if(hay.indexOf(f.q)<0)return false;}
   return true;
 }
@@ -1077,9 +1105,11 @@ function openRecord(id){
   cut.lastSpeed='vc'; cut.lastFeed='fz';
   go('calc');
   var me=r.meta||{};
-  sv('#a_name',r.name); sv('#a_article',me.article); sv('#a_material',me.material); sv('#a_machine',me.machine);
+  sv('#a_name',r.name); sv('#a_article',me.article); sv('#a_material',me.material); sv('#a_norm',me.norm);
+  sv('#a_hardness',me.hardness); sv('#a_condition',me.condition); sv('#a_machine',me.machine);
   sv('#a_tool',me.tool); sv('#a_application',me.application); sv('#a_result',me.result); sv('#a_notes',me.notes);
   sv('#a_operator',me.operator); sv('#a_coolant',me.coolant); sv('#a_toollife',me.toollife);
+  sv('#a_weartype',me.weartype); sv('#a_wearlevel',me.wearlevel); sv('#a_competitor',me.competitor);
   showToast('Prova caricata nel calcolatore');
 }
 function deleteRecord(id){
@@ -1172,9 +1202,9 @@ function archInit(){
   fillArchSelects(); updateArchCount(); updateSyncUI();
   if($('#btnArchiveSave'))$('#btnArchiveSave').addEventListener('click',archiveCurrent);
   if($('#archSearch'))$('#archSearch').addEventListener('input',renderArchive);
-  ['#fMode','#fMaterial','#fResult','#fApplication','#fMachine','#fTool','#fOperator','#fCoolant','#fFrom','#fTo','#fSort'].forEach(function(s){var e=$(s); if(e)e.addEventListener('change',renderArchive);});
+  ['#fMode','#fMaterial','#fResult','#fApplication','#fMachine','#fTool','#fOperator','#fCoolant','#fWear','#fFrom','#fTo','#fSort'].forEach(function(s){var e=$(s); if(e)e.addEventListener('change',renderArchive);});
   if($('#archClear'))$('#archClear').addEventListener('click',function(){
-    ['#archSearch','#fMode','#fMaterial','#fResult','#fApplication','#fMachine','#fTool','#fOperator','#fCoolant','#fFrom','#fTo'].forEach(function(s){sv(s,'');});
+    ['#archSearch','#fMode','#fMaterial','#fResult','#fApplication','#fMachine','#fTool','#fOperator','#fCoolant','#fWear','#fFrom','#fTo'].forEach(function(s){sv(s,'');});
     var fs=$('#fSort'); if(fs)fs.value='date_desc'; renderArchive();});
   if($('#archExport'))$('#archExport').addEventListener('click',exportArchive);
   if($('#archImport'))$('#archImport').addEventListener('click',function(){var f=$('#archFile'); if(f)f.click();});
