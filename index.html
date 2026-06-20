@@ -61,7 +61,8 @@ button{font-family:inherit; cursor:pointer}
 .masthead{position:sticky; top:0; z-index:50; background:var(--card); border-bottom:3px solid var(--yellow); box-shadow:0 1px 0 var(--line)}
 .masthead .bar{max-width:1120px; margin:0 auto; padding:0 20px; height:60px; display:flex; align-items:center; gap:14px}
 .logo{display:flex; align-items:center; gap:10px; flex-shrink:0; background:transparent; border:0; padding:0}
-.logo .mark{width:30px; height:30px; background:var(--yellow); border-radius:5px; display:grid; place-items:center; font-family:var(--display); font-weight:800; color:#000; font-size:19px; line-height:1}
+.logo .mark{width:30px; height:30px; border-radius:6px; overflow:hidden; display:block; flex-shrink:0; line-height:0}
+.logo .mark svg{display:block; width:30px; height:30px}
 .logo .wm{font-family:var(--display); font-size:21px; letter-spacing:.4px; line-height:1}
 .logo .wm b{font-weight:700; color:var(--text)} .logo .wm span{font-weight:400; color:var(--muted)}
 .crumb{font-family:var(--display); font-weight:600; font-size:15px; color:var(--yellow-text); letter-spacing:.7px; text-transform:uppercase; padding-left:14px; border-left:1px solid var(--line); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
@@ -413,11 +414,11 @@ footer b{color:var(--text)}
 
 <header class="masthead">
   <div class="bar">
-    <button class="logo" data-go="home" title="Home"><span class="mark">B</span><span class="wm"><b>BFT</b> <span>Burzoni</span></span></button>
+    <button class="logo" data-go="home" title="Home"><span class="mark"><svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><rect x="1" y="1" width="62" height="62" rx="13" fill="#F4C400"/><g fill="none" stroke="#15181A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="32" y1="13" x2="32" y2="50"/><path d="M32 19 C33 11 40 8 45 10 C50 13 51 20 49 27 C47 35 43 40 37 43 C35 44 33 45 32 45"/><path d="M36 16 C39 14 42 15 43 18"/><path d="M34 26 C37 24 41 24 45 27"/><path d="M35 29 C38 31 42 31 44 28"/><path d="M33 38 C38 38 43 37 49 36"/><path d="M33 40 C38 41 42 42 47 44"/></g><circle cx="39.5" cy="27.2" r="2.4" fill="#15181A"/><path d="M29 36 L34 36 L31.5 39.5 Z" fill="#15181A"/></svg></span><span class="wm"><b>BFT</b> <span>Burzoni</span></span></button>
     <div class="crumb" id="crumb">Officina · Calc</div>
     <button class="pdfbtn pdfprint" id="btnPdf" title="Stampa / salva come PDF">⎙ PDF</button>
     <button class="iconbtn no-print" id="btnTheme" title="Tema chiaro / scuro" aria-label="Cambia tema"></button>
-    <div class="hstatus"><span><span class="dot"></span>offline</span><span>REV&nbsp;<b>1.4</b></span><span id="clock">--:--</span></div>
+    <div class="hstatus"><span><span class="dot"></span>offline</span><span>REV&nbsp;<b>1.5</b></span><span id="clock">--:--</span></div>
   </div>
 </header>
 
