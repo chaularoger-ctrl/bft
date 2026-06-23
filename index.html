@@ -349,6 +349,12 @@ td.key{color:var(--text); font-weight:700}
 .gstep .g-sel:focus{outline:none;border-color:var(--yellow);background-color:var(--card);box-shadow:0 0 0 3px var(--sel)}
 .gstep .g-iso{flex:0 0 auto;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--yellow-text);border:1px solid var(--yellow-dim);background:var(--sel);border-radius:20px;padding:4px 10px;min-width:22px;text-align:center}
 .gstep .g-iso:empty{display:none}
+.gstep .g-clear{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1px solid var(--line-2);background:var(--card);color:var(--muted);font-size:17px;line-height:1;cursor:pointer;padding:0}
+.gstep .g-clear:hover{border-color:var(--no-bd);color:var(--no-fg)}
+.g-chips{display:flex;flex-wrap:wrap;gap:7px;margin:-6px 2px 10px}
+.g-chips button{font-family:var(--sans);font-size:12px;font-weight:600;border:1px solid var(--line-2);background:var(--card);color:var(--text);padding:6px 11px;border-radius:20px;cursor:pointer}
+.g-chips button:hover{border-color:var(--yellow);background:var(--sel)}
+.g-chips button.on{border-color:var(--yellow);background:var(--sel);color:var(--yellow-text)}
 .g-hint{font-size:11.5px;color:var(--muted);margin:-6px 2px 13px;line-height:1.45}
 .g-hint b{color:var(--text)}
 /* aiuto "?" per campo */
@@ -586,11 +592,14 @@ footer b{color:var(--text)}
   </div>
   <div class="gstep">
     <span class="g-num">1</span>
-    <div class="g-lab"><b>Materiale</b><small>imposta kc e i range</small></div>
-    <select id="c_mat" class="g-sel"><option value="">— scegli il materiale lavorato —</option></select>
+    <div class="g-lab"><b>Materiale</b><small>kc dal database</small></div>
+    <input id="c_matSearch" class="g-sel" list="kcList" placeholder="Cerca: 1045, C45, St37, 1.0503, AlSi, GG25…" autocomplete="off" spellcheck="false">
+    <datalist id="kcList"></datalist>
     <span class="g-iso" id="matIso" title="Gruppo ISO 513"></span>
+    <button class="g-clear" id="matClear" type="button" title="Azzera materiale" hidden>×</button>
   </div>
-  <div class="g-hint" id="matHint">Scegli il <b>materiale</b> per ottenere in automatico <b>kc</b> e i <b>range consigliati</b> di Vc e avanzamento. Puoi sempre modificare i valori a mano.</div>
+  <div class="g-chips" id="matChips"></div>
+  <div class="g-hint" id="matHint">Cerca il <b>materiale</b> (sigla SAE/DIN/Werkstoff): imposto in automatico <b>kc</b> dal database aziendale e i <b>range consigliati</b> di Vc e avanzamento. Puoi sempre modificare a mano.</div>
   <div class="ctools"><button class="ctbtn ghost" id="btnClear">↺ Svuota campi</button></div>
   <div class="card">
     <div class="ch"><span id="inHdr">2 · Ingressi di taglio</span><span class="tag" id="inTag"></span></div>
@@ -847,7 +856,7 @@ var MODE_TITLE={mill:'Fresatura',turn:'Tornitura',drill:'Foratura',tap:'Filettat
 var MODE_TAG={mill:'Dc / z / Vc / fz',turn:'Dc / Vc / fn',drill:'Dc / Vc / fn',tap:'filetto · p / Vc'};
 var MODE_DESC={mill:'Vc, n, avanzamenti, MRR, spessore truciolo e Ra teorica',turn:'Vc, n, avanzamento, MRR e Ra teorica',
   drill:'Vc, n, penetrazione e MRR · punta a 2 taglienti',tap:'maschiatura · avanzamento bloccato al passo (Vf = p·n)'};
-var cut={mode:'mill',mat:'',
+var cut={mode:'mill',mat:'',matGroup:'',kc11:0,mc:0,
   mill:{Dc:0,z:0,vc:0,n:0,fz:0,vf:0,ap:0,ae:0,kr:0,re:0},
   turn:{Dc:0,vc:0,n:0,fn:0,ap:0,re:0},
   drill:{Dc:0,vc:0,n:0,fn:0,z:0},
@@ -855,16 +864,733 @@ var cut={mode:'mill',mat:'',
   pw:{kc:0,eta:0,L:0,np:0,rate:0,tool:0},cmp:{A:null,B:null},cmpNames:{A:'',B:''},lastSpeed:'vc',lastFeed:'fz'};
 var CUTLAST=null;
 var PH={kr:'90',re:'0.8',eta:'0.8',np:'1'};
-/* Knowledge-base materiali: gruppo ISO 513, kc (N/mm²) e range consigliati per lavorazione */
-var MATDATA={
-  'Acciaio':            {iso:'P',kc:2000,mill:{vc:[120,250],fz:[0.05,0.25]},turn:{vc:[150,350],fn:[0.10,0.45]},drill:{vc:[25,90],fn:[0.08,0.30]}},
-  'Acciaio inox':       {iso:'M',kc:2300,mill:{vc:[80,180],fz:[0.05,0.20]},turn:{vc:[100,250],fn:[0.10,0.40]},drill:{vc:[15,55],fn:[0.06,0.25]}},
-  'Ghisa':              {iso:'K',kc:1100,mill:{vc:[100,250],fz:[0.10,0.30]},turn:{vc:[120,300],fn:[0.10,0.50]},drill:{vc:[25,80],fn:[0.10,0.35]}},
-  'Alluminio':          {iso:'N',kc:700, mill:{vc:[300,1200],fz:[0.05,0.30]},turn:{vc:[300,1500],fn:[0.05,0.40]},drill:{vc:[80,250],fn:[0.10,0.40]}},
-  'Titanio/Superleghe': {iso:'S',kc:2600,mill:{vc:[30,80],fz:[0.05,0.15]},turn:{vc:[30,90],fn:[0.08,0.30]},drill:{vc:[8,30],fn:[0.05,0.20]}},
-  'Rame/Ottone':        {iso:'N',kc:900, mill:{vc:[150,500],fz:[0.05,0.25]},turn:{vc:[150,600],fn:[0.05,0.35]},drill:{vc:[40,150],fn:[0.10,0.35]}},
-  'Plastica/Composito': {iso:'O',kc:350, mill:{vc:[200,800],fz:[0.05,0.30]},turn:{vc:[200,800],fn:[0.05,0.40]},drill:{vc:[50,200],fn:[0.10,0.40]}}
+/* Range consigliati per gruppo ISO 513 (Vc / avanzamento) */
+var GRP={
+  P:{label:'Acciaio',family:'Acciaio',mill:{vc:[120,250],fz:[0.05,0.25]},turn:{vc:[150,350],fn:[0.10,0.45]},drill:{vc:[25,90],fn:[0.08,0.30]}},
+  M:{label:'Acciaio inox',family:'Acciaio inox',mill:{vc:[80,180],fz:[0.05,0.20]},turn:{vc:[100,250],fn:[0.10,0.40]},drill:{vc:[15,55],fn:[0.06,0.25]}},
+  K:{label:'Ghisa',family:'Ghisa',mill:{vc:[100,250],fz:[0.10,0.30]},turn:{vc:[120,300],fn:[0.10,0.50]},drill:{vc:[25,80],fn:[0.10,0.35]}},
+  N:{label:'Alluminio / non ferrosi',family:'Alluminio',mill:{vc:[300,1200],fz:[0.05,0.30]},turn:{vc:[300,1500],fn:[0.05,0.40]},drill:{vc:[80,250],fn:[0.10,0.40]}},
+  S:{label:'Titanio / superleghe',family:'Titanio/Superleghe',mill:{vc:[30,80],fz:[0.05,0.15]},turn:{vc:[30,90],fn:[0.08,0.30]},drill:{vc:[8,30],fn:[0.05,0.20]}},
+  O:{label:'Plastica / composito',family:'Plastica/Composito',mill:{vc:[200,800],fz:[0.05,0.30]},turn:{vc:[200,800],fn:[0.05,0.40]},drill:{vc:[50,200],fn:[0.10,0.40]}}
 };
+var KC_CHIPS=[['Acciaio C45','C45'],['Inox 304','304'],['Alluminio','AlSi7Mg'],['Ghisa GG25','GG25'],['Titanio Ti6Al4V','TiAl6V4']];
+/* Database materiali (kc1.1 [N/mm²] e mc di Kienzle) — fonte tabella aziendale */
+var KCDB=[
+["1006 · St37 · 1.0037",1350,0.21,"P"],
+["1008 · St12 · 1.0201",1350,0.21,"P"],
+["1010 · Ck10 · 1.1121",1350,0.21,"P"],
+["1015 · C15 · 1.0401",1350,0.21,"P"],
+["1018 · C16E · 1.1148",1350,0.21,"P"],
+["1020 · C22 · 1.0402",1350,0.21,"P"],
+["1022 · GS.20Mn5 · 1.1133",1350,0.21,"P"],
+["1025 · Ck25 · 1.1158",1350,0.21,"P"],
+["1035 · C35 · 1.0501",1500,0.22,"P"],
+["1035 · Ck35 · 1.1183",1500,0.22,"P"],
+["1039 · 40Mn4 · 1.1157",1500,0.22,"P"],
+["1040 · C40 · 1.0511",1500,0.22,"P"],
+["1043",1500,0.22,"P"],
+["1045 · C45 · 1.0503",1500,0.22,"P"],
+["1049 · Cm45 · 1.1201",1500,0.22,"P"],
+["1049/1050 · Ck50 · 1049 · 1.1206",1500,0.22,"P"],
+["1050 · Cf53 · 1.1213",1500,0.22,"P"],
+["Al99,5 · 1050 · 3.0255",700,0.25,"N"],
+["1055 · Ck55 · 1.1203",1700,0.24,"P"],
+["O1 · 105WCr6 · 105WC13 · 1.2510",2450,0.23,"P"],
+["1060 · C60 · 1.0601",1700,0.24,"P"],
+["1070 · Ck67 · 1.1231",1700,0.24,"P"],
+["Al99,7 · 1070 · 3.0275",700,0.25,"N"],
+["1080 · Ck75 · 1.1248",1700,0.24,"P"],
+["Al99,8 · 1080 · 3.0128",700,0.25,"N"],
+["1086 · Ck85 · 1.1269",1700,0.24,"P"],
+["1095 · Ck101 · 1.1274",1700,0.24,"P"],
+["10SPb20 · 10PbF2 · 1.0722",1350,0.21,"P"],
+["1100",700,0.25,"N"],
+["1108 · 10S20 · 1.0721",1675,0.24,"P"],
+["1112 · 10S20 · 1.0721",1675,0.24,"P"],
+["1140 · 35S20 · 1.0726",1675,0.24,"P"],
+["1144 · 44SMn28 · 1.0762",1675,0.24,"P"],
+["1151 · 45S20 · 1.0727",1675,0.24,"P"],
+["120WV4 · 120WV10 · 1.2516",2450,0.23,"P"],
+["1213 · 9SMn28 · 1.0715",1675,0.24,"P"],
+["1215 · 9SMn36 · 1.0736",1675,0.24,"P"],
+["A38712-2 · 15CrMo5 · 12CD4 · 1.7262",1775,0.24,"P"],
+["12L13 · 9SMnPb28 · 1.0718",1675,0.24,"P"],
+["12L14 · 9SMnPb36 · 1.0737",1675,0.24,"P"],
+["46247 · 13-8PH · 1.4534",2150,0.2,"M"],
+["1330 · 28Mn6 · 1.1170",1500,0.22,"P"],
+["1335 · 36Mn5 · 1.1167",1500,0.22,"P"],
+["46157 · X4CrNiCuNb16.4 · 15-5PH · 1.4540",2150,0.2,"M"],
+["X7CrNiMoAl15.7 · 15-7PH · 1.4532",2150,0.2,"M"],
+["630 · X5CrNiCuNb16-4 · 17-4PH · 1.4542",2150,0.2,"M"],
+["177PH · X7CrNiAl17.7 · 17-7PH · 1.456814504",2150,0.2,"M"],
+["17CrNiMo6 · 18NCD6 · 1.6587",1775,0.24,"P"],
+["2011 · AlCuBiPb · 3.1655",800,0.25,"N"],
+["2017 · AlCuSiMn · 2014 · 3.1255",800,0.25,"N"],
+["2017 · AlCuMg1 · 3.1325",800,0.25,"N"],
+["201LN",2150,0.2,"P"],
+["202 · X3CrMnNiN18-8-7 · 1.4371",2150,0.2,"M"],
+["2024 · AlCuMg2 · 3.1355",800,0.25,"N"],
+["2050",750,0.25,"N"],
+["2090",750,0.25,"N"],
+["2091",750,0.25,"N"],
+["2094",750,0.25,"N"],
+["2095",750,0.25,"N"],
+["2097",750,0.25,"N"],
+["2098",750,0.25,"N"],
+["2099",750,0.25,"N"],
+["20AP",1500,0.22,"P"],
+["ASTM B463 · 20CB-3",2600,0.24,"P"],
+["16MnSCr5 · 20MC5 · 1.7139",1775,0.24,"P"],
+["ASTM A666 · 39985",3100,0.24,"P"],
+["2117",800,0.25,"N"],
+["215",2150,0.2,"P"],
+["2195",800,0.25,"N"],
+["2196",750,0.25,"N"],
+["2197",750,0.25,"N"],
+["2198",750,0.25,"N"],
+["2199",750,0.25,"N"],
+["2218 · AlCuMgNi2",800,0.25,"N"],
+["2224",800,0.25,"N"],
+["2297",750,0.25,"N"],
+["22CMSD4",1500,0.22,"P"],
+["2397",750,0.25,"N"],
+["2515 · 12Ni19 · 1.5680",1775,0.24,"P"],
+["284",2150,0.2,"P"],
+["3003 · AlMnCu · 3.0517",800,0.25,"N"],
+["3004 · AlMn1Mg1 · 3.0526",800,0.25,"N"],
+["3005 · AlMn1Mg0.5 · 3.0525",800,0.25,"N"],
+["301 · X12CrNi17-7 · 1.4310",2150,0.2,"M"],
+["302 · X12CrNi18-9 · 1.4319",2150,0.2,"M"],
+["303 · X8CrNiS18-9 · 1.4305",2150,0.2,"M"],
+["304 · X5CrNi18-9 · 1.4350",2150,0.2,"M"],
+["304L · 304 L · 1.4306",2150,0.2,"M"],
+["304LN · X2CrNiN18-10 · 304 LN · 1.4311",2150,0.2,"M"],
+["305 · X8CrNi18-12 · 1.4312",2150,0.2,"M"],
+["309 · X15CrNiSi20-12 · 1.4828",2150,0.2,"M"],
+["309 S · X7CrNi23-14 · 1.4833",2150,0.2,"M"],
+["32CrMo12 · 30CD12 · 1.8515",1775,0.24,"P"],
+["310S · X12CrNi25-20 · 310 S · 1.4845",2150,0.2,"M"],
+["3103 · AlMn1 · 3.0515",800,0.25,"N"],
+["3105",800,0.25,"N"],
+["311",2150,0.2,"P"],
+["3115 · 15CrNi6 · 1.5919",1775,0.24,"P"],
+["3135 · 36NiCr6 · 1.5710",1500,0.22,"P"],
+["30314 · X15CrNiSi25-20 · 314 · 1.4841",2150,0.2,"M"],
+["315",2150,0.2,"P"],
+["316 · X5CrNiMo17-12-2 · 1.4401",2150,0.2,"M"],
+["316L · X2CrNiMo18-12 · 316 L · 1.4404",2150,0.2,"M"],
+["316LN · X2CrNiMoN18-13 · 316 LN · 1.4429",2150,0.2,"M"],
+["X2CrNiMoN17-13-3 · 316 LXN · 1.4429",2150,0.2,"M"],
+["316Ti · X8CrNiMoTi17-12-2 · 316 Ti · 1.4571",2150,0.2,"S"],
+["X2CrNiMo17-12-2+S+Cu · 316L (S+Cu)",2150,0.2,"P"],
+["X2CrNiMo17-12-2 improved · 316L Decolletage",2150,0.2,"P"],
+["317 · X5CrNiMo17-13 · 1.4449",2150,0.2,"M"],
+["317L · X2CrNiMo18-16 · 317 L · 1.4438",2150,0.2,"M"],
+["318 · X10CrNiMoNb18-12 · 1.4583",2150,0.2,"M"],
+["320",2150,0.2,"P"],
+["321 · X10CrNiTi18-9 · 1.4541",2150,0.2,"S"],
+["X8CrNiTi18-10 · 321 H",2150,0.2,"S"],
+["325",2150,0.2,"P"],
+["326",2150,0.2,"P"],
+["329 · X8CrNiMo27-5 · 1.4460",2150,0.2,"M"],
+["330 · X12NiCrSi36-16 · 1.4864",2150,0.2,"M"],
+["331",2150,0.2,"P"],
+["332",2150,0.2,"P"],
+["70334 · X8CrNiAlTi20-20 · 334",2150,0.2,"S"],
+["3415 · 14NiCr10 · 1.5732",1500,0.22,"P"],
+["3415 · 14NiCr14 · 1.5752",1775,0.24,"P"],
+["347 · X10CrNiNb18-9 · 1.4550",2150,0.2,"M"],
+["X5CrNiNb18-10 · 348 · 1.4546",2150,0.2,"M"],
+["35NCD14",1500,0.22,"P"],
+["38Cr2 · 38C2 · 1.7003",1775,0.24,"P"],
+["394",2150,0.2,"P"],
+["403 · X7Cr13 · 1.4000",1875,0.21,"M"],
+["4032",800,0.25,"N"],
+["403Cb",1875,0.21,"P"],
+["X19CrMoVNb11-1 · 403Cb+ · 1.4914",1875,0.21,"M"],
+["405 · X10CrAl13 · 1.4724",1875,0.21,"M"],
+["409 · X6CrTi12 · 1.4510",1875,0.21,"S"],
+["409 Cb",1875,0.21,"P"],
+["409 HP",1875,0.21,"P"],
+["40CrMnMo7 · 40CMD8 · 1.2311",2450,0.23,"P"],
+["40CrMnNiMo8 · 1.2738",1775,0.24,"P"],
+["410 · X10Cr13 · 1.4006",1875,0.21,"M"],
+["410S",1875,0.21,"P"],
+["4130 · 25CrMo4 · 1.7218",1775,0.24,"P"],
+["4137 · 34CrMo4 · 1.7220",1775,0.24,"P"],
+["4140 · 42CrMo4 · 1.7225",1775,0.24,"P"],
+["4142 · 41CrMo4 · 1.7223",1775,0.24,"P"],
+["4150 · 50CrMo4 · 1.7228",1775,0.24,"P"],
+["41600 · X12CrS13 · 416 · 1.4005",1875,0.21,"M"],
+["420 · X20Cr13 · 1.4021",1875,0.21,"M"],
+["420F · X30Cr13 · 1.4028",1875,0.21,"M"],
+["425",1875,0.21,"P"],
+["429",1875,0.21,"P"],
+["430 · X8Cr17 · 1.4016",1875,0.21,"M"],
+["430F · X12CrMoS17 · 1.4104",1875,0.21,"M"],
+["431 · X22CrNi17 · 1.4057",1875,0.21,"M"],
+["431 · X17CrNi16-2 · 431 (HT) · 1.4057",4600,0.25,"M"],
+["433",1875,0.21,"P"],
+["434 · X6CrMo17 · 1.4113",1875,0.21,"M"],
+["4340 · 35CrNiMo6 · 1.6582",1775,0.24,"P"],
+["436S",1875,0.21,"P"],
+["439 HP",1875,0.21,"P"],
+["440A · X70CrMo15 · 1.4109",1875,0.21,"M"],
+["440C · X105CrMo17 · 1.4125",1875,0.21,"M"],
+["441",1875,0.21,"P"],
+["441 HP",1875,0.21,"P"],
+["4419 · 22Mo4 · 1.5419",1775,0.24,"P"],
+["444 · 1.4521",1875,0.21,"M"],
+["446 · X10CrAl24 · 1.4762",1875,0.21,"M"],
+["452",1875,0.21,"P"],
+["4520",1775,0.24,"P"],
+["5617 · 455",2150,0.2,"P"],
+["6F7 · X45NiCrMo4 · 45NCD17 · 1.2767",2450,0.23,"P"],
+["500",4600,0.25,"S"],
+["5005 · AlMg1 · 3.3315",800,0.25,"N"],
+["5015 · 15Cr3 · 1.7015",1775,0.24,"P"],
+["5045 · 46Cr2 · 1.7006",1775,0.24,"P"],
+["5052 · AlMg2,5 · 3.3523",800,0.25,"N"],
+["5056 · AlMg5 · 3.3555",800,0.25,"N"],
+["5083 · ASlMg4,5Mn · 3.3547",800,0.25,"N"],
+["5086 · AlMg4Mn · 3.3545",800,0.25,"N"],
+["5115 · 16MnCr5 · 1.7131",1775,0.24,"P"],
+["5120 · St52-3 · 1.0841",1775,0.24,"P"],
+["5130 · 28Cr4 · 1.7030",1775,0.24,"P"],
+["5132 · 34Cr4 · 1.7033",1775,0.24,"P"],
+["5135 · 37Cr4 · 1.7034",1775,0.24,"P"],
+["5140 · 41Cr4 · 1.7035",1775,0.24,"P"],
+["5140 · 41Cr4 · 1.7035 #2",1775,0.24,"P"],
+["5154 · AlMg3,5 · 3.3535",800,0.25,"N"],
+["5155 · 55Cr3 · 1.7176",1775,0.24,"P"],
+["521",4600,0.25,"S"],
+["52100 · 100Cr6 · 1.3505",1775,0.24,"P"],
+["5251 · AlMg2Mo3 · 3.3525",800,0.25,"N"],
+["5454 · AlMg2,5Mn · 3.3537",800,0.25,"N"],
+["55MnSi4-4",1775,0.24,"P"],
+["54NiCrMoV6 · 55NCDV6 · 1.2711",1700,0.24,"P"],
+["55W1",1775,0.24,"P"],
+["5657 · AlMg0,8Si",800,0.25,"N"],
+["5754 · AlMg3 · 3.3535",800,0.25,"N"],
+["57NiCrMoV77 · 1.2744",1700,0.24,"P"],
+["600",4700,0.25,"S"],
+["6061 · AlMgSiCu · 3.3211",800,0.25,"N"],
+["6063 · AlMgSi0,5 · 3.3206",800,0.25,"N"],
+["6070",800,0.25,"N"],
+["60SPb20",4700,0.25,"S"],
+["610",2150,0.2,"P"],
+["611",2150,0.2,"P"],
+["6150 · 50CrV4 · 1.8159",1775,0.24,"P"],
+["6151",800,0.25,"N"],
+["6262",800,0.25,"N"],
+["6351 · AlMgSi1 · 3.2315",800,0.25,"N"],
+["6463 · EAlMgSi0,5 · 3.3207",800,0.25,"N"],
+["6F3 · 56NiCrMoV7 · 1.2714",2450,0.23,"P"],
+["6F5 · 55NiCr10 · 1.2718",2450,0.23,"P"],
+["7001",800,0.25,"N"],
+["7003",800,0.25,"N"],
+["7020 · AlZn4,5Mg1 · 3.4335",800,0.25,"N"],
+["7022 · AlZnMgCu0,5 · 3.4345",800,0.25,"N"],
+["7050",800,0.25,"N"],
+["7075 · AlZnMgCu1,5 · 3.4365",800,0.25,"N"],
+["70SPb20",4700,0.25,"S"],
+["7175",800,0.25,"N"],
+["7178",800,0.25,"N"],
+["7475",800,0.25,"N"],
+["75CrMoNiW67 · 1.2762",2450,0.23,"P"],
+["8017",800,0.25,"N"],
+["8024",750,0.25,"N"],
+["8090",750,0.25,"N"],
+["8091",750,0.25,"N"],
+["8093",750,0.25,"N"],
+["8620 · 21NiCrMo2 · 1.6523",1775,0.24,"P"],
+["8630 · 27CrNiMo2 · 1.6545",1775,0.24,"P"],
+["8740 · 40NiCrMo22 · 1.6546",1775,0.24,"P"],
+["X1CrNiMoCu25-20-5 · 904 L · 1.4539",2150,0.2,"M"],
+["90MnCrV8 · 90MCV8 · 1.2842",1775,0.24,"P"],
+["9254 · 55Si7 · 9255 · 1.0904",1775,0.24,"P"],
+["9262 · 60SiCr7 · 1.0961",1775,0.24,"P"],
+["9310 · 14NiCrMo134 · 1.6657",1775,0.24,"P"],
+["9840 · 36CrNiMo4 · 1.6511",1775,0.24,"P"],
+["ASTM 368 · X5NiCrTi2515 · A-286 · 1.4980",3100,0.24,"S"],
+["A100",4700,0.25,"S"],
+["A105 · C22-8",1775,0.24,"P"],
+["P235GH · A106GB",1775,0.24,"P"],
+["A12875 · GX120Mn12 · A128.75 · 1.3401",2450,0.23,"P"],
+["ASTMA182F22 · 10CrMo910 · A182 · 1.7380",1775,0.24,"P"],
+["ASTMA182F11-F12 · 13CrMo44 · A182 · 1.7335",1775,0.24,"P"],
+["A2 · X100CrMoV51 · 1.2363",2450,0.23,"P"],
+["A2 · X100CrMoV5 1 · A2 (Hardenned) · 1.2363",4700,0.25,"P"],
+["ASTMA204Gr.A · 15Mo3 · A204Gr.A · 1.5415",1775,0.24,"P"],
+["A234WPB",1775,0.24,"P"],
+["A234WPL6",1775,0.24,"P"],
+["A27 65.35 · GS.45 · 1.0443",1350,0.21,"P"],
+["Fe310.0 (St33) · A33 · 1.0035",1350,0.21,"P"],
+["P265GH · A333G6",1775,0.24,"P"],
+["Ust34-2 · A34-2 · 1.0028",1350,0.21,"P"],
+["RSt34-2 · A34-2NE · 1.0034",1350,0.21,"P"],
+["A350LF2",1775,0.24,"P"],
+["ASTMA350LF5 · 14Ni6 · A350LF5 · 1.5622",1775,0.24,"P"],
+["A335A · A355A · 1.4545",2450,0.23,"M"],
+["A36 · ST-37-2 · 1.0117",1350,0.21,"P"],
+["A515 65 · H I · A515.65 · 1.0345",1350,0.21,"P"],
+["A516Gr.70 · 17Mn4/ A515Gr.70/ A414Gr.F · A516 · 1.0481",1500,0.22,"P"],
+["P265GH · A516G60",1500,0.22,"P"],
+["P295GH · A516G70",1500,0.22,"P"],
+["A537Cl.1/ A414Gr.G/A612 · 19Mn6 · A537 · 1.0473",1500,0.22,"P"],
+["A570Gr.50/ A572Gr.50 · Fe490-2 (St50-2) · A570 · 1.0050",1500,0.22,"P"],
+["A570Gr.33,36 · Fe360B (Ust37-2) · A570 · 1.0036",1500,0.22,"P"],
+["A570Gr.40 · Fe430B (St44-2) · A570 · 1.0044",1500,0.22,"P"],
+["A570 36 · RSt37.2 · A570.36 · 1.0038",1350,0.21,"P"],
+["A572Gr.65 · Fe590-2 (St60-2) · A572 · 1.0060",1500,0.22,"P"],
+["A572.60",1500,0.22,"P"],
+["A573Gr.70/ A611Gr.D · Fe430D1 (St44-3) · A573 · 1.0144",1350,0.21,"P"],
+["A573.81 65 · St37.3 · A573.81.65 · 1.0116",1775,0.24,"P"],
+["A6",2450,0.23,"P"],
+["A619(1008) · RRSt3 · A619 · 1.0347",2450,0.23,"P"],
+["A633Gr.C · StE355 · A633 · 1.0562",1350,0.21,"P"],
+["A7",2450,0.23,"P"],
+["Fe690-2 (St70-2) · A70-2 · 1.0070",1500,0.22,"P"],
+["A738 · Fe510D2 (Ast52) · 1.0577",1500,0.22,"P"],
+["AMS 6532 · Aermet 100",1875,0.21,"P"],
+["Aermet 310",1875,0.21,"P"],
+["Aermet 340",1875,0.21,"P"],
+["AL 29-4C",2150,0.2,"N"],
+["ASTM B753 · AL 4750",3300,0.24,"N"],
+["AL-6XN",2150,0.2,"N"],
+["AL-6XN Plus",2150,0.2,"N"],
+["Allcorr",3300,0.24,"N"],
+["AM 350",2150,0.2,"P"],
+["Armco 18",2600,0.24,"P"],
+["Armco 20-45-5",3300,0.24,"P"],
+["AlSi7Mg · AS7G",800,0.25,"N"],
+["Astroloy",3300,0.24,"P"],
+["B-148-52 · G-CuAl10Ni · 2.0975",700,0.27,"N"],
+["B163 · X10NiCrAlTi32-20 · 1.4876",2150,0.2,"S"],
+["420F MOD · X 22 CrMoNiS 13 1 · Bioline 4C27A",2150,0.2,"P"],
+["C18200 · CuCrZr · 2.1293",700,0.27,"N"],
+["C2300 · G-CuPb15Sn · 2.1182",700,0.27,"N"],
+["1025 · C25 · 1.0406",1500,0.22,"P"],
+["C27200 · CuZn37 · 2.0321",700,0.27,"N"],
+["C36000 · CuZn36Pb3 · 2.0375",700,0.27,"N"],
+["C63000 · CuAl10Ni5Fe4 · 2.0966",700,0.27,"N"],
+["C81500 · G-CuCrF35 · 2.1292",700,0.27,"N"],
+["C83600 · G-CuSn5ZnPb · 2.1096",700,0.27,"N"],
+["C83600 · G-CuSn2ZnPb · 2.1098",700,0.27,"N"],
+["C86200 · G-CuZn34Al2 · 2.0596",700,0.27,"N"],
+["C86500 · G-CuZn35Al1 · 2.0592",700,0.27,"N"],
+["C90700 · G-CuSn10 · 2.1050",700,0.27,"N"],
+["C90800 · G-CuSn12 · 2.1052",700,0.27,"N"],
+["C93200 · G-CuSn75Pb · 2.1090",700,0.27,"N"],
+["CF-8 · X6CrNi18-9 · 1.4308",2150,0.2,"M"],
+["CF-8M · X6CrNiMo18-10 · 1.4408",2150,0.2,"M"],
+["AMS 5936 · Custom 465",2150,0.2,"P"],
+["CuZn15 · 2.0240",700,0.27,"N"],
+["D2 · X165CrMoV12 · 1.2601",2450,0.23,"P"],
+["D3 · X210Cr12 · 1.2080",2450,0.23,"P"],
+["D4(D6) · X210CrW12 · 1.2436",2450,0.23,"P"],
+["Datalloy 2",2150,0.2,"P"],
+["5725 · Discaloy 16",3100,0.24,"P"],
+["ASTM A638 · Discaloy 24",3100,0.24,"P"],
+["ASTM A182 Grade F51 · Duplex 1803 (F51)",2150,0.2,"M"],
+["Duplex 2003",2150,0.2,"M"],
+["Duplex 2102",2150,0.2,"M"],
+["ASTM A182 Grade F60 · X2CrNiMoN22-5-3 · Duplex 2205 (F60 / F51) · 1.4462",2150,0.2,"M"],
+["ASTM A182 Grade F68 · X2CrNiN23-4 · Duplex 2304 (F68) · 1.4362",2150,0.2,"M"],
+["Duplex 255",2150,0.2,"M"],
+["ASTM A182 Grade F61 · X2CrNiMoN25-6-3 · Duplex 2550 (F61) · 1.4507",2150,0.2,"M"],
+["ASTM A182 Grade F55 · X2CrNiMoCuWN25-7-4 · Duplex 2760 (F55) · 1.4501",2150,0.2,"M"],
+["Duplex LDX2101",2150,0.2,"M"],
+["Duraloy 22H",3300,0.24,"P"],
+["Duraloy Super 22H",3300,0.24,"P"],
+["X2NiCoMoTi180905 · Durimphy",4600,0.25,"S"],
+["ASTM B625 · E-Brite Alloy",2150,0.2,"N"],
+["E-Cu57 · 2.0060",700,0.27,"N"],
+["EV8 · X53CrMnNiN21-9 · 1.4871",2150,0.2,"M"],
+["ASTM F1537 · F 1537",3300,0.24,"P"],
+["Ferrium® S53®",4600,0.25,"S"],
+["FV535",2450,0.23,"P"],
+["FV607",2150,0.2,"P"],
+["G-CuZn40Fe · 2.0590",700,0.27,"N"],
+["A48-20B · GG10 · 0.6010",1150,0.2,"K"],
+["A48-25B · GG15 · 0.6015",1150,0.2,"K"],
+["A48-30B · GG20 · 0.6020",1150,0.2,"K"],
+["A48-35B · GG25 · 0.6025",1350,0.28,"K"],
+["A48-45B · GG30 · 0.6030",1350,0.28,"K"],
+["A48-50B · GG35 · 0.6035",1350,0.28,"K"],
+["A48-55B · GG40 · 0.6040",1350,0.28,"K"],
+["65-45-12 · GGG-50 · GGG--40Mo0.5 · 0.7050",1225,0.25,"K"],
+["GGG-35.3 · 0.7033",1225,0.25,"K"],
+["60-40-18 · GGG-40 · 0.7040",1225,0.25,"K"],
+["GGG-50",1350,0.28,"K"],
+["80-55-06 · GGG-60 · 0.7060",1350,0.28,"K"],
+["100-70-03 · GGG-70 · 0.7070",1350,0.28,"K"],
+["120-90-02 · GGG-80 · 0.7080",1350,0.28,"K"],
+["A 439 Type D-2C · GGG-Ni22 · 0.7670",1225,0.25,"K"],
+["A 439 Type D-5 · GGG-Ni35 · 0.7683",1225,0.25,"K"],
+["A 439 Type D-2B · GGG-NiCr20.3 · 0.7661",1350,0.28,"K"],
+["A 439 Type D-2 · GGG-NiCr20.2 · GGG-NiCr202 · 0.7660",1225,0.25,"K"],
+["A 439 Type D-3A · GGG-NiCr30.1 · 0.7677",1350,0.28,"K"],
+["A 439 Type D-3 · GGG-NiCr30.3 · GGG-NiCr303 · 0.7676",1225,0.25,"K"],
+["A 439 Type D-5B · GGG-NiCr35.3 · GGG-NiCr353 · 0.7685",1225,0.25,"K"],
+["GGG-NiCrNb20.2 · 0.7659",1350,0.28,"K"],
+["GGG-NiMn13.7 · 0.7652",1350,0.28,"K"],
+["A 571 Type D-2M · GGG-NiMn23.4 · GGG-NiMn234 · 0.7673",1225,0.25,"K"],
+["A 439 Type D-4 · GGG-NiSiCr30.5.5 · GGG-NiSi3055 · 0.7680",1350,0.28,"K"],
+["GGG-NiSiCr20.5.2 · 0.7665",1350,0.28,"K"],
+["GGG-NiSiCr30.5.2 · 0.7679",1350,0.28,"K"],
+["GGG-NiSiCr35.5.2 · 0.7688",1350,0.28,"K"],
+["GGG120B",4600,0.25,"K"],
+["GGG140B",4600,0.25,"K"],
+["GGG80B",4600,0.25,"K"],
+["GGG90B",4600,0.25,"K"],
+["AlSl 686 · GMR 235",3300,0.24,"N"],
+["NiCr16MoAl · GMR 235-D",3300,0.24,"P"],
+["5508 · Greek Ascoloy - 418",3100,0.24,"P"],
+["32510 · GTS-35-10 · 0.8135",1225,0.25,"P"],
+["GTS-45-06",1225,0.25,"P"],
+["GTS-55-04",1420,0.3,"P"],
+["70003 · GTS-65-02 · 0.8165",1420,0.3,"P"],
+["A220-80002 · GTS-70-02 · 0.8170",1420,0.3,"P"],
+["GTW-35-04 · 0.8035",1225,0.25,"P"],
+["GTW-40-05 · 0.8040",1225,0.25,"P"],
+["GTW-45-07 · 0.8045",1225,0.25,"P"],
+["H10 · X32CrMoV33 · 1.2365",2450,0.23,"P"],
+["H10",4600,0.25,"S"],
+["H10A · X32CrMoCoV33.3 · 1.2885",2450,0.23,"P"],
+["H11 · X38CrMoV51 · 1.2343",2450,0.23,"P"],
+["H11",4600,0.25,"S"],
+["H12",4600,0.25,"S"],
+["H13 · X40CrMoV51 · 1.2344",2450,0.23,"P"],
+["H19",4600,0.25,"S"],
+["H21 · X30WCrV93 · 1.2581",2450,0.23,"P"],
+["H21",4600,0.25,"S"],
+["H46",2150,0.2,"P"],
+["Hardox 450",4600,0.25,"S"],
+["Hardox 500",4600,0.25,"S"],
+["Hardox 550",4700,0.25,"S"],
+["Hardox 600",4700,0.25,"S"],
+["Hardox400",2450,0.23,"P"],
+["HardoxHiTuf",2450,0.23,"P"],
+["5396A · S.NiMo30 · Hastelloy B · 2.48",3300,0.24,"S"],
+["Hastelloy B-2",3300,0.24,"S"],
+["Hastelloy C-22",3300,0.24,"S"],
+["G-NiMo30 · Hastelloy C-276 · 2.4819",3300,0.24,"S"],
+["Hastelloy C-4",3300,0.24,"S"],
+["Hastelloy G",3300,0.24,"S"],
+["Hastelloy G-3 · 2.4619",3300,0.24,"S"],
+["Hastelloy N",3300,0.24,"S"],
+["Hastelloy R235",3300,0.24,"S"],
+["Hastelloy S",3300,0.24,"S"],
+["Hastelloy W",3300,0.24,"S"],
+["5536 · NiCr22FeMo · Hastelloy X · 2.4603",3300,0.24,"S"],
+["5772 · Haynes 188",3300,0.24,"P"],
+["5759 · LW2.4964 · Haynes 25",3300,0.24,"P"],
+["Haynes 263",3300,0.24,"P"],
+["5768 · X12CrCoNi2120 · Haynes 556",3300,0.24,"P"],
+["5540 · NiCr15Fe · Haynes 600 · 2.4816",3300,0.24,"N"],
+["5715 · Haynes 601 · 2.4851",3300,0.24,"N"],
+["ASME SB443 · NiCr22Mo9Nb · Haynes 625 · 2.4856",3300,0.24,"N"],
+["NiCr29Fe · Haynes 690 · 2.4642",3300,0.24,"N"],
+["Haynes 75",3300,0.24,"P"],
+["5542 · Haynes X-750 · 2.4669",3300,0.24,"N"],
+["HNV3 · X45CrSi9-3 · 1.4718",1875,0.21,"M"],
+["ASTM F-75 · CoCr28Mo · HS 21",3300,0.24,"P"],
+["AlSl 670 · CoCr20W15Ni · HS 25",3300,0.24,"N"],
+["5380 · CoCr26Ni14Mo · HS 30",3300,0.24,"P"],
+["ASTM A567 · CoCr25NiW · HS 31",3300,0.24,"P"],
+["CoCr19W14NiB · HS 36",3300,0.24,"P"],
+["HW3 · X45GrSi93 · 1.4718",2450,0.23,"M"],
+["A276 · X2CrNiMoCoN28-8-5-1 · Hyper Duplex 2707 (A276) · 1.4658",2150,0.2,"M"],
+["5397 · NiCo15Cr10MoAlTi · IN100 · 2.4674",3300,0.24,"N"],
+["ASTM B463 · Incoloy 020 · 2.4660",2600,0.24,"S"],
+["ASME SB409 · X10NiCrAlTi3220 · Incoloy 800",2600,0.24,"S"],
+["5552 · G.X50CrNi3030 · Incoloy 801 · 1.4868",2600,0.24,"S"],
+["Incoloy 802",2600,0.24,"S"],
+["Incoloy 803",2600,0.24,"S"],
+["Incoloy 804",3300,0.24,"S"],
+["ASME SB163 · NiCr21Mo · Incoloy 825 · 2.4858",3300,0.24,"S"],
+["5660 · NiFe35Cr14MoTi · Incoloy 901 · 2.4662",3300,0.24,"S"],
+["NiFe42K15Nb · Incoloy 903",3300,0.24,"S"],
+["Incoloy 925",3300,0.24,"S"],
+["X12NiCrSi3616 · Incoloy DS",2600,0.24,"S"],
+["Inconel 050",3300,0.24,"S"],
+["Inconel 182",3300,0.24,"S"],
+["ASME SB575 · Inconel 22",3300,0.24,"S"],
+["Inconel 230",3300,0.24,"S"],
+["5540 · NiCr15Fe · Inconel 600 · 2.4640",3300,0.24,"S"],
+["Inconel 600SP",3300,0.24,"S"],
+["5715 · Inconel 601 · 2.4851",3300,0.24,"S"],
+["Inconel 601GC",3300,0.24,"S"],
+["Inconel 603XL",3300,0.24,"S"],
+["Inconel 604",3300,0.24,"S"],
+["Inconel 606",3300,0.24,"S"],
+["Inconel 613",3300,0.24,"S"],
+["NiCr23Co12Mo · Inconel 617 · 2.4663",3300,0.24,"S"],
+["Inconel 62",3300,0.24,"S"],
+["Inconel 622 · 2.4602",3300,0.24,"S"],
+["ASME SB443.4 · NiCr22Mo9Nb · Inconel 625 · 2.4856",3300,0.24,"S"],
+["Inconel 625LCF",3300,0.24,"S"],
+["Inconel 657",3300,0.24,"S"],
+["Inconel 671",3300,0.24,"S"],
+["Inconel 672",3300,0.24,"S"],
+["Inconel 686",3300,0.24,"S"],
+["Inconel 690 · 2.4642",3300,0.24,"S"],
+["Inconel 691",3300,0.24,"S"],
+["Inconel 693",3300,0.24,"S"],
+["5550 · Inconel 702",3300,0.24,"S"],
+["AMS 5702 · Inconel 706",3300,0.24,"S"],
+["5383 · NiCr19Fe19NbMo · Inconel 718 · 2.4668",3300,0.24,"S"],
+["Inconel 718 DA",3300,0.24,"S"],
+["Inconel 718 OP",3300,0.24,"S"],
+["Inconel 718 Plus",3300,0.24,"S"],
+["Inconel 720",3300,0.24,"S"],
+["Inconel 721",3300,0.24,"S"],
+["5541 · NiCr16FeTi · Inconel 722",3300,0.24,"S"],
+["Inconel 725",3300,0.24,"S"],
+["Inconel 725HS",3300,0.24,"S"],
+["Inconel 738",3300,0.24,"S"],
+["Inconel 740",3300,0.24,"S"],
+["Inconel 783",3300,0.24,"S"],
+["Inconel 800",2600,0.24,"S"],
+["Inconel 800H",2600,0.24,"S"],
+["Inconel 82",3300,0.24,"S"],
+["Inconel 939",3300,0.24,"S"],
+["Inconel C-276",3300,0.24,"S"],
+["Inconel G",3300,0.24,"S"],
+["Inconel G-3",3300,0.24,"S"],
+["NiCr22Fe18Mo · Inconel HX",3300,0.24,"S"],
+["Inconel MA 6000",3300,0.24,"S"],
+["Inconel MA754",3300,0.24,"S"],
+["Inconel MA758",3300,0.24,"S"],
+["5542 · NiCr16FeTi · Inconel X-750 · 2.4669",3300,0.24,"S"],
+["Inconel X-751",3300,0.24,"S"],
+["ASTM F1684 · Invar 36",2600,0.24,"P"],
+["ASTM F30 · Invar 42",2600,0.24,"P"],
+["NiCr20Co18Ti · Jessop G81",3300,0.24,"P"],
+["Jetalloy 209",3300,0.24,"P"],
+["5718.9 · X12CrNiMoV12-3 · Jethete M152 · 1.4939",2150,0.2,"M"],
+["Jethete M448",2150,0.2,"P"],
+["X19CrMoNbVN11-1 · Jethete X19",2150,0.2,"P"],
+["X21CrMoV12-1 · Jethete X20 · 1.4923",2150,0.2,"M"],
+["K12",4600,0.25,"S"],
+["K12 (HT)",4700,0.25,"S"],
+["L 251",3300,0.24,"P"],
+["5759 · CoCr20W15Ni · L 605 · 2.4964",3300,0.24,"N"],
+["L1",2450,0.23,"P"],
+["L3 · 100Cr6 · 1.2067",2450,0.23,"P"],
+["L6 · 55NiCrMoV6 · 1.2713",2450,0.23,"P"],
+["L6",4700,0.25,"S"],
+["M 203",3300,0.24,"P"],
+["M 204",3300,0.24,"P"],
+["M 205",3300,0.24,"P"],
+["5551 · G-NiCr19Co · M-252",3300,0.24,"P"],
+["M2 · HS-6-5-2C · 1.3343",2450,0.23,"P"],
+["M3",2450,0.23,"P"],
+["M35 · S6/5/2/5 · 1.3243",2450,0.23,"P"],
+["M7",2450,0.23,"P"],
+["MAR-M 247",3300,0.24,"P"],
+["CoCrW10TaZrB · MAR-M 302",3300,0.24,"P"],
+["CoCr22W9TaZrNb · MAR-M 322",3300,0.24,"P"],
+["CoCr24Ni10WTaZrB · MAR-M 509",3300,0.24,"P"],
+["MAR-M 905",3300,0.24,"P"],
+["CoCr20Ni20Ta · MAR-M 918",3300,0.24,"P"],
+["Maraging C200",4600,0.25,"S"],
+["6501, 6512, 6520 · Maraging C250",4600,0.25,"S"],
+["6514 · Maraging C300",4600,0.25,"S"],
+["Maraging C350",4600,0.25,"S"],
+["Maraging T200",4600,0.25,"S"],
+["6518, 6519, 6591 · Maraging T250",4600,0.25,"S"],
+["Maraging T300",4600,0.25,"S"],
+["Marval 18",3100,0.24,"P"],
+["Marval X12",3100,0.24,"P"],
+["Mh97+Pb",4700,0.25,"S"],
+["4544 · NiCu30Fe · Monel 400 · 2.4360",3300,0.24,"S"],
+["4676 · NiCu30Al · Monel K500 · 2.4375",3300,0.24,"S"],
+["4674 · Monel R405",3300,0.24,"S"],
+["MP159",3300,0.24,"P"],
+["MP35N",3300,0.24,"P"],
+["5768 · Multimet N-155 · 1.4971",3300,0.24,"M"],
+["Multimet N-156",3300,0.24,"P"],
+["ASME SB-160 - SB-163 · 17750-17754 · Nickel 200 Alloy",3300,0.24,"S"],
+["AMS 5553 · 17740 · Nickel 201 Alloy",3300,0.24,"S"],
+["5391A · G.NiCr13Al16MoNb · Nimocast 713",3300,0.24,"P"],
+["Nimocast 80",3300,0.24,"P"],
+["Nimocast 90",3300,0.24,"P"],
+["NiFe33Cr17Mo · Nimocast PD16",3300,0.24,"P"],
+["Nimocast PE10",3300,0.24,"P"],
+["Nimocast PK24",3300,0.24,"P"],
+["Nimonic 101",3300,0.24,"S"],
+["NiCo20Cr15MoAlTi · Nimonic 105 · 2.4634",3300,0.24,"S"],
+["NiCo15Cr15MoAlTi · Nimonic 115 · 2.4636",3300,0.24,"S"],
+["NiCr20Ti · Nimonic 75 · 2.4630",3300,0.24,"S"],
+["NiCr20TiAl · Nimonic 80A · 2.4631",3300,0.24,"S"],
+["Nimonic 86",3300,0.24,"S"],
+["NiCr20Co18Ti · Nimonic 90 · 2.4632",3300,0.24,"S"],
+["5660, 5661 · NiCr15MoTi · Nimonic 901 · 2.4662",3300,0.24,"S"],
+["Nimonic 91",3300,0.24,"S"],
+["Nimonic 95",3300,0.24,"S"],
+["ASME SB575 · Nimonic C22",3300,0.24,"S"],
+["NiCr20CoMoTi · Nimonic C263 · 2.4650",3300,0.24,"S"],
+["ASME SB575 · Nimonic C276 · 2.4819",3300,0.24,"S"],
+["5536E · NiCr22Fe18Mo · Nimonic PE13",3300,0.24,"S"],
+["NiFe33Cr17Mo · Nimonic PE16",3300,0.24,"S"],
+["5751A · NiCr18CoMo · Nimonic PK25 · 2.4666",3300,0.24,"S"],
+["Nimonic PK31",3300,0.24,"S"],
+["NiCr20Co16MoTi · Nimonic PK33",3300,0.24,"S"],
+["Nitronic 50",2150,0.2,"P"],
+["Nitronic 60",2150,0.2,"P"],
+["O1 · 100MnCrW4 · 1.2510",2450,0.23,"P"],
+["P2 · 21MnCr5 · 1.2162",2450,0.23,"P"],
+["P20 · 40CrMnMo7 · 1.2311",2450,0.23,"P"],
+["P20+S · 40CrMnMoS86 · 1.2312",2450,0.23,"P"],
+["P21 · X19NiCrMo4 · 1.2764",2450,0.23,"P"],
+["P4 · X6CrMo4 · 1.2341",2450,0.23,"P"],
+["AISI 686 · R-235",3300,0.24,"P"],
+["5592, 5716 · RA 330",2600,0.24,"P"],
+["AlSl 690 · Refractaloy 26",3300,0.24,"N"],
+["NiCo15Cr10MoAlTi · René 100 · 2.4674",3300,0.24,"N"],
+["René 104",3300,0.24,"P"],
+["René 125",3300,0.24,"P"],
+["5712, 5713 · NiCr19Co11MoTi · René 41 · 2.4973",3300,0.24,"N"],
+["René 63",3300,0.24,"P"],
+["René 77",3300,0.24,"P"],
+["René 80",3300,0.24,"P"],
+["René 95",3300,0.24,"P"],
+["ASTM F1586 · REX 734",2150,0.2,"P"],
+["5533 · X40CoCrNi2020 · S 590",3300,0.24,"P"],
+["5534 · CoCr20Ni20W · S 816 · 2.4979",3300,0.24,"N"],
+["S1 · 45WCrV7 · 1.2542",2450,0.23,"P"],
+["S240",2150,0.2,"P"],
+["S4 · 60MnSiCr4 · 1.2826",2450,0.23,"P"],
+["S7",2450,0.23,"P"],
+["X2NiCrAlTi3220 · Sanicro 30",3300,0.24,"S"],
+["Staballoy AG17",2150,0.2,"P"],
+["X2CrNi18-13-3 · Staybrite® 4435NCu",2150,0.2,"P"],
+["Stellite 1",3300,0.24,"S"],
+["Stellite 100",3300,0.24,"S"],
+["Stellite 12",3300,0.24,"S"],
+["Stellite 151",3300,0.24,"S"],
+["Stellite 188",3300,0.24,"S"],
+["Stellite 19",3300,0.24,"S"],
+["Stellite 20",3300,0.24,"S"],
+["Stellite 21",3300,0.24,"S"],
+["Stellite 23",3300,0.24,"S"],
+["5759 · CoCr20W15Ni · Stellite 25 (L605) · 2.4964",3300,0.24,"S"],
+["Stellite 3",3300,0.24,"S"],
+["Stellite 30",3300,0.24,"S"],
+["ASTM A567 · CoCr25NiW · Stellite 31 (X40)",3300,0.24,"S"],
+["Stellite 4",3300,0.24,"S"],
+["Stellite 45",3300,0.24,"S"],
+["Stellite 6",3300,0.24,"S"],
+["Stellite 7",3300,0.24,"S"],
+["Stellite 8 (F75)",3300,0.24,"S"],
+["NiCo32Cr26Mo · Stelloy HS27",3300,0.24,"P"],
+["X2CrNiMoCuN25-6-3 · Super duplex 2507",2150,0.2,"M"],
+["Super Duplex 4565",2150,0.2,"M"],
+["Super Invar 32-5",2600,0.24,"P"],
+["T1 · S18.0.1 · 1.3355",2450,0.23,"P"],
+["T4 · S18.1.2.5 · 1.3255",2450,0.23,"P"],
+["Ti-10.2.3",2110,0.22,"S"],
+["Ti-11.5Mo-6Zr-4.5Sn",2110,0.22,"S"],
+["Ti-12Mo-6Zr-2Fe (TMZF)",2110,0.22,"S"],
+["Ti-13Nb-13Zr",2110,0.22,"S"],
+["4917 · TiV13Cr11Al3 · Ti-13V-11Cr-3Al",2110,0.22,"S"],
+["Ti-15-333",2110,0.22,"S"],
+["Ti-15Mo (Alpha + Beta)",2110,0.22,"S"],
+["Ti-15Mo (Beta)",2110,0.22,"S"],
+["ASTM Grade 21 · Ti-15Mo-3Nb-3Al-0.2Si",2110,0.22,"S"],
+["4943, 4944 · Ti-3Al-2.5V",2110,0.22,"S"],
+["Ti-3Al-8V-6Cr-4Mo-4Zr",2110,0.22,"S"],
+["Ti-425",2110,0.22,"S"],
+["Ti-425 MIL",2110,0.22,"S"],
+["Ti-45Nb",2110,0.22,"S"],
+["Ti-48Al-2Cr-2Nb",2110,0.22,"S"],
+["TiAl4Mo4Sn2Si0.5 · Ti-4Al-4Mo-2Sn-0.5Si",2110,0.22,"S"],
+["TiAl4Mo4Sn4Si0.5 · Ti-4Al-4Mo-4Sn-0.5Si",2110,0.22,"S"],
+["Ti-5Al-2.5Fe (Tikrutan)",2110,0.22,"S"],
+["ASTM B 265 · TiAl5Sn2 · Ti-5Al-2.5Sn · 3.7115",3300,0.24,"S"],
+["4995 · Ti5Al2Sn2Zr4Cr4Mo · Ti-5Al-2Sn-2Zr-4Cr-4Mo",2110,0.22,"S"],
+["Ti-5Al-5Mo-5V-1Cr-1Fe",2110,0.22,"S"],
+["Ti-5Al-5V-5Mo-3Cr",2110,0.22,"S"],
+["4981 · Ti-6-2-4-6",2110,0.22,"S"],
+["Ti-6-7",2110,0.22,"S"],
+["Ti-6Al-2Sn-2Zr-2Mn-2Cr-0.2Si",2110,0.22,"S"],
+["4906, 4920, 4928, · TiAl6V4 · Ti-6Al-4V (Grade 5)",2110,0.22,"S"],
+["4907, 4930, 4931 · Ti-6Al-4V ELI",2110,0.22,"S"],
+["4906, 4920, 4928, · TiAl6V4 · Ti-6Al-4V MIL",2110,0.22,"S"],
+["4906, 4920, 4928, · TiAl6V4 · Ti-6Al-4V MIL (HT)",2110,0.22,"S"],
+["Ti-6Al-4Zr-2Mo-2Sn",2110,0.22,"S"],
+["4919, 4975, 4976 · TiAl6Zr4Mo2Sn2 · Ti-6Al-4Zr-2Mo-2Sn-0.2Si",2110,0.22,"S"],
+["TiA6Zr5Mo0.5Si0.25 · Ti-6Al-5Zr-0.5Mo-0.25Si",2110,0.22,"S"],
+["TiAl6Zr5Mo4CuSi0.2 · Ti-6Al-5Zr-4Mo-Cu-0.2Si",2110,0.22,"S"],
+["4971 · TiAl16V6Sn2 · Ti-6Al-6V-2Sn",2110,0.22,"S"],
+["TiAl7Nb · Ti-6Al-7Nb",2110,0.22,"S"],
+["ASTM B381 · TiAl7Mo4 · Ti-7Al-4Mo",2110,0.22,"S"],
+["4915, 4933, 4972 · TiAl8Mo1V1 · Ti-8Al-1Mo-1V",2110,0.22,"S"],
+["Ti-8Mo-8V-2Fe-3Al",2110,0.22,"S"],
+["Grade 1 B381F4 · Ti-99.5 · Ti-99.5 (Grade 1)",1700,0.23,"S"],
+["Grade 2 B381F3 · Ti-99.6 · Ti-99.6 (Grade 2)",1700,0.23,"S"],
+["Grade 3 B381F2 · Ti-99.7 · Ti-99.7 (Grade 3)",1700,0.23,"S"],
+["Grade 4 B381F1 · Ti-99.8 · Ti-99.8 (grade 4)",1700,0.23,"S"],
+["NiTa9Co8W6CrAl · TRW VIA",3300,0.24,"P"],
+["AlSl 684 · NiCr18CoMoAlTi · Udimet 500 · 2.4983",3300,0.24,"S"],
+["Udimet 520",3300,0.24,"S"],
+["NiCr19NbMo · Udimet 630",3300,0.24,"S"],
+["AlSl 687 · NiCo15Cr15MoAlTi · Udimet 700 · 2.4636",3300,0.24,"S"],
+["Udimet 710",3300,0.24,"S"],
+["5383 · NiCr19Fe19NbMo · Udimet 718 · 2.4668",3300,0.24,"S"],
+["Udimet 720",3300,0.24,"S"],
+["Udimet B-250",3100,0.24,"S"],
+["Udimet B-300",3100,0.24,"S"],
+["X2CrNiN23-4 · Uranus 35N",2150,0.2,"P"],
+["X2CrNiMoN22-5-3 · Uranus 45N22CrMo",2150,0.2,"P"],
+["X2CrNiMoCuN25-6-3 · Uranus 52N+",2150,0.2,"P"],
+["X1CrNi25-21 · Uranus 65",2150,0.2,"P"],
+["X1NiCrMoCuN20-18-7 · Uranus B25 6Mo",2150,0.2,"P"],
+["X1NiCrMoCuN25-20-7 · Uranus B26 6Mo",2150,0.2,"P"],
+["X1NiCrMoCu31-27-4 · Uranus B28",2150,0.2,"P"],
+["X1NiCrMoCuN25-20-5 · Uranus B6 · 1.4539",2150,0.2,"M"],
+["X1NiCrMoCu22-24-6 · Uranus B66",2150,0.2,"P"],
+["X1CrNiSi18-15-4 · Uranus S1 4%Si",2150,0.2,"P"],
+["CoCr25Ni20MoWNb · V-36",3300,0.24,"P"],
+["AlSl:665 · W-545",3100,0.24,"N"],
+["W110",1775,0.24,"P"],
+["W112 · C125W · 1.1663",1700,0.24,"P"],
+["W210 · 100V1 · 1.2833",1775,0.24,"P"],
+["5544 · NiCr20Co14MoTi · Waspaloy® · 2.4654",3300,0.24,"S"],
+["CoCr21Mo11W · WI-52",3300,0.24,"P"],
+["ASTM A567 · CoCr25NiW · X 40",3300,0.24,"P"],
+["X 45",3300,0.24,"P"],
+["X 50",3300,0.24,"P"],
+["X 63",3300,0.24,"P"],
+["X10CrAl18 · 1.4742",1875,0.21,"M"],
+["X12CrNiMoS18-11 · 1.4427",1875,0.21,"M"],
+["X12CrNiWTi16-3",1875,0.21,"S"],
+["X17CrNi16-02 · 1.4057",1875,0.21,"M"],
+["X20CrNi17-2",1875,0.21,"P"],
+["X20CrNiMo22-5-3",1875,0.21,"P"],
+["ASTM A437-76 Grade B4B · X22CrMoV12-1 = ST12T · X22CrMoV12.1",1875,0.21,"P"],
+["X2CrNiMo18-15-3",1875,0.21,"P"],
+["X30Cr13",1875,0.21,"P"],
+["X30CrMoN15-1 · 1.4028",1875,0.21,"M"],
+["X3CrNiCuTiNb12-9",1875,0.21,"P"],
+["ASTM F899 · X40CrMoVN16-2 · 1.4123",2150,0.2,"M"],
+["X40CrNiSi25-20 · 1.4848",2150,0.2,"M"],
+["X40CrSiMo10-2 · 1.4731",2150,0.2,"M"],
+["X40NiCrSi38-18 · 1.4865",2150,0.2,"M"],
+["X45CrNiW18-9 · 1.4873",2150,0.2,"M"],
+["X46CrS13",1875,0.21,"P"],
+["X4CrNiMo16-5-1 · 1.4418",1875,0.21,"M"],
+["X8CrCoNiMo10-6",2150,0.2,"P"],
+["X8CrMnMoN23-21-1",2150,0.2,"P"],
+["X8CrNiSCu18-9",1875,0.21,"P"],
+["X90CrMoV18",1875,0.21,"P"],
+["ASTM F1314 · XM19",2150,0.2,"P"],
+["X3NiCoMoTi18.9.5 · Z2NKDT18-10-5 · 1.2709",2450,0.23,"S"],
+["Z38CDV5",4700,0.25,"S"],
+["X40CrMoV53 · Z38CDV5-3 · 1.2367",2450,0.23,"P"],
+];
 /* Aiuto contestuale per campo (a prova di principiante, resta tecnico) */
 var HELP={
   Dc:'Diametro dell’utensile (fresa/punta) o del pezzo (tornitura), in mm. Determina giri e velocità.',
@@ -954,6 +1680,11 @@ function recompute(edited){
     h=cell('n',fmt(n,n>=1000?0:1),'rpm')+cell('Vc',fmt(vc,1),'m/min')+cell('fn = p',itc(fmt(P,3)),'mm/g')+cell('Vf penetr.',fmt(vf,0),'mm/min','alt');
   }
   $('#rgrid').innerHTML=h;
+  if(cut.kc11>0&&m!=='tap'){
+    var hth=Math.max(num(m==='mill'?hm:(m==='turn'?d.fn:fz)),0.02);
+    cut.pw.kc=cut.kc11*Math.pow(hth,-(cut.mc||0.22));
+    var pk=$('#p_kc'); if(pk){pk.value=fmt(cut.pw.kc,0); pk.readOnly=true; pk.title='kc da materiale: kc1.1 '+cut.kc11+' · mc '+cut.mc+' · h '+fmt(hth,3)+' mm → kc '+fmt(cut.pw.kc,0)+' N/mm²';}
+  }
   var pw=cut.pw, Pc=(pw.kc>0&&Q)?Q*pw.kc/60000:null, Pmot=(Pc!=null)?Pc/(pw.eta||0.8):null, Mc=(Pc!=null&&n>0)?9549*Pc/n:null, Tc=(pw.L>0&&vf>0)?pw.L*(pw.np||1)/vf:null, cost=(Tc!=null&&(pw.rate>0||pw.tool>0))?Tc*(pw.rate||0)+(pw.tool||0):null;
   var ph=cell('Pc netto',Pc==null?'—':fmt(Pc,Pc<10?2:1),Pc==null?'':'kW','alt')+cell('P motore',Pmot==null?'—':fmt(Pmot,Pmot<10?2:1),Pmot==null?'':'kW')+cell('Mc',Mc==null?'—':fmt(Mc,Mc<10?2:1),Mc==null?'':'Nm')+cell('Tc',Tc==null?'—':fmt(Tc,Tc<1?3:2),Tc==null?'':'min')+cell('Costo/pz',cost==null?'—':itc(fmt(cost,2)),cost==null?'':'€','warn hero');
   if($('#pwgrid'))$('#pwgrid').innerHTML=ph;
@@ -964,7 +1695,7 @@ function recompute(edited){
 
 function advClass(v,r){return (v>=r[0]&&v<=r[1])?'ok':'warn';}
 function renderAdvice(m,vc,fk,fv){
-  var box=$('#roAdvice'); if(!box)return; var md=MATDATA[cut.mat];
+  var box=$('#roAdvice'); if(!box)return; var md=GRP[cut.matGroup];
   if(!md||m==='tap'){box.innerHTML=''; return;}
   var out='';
   if(md[m]&&md[m].vc){var r=md[m].vc,c=advClass(vc,r);
@@ -972,12 +1703,13 @@ function renderAdvice(m,vc,fk,fv){
   var fr=md[m]&&(md[m].fz||md[m].fn);
   if(fr&&fv>0){var c2=advClass(fv,fr);
     out+='<span class="adv '+c2+'">'+(c2==='ok'?'✓':'⚠')+' '+fk+' <span class="av">'+itc(fmt(fv,3))+'</span> mm'+(c2==='ok'?' · ok':(' · consigliato '+itc(fmt(fr[0],2))+'–'+itc(fmt(fr[1],2))))+'</span>';}
+  if(cut.kc11>0){out+='<span class="adv ok">kc <span class="av">'+fmt(cut.pw.kc,0)+'</span> N/mm² · da kc₁.₁ '+cut.kc11+'</span>';}
   box.innerHTML=out;
 }
 var _toastT=null;
 function showToast(msg){var t=$('#toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); if(_toastT)clearTimeout(_toastT); _toastT=setTimeout(function(){t.classList.remove('show');},1900);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function persistCut(){store.set('cut',JSON.stringify({mode:cut.mode,mat:cut.mat,mill:cut.mill,turn:cut.turn,drill:cut.drill,tap:cut.tap,pw:cut.pw,cmp:cut.cmp,cmpNames:cut.cmpNames,lastSpeed:cut.lastSpeed,lastFeed:cut.lastFeed}));}
+function persistCut(){store.set('cut',JSON.stringify({mode:cut.mode,mat:cut.mat,matGroup:cut.matGroup,kc11:cut.kc11,mc:cut.mc,mill:cut.mill,turn:cut.turn,drill:cut.drill,tap:cut.tap,pw:cut.pw,cmp:cut.cmp,cmpNames:cut.cmpNames,lastSpeed:cut.lastSpeed,lastFeed:cut.lastFeed}));}
 function svuotaCut(){var m=cut.mode; CUTFIELDS[m].forEach(function(f){if(f[3]&&f[3].type==='preset'){var sp=$('#c_preset'); if(sp)sp.value=''; return;} cut[m][f[0]]=0; var e=$('#c_'+f[0]); if(e)e.value='';});
   ['kc','L','rate','tool'].forEach(function(k){cut.pw[k]=0; var e=$('#p_'+k); if(e)e.value='';});
   CUTLAST=null; if($('#rgrid'))$('#rgrid').innerHTML=''; if($('#pwgrid'))$('#pwgrid').innerHTML=''; persistCut(); showToast('Campi svuotati');}
@@ -1263,7 +1995,7 @@ function archiveCurrent(){
       application:gv('#a_application'),result:gv('#a_result'),operator:gv('#a_operator'),coolant:gv('#a_coolant'),
       toollife:gv('#a_toollife'),weartype:gv('#a_weartype'),wearlevel:gv('#a_wearlevel'),competitor:gv('#a_competitor'),
       comppar:gv('#a_comppar'),compmrr:gv('#a_compmrr'),ra:gv('#a_ra'),video:gv('#a_video'),photo:gv('#a_photo'),
-      notes:gv('#a_notes')}};
+      matdb:cut.mat,kc11:cut.kc11,mc:cut.mc,notes:gv('#a_notes')}};
   var list=archLoad(); list.unshift(rec); archStore(list); updateArchCount(); cloudPush(rec);
   showToast('Salvato in archivio'+(rec.name?' · '+rec.name:''));
 }
@@ -1322,7 +2054,9 @@ function recDetailHTML(r){
     detCell('Costo/pz (€)',o.cost!=null?itc(fmt(o.cost,2)):'');
   var pwRows=PWF.map(function(f){var v=pw[f[0]]; if(v==null||v===''||+v===0)return ''; var dec=(f[0]==='eta')?2:((f[0]==='rate'||f[0]==='tool')?2:0);
     return detCell(f[1]+(f[2]&&f[2]!=='–'?' ('+f[2]+')':''),fmt(v,dec));}).join('');
-  var metaPairs=[['Articolo',me.article],['Materiale',me.material],['Norma',me.norm],['Durezza',me.hardness],['Condizione',me.condition],
+  var metaPairs=[['Articolo',me.article],['Materiale',me.material],['Materiale DB',me.matdb],
+    ['kc₁.₁ (N/mm²)',me.kc11?(''+me.kc11):''],['mc',me.mc?(''+me.mc):''],
+    ['Norma',me.norm],['Durezza',me.hardness],['Condizione',me.condition],
     ['Macchina',me.machine],['Utensile',me.tool],['Applicazione',me.application],['Esito',me.result],['Refrigerante',me.coolant],
     ['Vita utensile',me.toollife],['Tipo usura',me.weartype],['Entità usura',me.wearlevel],['Finitura Ra (µm)',me.ra],
     ['Operatore',me.operator],['Competitor',me.competitor],['Par. competitor',me.comppar],['MRR comp.',me.compmrr]];
@@ -1409,9 +2143,11 @@ function openRecord(id){
   if(r.pw)cut.pw=JSON.parse(JSON.stringify(r.pw));
   cut.lastSpeed='vc'; cut.lastFeed='fz';
   var me=r.meta||{};
-  cut.mat=(MATDATA[me.material]?me.material:'');
+  cut.mat=(me.matdb||''); var rr=cut.mat?findMat(cut.mat):null;
+  if(rr){cut.kc11=rr[1]; cut.mc=rr[2]; cut.matGroup=rr[3];} else {cut.kc11=0; cut.mc=0; cut.matGroup='';}
   go('calc');
-  var msel=$('#c_mat'); if(msel)msel.value=cut.mat||''; applyMatHint(); recompute(null);
+  var msel=$('#c_matSearch'); if(msel)msel.value=cut.mat||''; var pk0=$('#p_kc'); if(pk0&&!cut.kc11){pk0.readOnly=false; pk0.title='';}
+  applyMatHint(); markChips(); recompute(null);
   sv('#a_name',r.name); sv('#a_article',me.article); sv('#a_material',me.material); sv('#a_norm',me.norm);
   sv('#a_hardness',me.hardness); sv('#a_condition',me.condition); sv('#a_machine',me.machine);
   sv('#a_tool',me.tool); sv('#a_application',me.application); sv('#a_result',me.result); sv('#a_notes',me.notes);
@@ -1553,28 +2289,41 @@ function toggleTheme(){setTheme(curTheme()==='dark'?'light':'dark');}
 function themeInit(){var b=$('#btnTheme'); if(b)b.addEventListener('click',toggleTheme); applyThemeUI();}
 
 /* ============ GUIDA: materiale, aiuti, sezioni collassabili ============ */
-function fillMatSelect(){var s=$('#c_mat'); if(!s||s.options.length>1)return;
-  MATERIALS.forEach(function(x){ if(x==='Altro')return; s.appendChild(el('option',{value:x},x)); });
-  s.appendChild(el('option',{value:'Altro'},'Altro / non in elenco'));}
-function applyMatHint(){var md=MATDATA[cut.mat],h=$('#matHint'),iso=$('#matIso');
-  if(iso)iso.textContent=md?md.iso:'';
+var KCMAP={}; (function(){for(var i=0;i<KCDB.length;i++)KCMAP[KCDB[i][0].toLowerCase()]=KCDB[i];})();
+function buildKcList(){var dl=$('#kcList'); if(dl&&!dl.options.length){var frag=document.createDocumentFragment();
+    for(var i=0;i<KCDB.length;i++)frag.appendChild(el('option',{value:KCDB[i][0]})); dl.appendChild(frag);}
+  var ch=$('#matChips'); if(ch&&!ch.children.length){KC_CHIPS.forEach(function(c){var b=el('button',{type:'button','data-term':c[1]},c[0]); ch.appendChild(b);});}}
+function findMat(text){text=(text||'').trim(); if(!text)return null; var rec=KCMAP[text.toLowerCase()]; if(rec)return rec;
+  var t=text.toLowerCase(); for(var i=0;i<KCDB.length;i++){if(KCDB[i][0].toLowerCase().indexOf(t)>=0)return KCDB[i];} return null;}
+function resolveMaterial(text){
+  var rec=findMat(text);
+  if(!text||!(''+text).trim()){clearMaterial();return;}
+  if(!rec){cut.mat=(''+text).trim(); cut.matGroup=''; cut.kc11=0; cut.mc=0; applyMatHint(); persistCut(); recompute(null); return;}
+  cut.mat=rec[0]; cut.kc11=rec[1]; cut.mc=rec[2]; cut.matGroup=rec[3];
+  var ms=$('#c_matSearch'); if(ms&&ms.value!==rec[0])ms.value=rec[0];
+  var am=$('#a_material'),fam=(GRP[rec[3]]&&GRP[rec[3]].family); if(am&&!am.value&&fam)am.value=fam;
+  applyMatHint(); markChips(); persistCut(); recompute(null);}
+function clearMaterial(){cut.mat=''; cut.matGroup=''; cut.kc11=0; cut.mc=0;
+  var ms=$('#c_matSearch'); if(ms)ms.value=''; var pk=$('#p_kc'); if(pk){pk.readOnly=false; pk.title='';}
+  applyMatHint(); markChips(); persistCut(); recompute(null);}
+function markChips(){var ch=$('#matChips'); if(!ch)return; Array.prototype.forEach.call(ch.children,function(b){
+  var rec=findMat(b.getAttribute('data-term')); b.classList.toggle('on',!!(rec&&cut.mat===rec[0]));});}
+function applyMatHint(){var g=GRP[cut.matGroup],h=$('#matHint'),iso=$('#matIso'),clr=$('#matClear');
+  if(iso)iso.textContent=cut.matGroup?cut.matGroup:'';
+  if(clr)clr.hidden=!cut.mat;
   if(!h)return;
-  if(!cut.mat){h.innerHTML='Scegli il <b>materiale</b> per ottenere in automatico <b>kc</b> e i <b>range consigliati</b> di Vc e avanzamento. Puoi sempre modificare i valori a mano.';return;}
-  if(!md){h.innerHTML='Materiale generico: nessun suggerimento automatico. Inserisci <b>kc</b> e i parametri a mano.';return;}
-  var m=cut.mode,vc=md[m]&&md[m].vc,feed=md[m]&&(md[m].fz||md[m].fn),fl=(m==='mill'?'fz':'fn');
-  h.innerHTML='<b>'+esc(cut.mat)+'</b> · gruppo ISO '+md.iso+' · kc ≈ <b>'+md.kc+'</b> N/mm²'+
-    (vc?(' · Vc <b>'+vc[0]+'–'+vc[1]+'</b> m/min'):'')+
-    (feed&&m!=='tap'?(' · '+fl+' <b>'+itc(fmt(feed[0],2))+'–'+itc(fmt(feed[1],2))+'</b> mm'):'');}
-function setMaterial(v){cut.mat=v||''; var md=MATDATA[cut.mat];
-  if(md){cut.pw.kc=md.kc; var ek=$('#p_kc'); if(ek)ek.value=md.kc;}
-  var am=$('#a_material'); if(am&&!am.value&&cut.mat&&cut.mat!=='Altro')am.value=cut.mat;
-  applyMatHint(); persistCut(); recompute(null);}
-function rangeText(key){var md=MATDATA[cut.mat]; if(!md)return ''; var m=cut.mode,r=null,lbl='';
-  if(key==='vc'&&md[m]&&md[m].vc){r=md[m].vc;lbl='Vc';}
-  else if(key==='fz'&&m==='mill'&&md.mill.fz){r=md.mill.fz;lbl='fz';}
-  else if(key==='fn'&&md[m]&&md[m].fn){r=md[m].fn;lbl='fn';}
+  if(!cut.mat){h.innerHTML='Cerca il <b>materiale</b> (sigla SAE/DIN/Werkstoff): imposto in automatico <b>kc</b> dal database aziendale e i <b>range consigliati</b>. Puoi sempre modificare a mano.';return;}
+  if(!cut.kc11){h.innerHTML='Materiale <b>'+esc(cut.mat)+'</b> non in database: inserisci <b>kc</b> a mano nel riquadro Potenza.';return;}
+  var m=cut.mode,ranges='';
+  if(g&&m!=='tap'){var vc=g[m]&&g[m].vc,fr=g[m]&&(g[m].fz||g[m].fn),fl=(m==='mill'?'fz':'fn');
+    ranges=(vc?(' · Vc <b>'+vc[0]+'–'+vc[1]+'</b>'):'')+(fr?(' · '+fl+' <b>'+itc(fmt(fr[0],2))+'–'+itc(fmt(fr[1],2))+'</b> mm'):'');}
+  h.innerHTML='<b>'+esc(cut.mat)+'</b> · '+(g?g.label+' ':'')+'(ISO '+cut.matGroup+') · kc₁.₁ <b>'+cut.kc11+'</b> N/mm² · mc <b>'+cut.mc+'</b>'+ranges;}
+function rangeText(key){var g=GRP[cut.matGroup]; if(!g)return ''; var m=cut.mode,r=null,lbl='';
+  if(key==='vc'&&g[m]&&g[m].vc){r=g[m].vc;lbl='Vc';}
+  else if(key==='fz'&&m==='mill'&&g.mill.fz){r=g.mill.fz;lbl='fz';}
+  else if(key==='fn'&&g[m]&&g[m].fn){r=g[m].fn;lbl='fn';}
   if(!r)return '';
-  return '<br><b>Consigliato '+esc(cut.mat)+':</b> '+lbl+' '+itc(fmt(r[0],r[0]<10?2:0))+'–'+itc(fmt(r[1],r[1]<10?2:0));}
+  return '<br><b>Consigliato '+(g.label||'')+':</b> '+lbl+' '+itc(fmt(r[0],r[0]<10?2:0))+'–'+itc(fmt(r[1],r[1]<10?2:0));}
 function toggleHint(key){var fh=$('#fhint_'+key); if(!fh)return;
   if(fh.hidden){fh.innerHTML=HELP[key]+rangeText(key); fh.hidden=false;} else fh.hidden=true;}
 function wireCollapse(btnSel,panelSel){var b=$(btnSel),p=$(panelSel); if(!b||!p)return;
@@ -1584,8 +2333,13 @@ function updateDetCnt(){var c=$('#detCnt'); if(!c)return; var ids=['a_norm','a_h
 function updateFiltCnt(f){var c=$('#filtCnt'); if(!c)return; var keys=['mode','material','result','application','machine','tool','operator','coolant','wear','from','to'];
   var n=0; keys.forEach(function(k){if(f[k])n++;}); c.textContent=n?(''+n):'';}
 function wireGuide(){
-  fillMatSelect(); var ms=$('#c_mat'); if(ms){ms.value=cut.mat||''; ms.addEventListener('change',function(){setMaterial(this.value);});}
-  applyMatHint();
+  buildKcList();
+  var ms=$('#c_matSearch'); if(ms){ms.value=cut.mat||'';
+    ms.addEventListener('change',function(){resolveMaterial(this.value);});
+    ms.addEventListener('input',function(){ if(KCMAP[(this.value||'').trim().toLowerCase()])resolveMaterial(this.value); });}
+  var clr=$('#matClear'); if(clr)clr.addEventListener('click',clearMaterial);
+  var ch=$('#matChips'); if(ch)ch.addEventListener('click',function(e){var b=e.target.closest('button[data-term]'); if(b)resolveMaterial(b.getAttribute('data-term'));});
+  applyMatHint(); markChips();
   if($('#inGrid'))$('#inGrid').addEventListener('click',function(e){var b=e.target.closest('.qmark'); if(b)toggleHint(b.getAttribute('data-k'));});
   wireCollapse('#cmpToggle','#cmpPanel'); wireCollapse('#detToggle','#archDetails'); wireCollapse('#archFiltToggle','#archFilters');
   var det=$('#archDetails'); if(det)det.addEventListener('input',updateDetCnt); updateDetCnt();
