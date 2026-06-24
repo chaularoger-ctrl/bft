@@ -357,6 +357,33 @@ td.key{color:var(--text); font-weight:700}
 .g-chips button.on{border-color:var(--yellow);background:var(--sel);color:var(--yellow-text)}
 .g-hint{font-size:11.5px;color:var(--muted);margin:-6px 2px 13px;line-height:1.45}
 .g-hint b{color:var(--text)}
+/* ---------- STEPPER GUIDATO ---------- */
+.cstepper{position:sticky;top:101px;z-index:30;display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;margin-bottom:14px;box-shadow:0 6px 14px rgba(0,0,0,.18)}
+@media(max-width:560px){.cstepper{top:105px}}
+.cstep{flex:1 1 0;display:flex;align-items:center;gap:8px;min-width:0;background:transparent;border:1px solid transparent;border-radius:8px;padding:7px 9px;cursor:pointer;color:var(--muted);font-family:var(--sans);text-align:left}
+.cstep .cs-n{flex:0 0 auto;width:23px;height:23px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:13px;background:var(--card);border:1px solid var(--line-2);color:var(--muted)}
+.cstep .cs-t{font-size:12.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cstep.done{color:var(--text)}
+.cstep.done .cs-n{background:var(--ok-bg,var(--sel));border-color:var(--yellow-dim);color:var(--yellow-text)}
+.cstep.done .cs-n::after{content:"✓";font-size:13px}
+.cstep.done .cs-n span{display:none}
+.cstep.active{color:var(--text);border-color:var(--yellow);background:var(--sel)}
+.cstep.active .cs-n{background:var(--yellow);border-color:var(--yellow);color:#1a1500;box-shadow:0 0 0 4px var(--sel)}
+.cstep:not(.active):not(.done){opacity:.72}
+.cs-bar{flex:0 0 16px;height:2px;background:var(--line-2);border-radius:2px}
+@media(max-width:520px){.cstep .cs-t{display:none}.cstep{flex:0 0 auto;justify-content:center}.cstepper{justify-content:center;gap:4px}.cs-bar{flex:1 1 auto}.cstep.active .cs-t{display:inline}}
+/* sezioni: blocco/sblocco e fuoco sull'azione corrente */
+.locked{position:relative;opacity:.5;filter:saturate(.5)}
+.locked>*{pointer-events:none}
+.lockmsg{display:none;align-items:center;gap:8px;font-size:12px;color:var(--muted);background:var(--panel-2);border:1px dashed var(--line-2);border-radius:var(--rs);padding:9px 12px;margin-bottom:16px}
+.locked+.lockmsg{display:flex}
+.lockmsg b{color:var(--text)}
+.guide-on.gstep,.card.guide-on{border-color:var(--yellow);box-shadow:0 0 0 3px var(--sel)}
+.guide-on.flash{animation:focusPulse 1.5s ease-in-out 1}
+@keyframes focusPulse{0%,100%{box-shadow:0 0 0 3px var(--sel)}45%{box-shadow:0 0 0 7px var(--sel)}}
+.subdiv{display:flex;align-items:center;gap:12px;margin:22px 2px 14px;color:var(--muted);font-family:var(--mono);font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase}
+.subdiv::before,.subdiv::after{content:"";flex:1;height:1px;background:var(--line)}
+@media print{.cstepper{display:none}.locked{opacity:1;filter:none}.lockmsg{display:none}}
 /* ---------- GRAFICI (SVG) ---------- */
 .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:600px){.chart-row{grid-template-columns:1fr}}
@@ -616,7 +643,14 @@ footer b{color:var(--text)}
     <h2 id="calcTitle">Fresatura</h2>
     <span class="sub" id="calcSub">parametri di taglio · calcolo in tempo reale</span>
   </div>
-  <div class="gstep">
+  <nav class="cstepper no-print" id="cstepper" aria-label="Avanzamento">
+    <button class="cstep" data-go-step="secMat" type="button"><span class="cs-n"><span>1</span></span><span class="cs-t">Materiale</span></button>
+    <span class="cs-bar"></span>
+    <button class="cstep" data-go-step="secIn" type="button"><span class="cs-n"><span>2</span></span><span class="cs-t">Parametri</span></button>
+    <span class="cs-bar"></span>
+    <button class="cstep" data-go-step="readout" type="button"><span class="cs-n"><span>3</span></span><span class="cs-t">Risultati</span></button>
+  </nav>
+  <div class="gstep" id="secMat">
     <span class="g-num">1</span>
     <div class="g-lab"><b>Materiale</b><small>kc dal database</small></div>
     <input id="c_matSearch" class="g-sel" list="kcList" placeholder="Cerca: 1045, C45, St37, 1.0503, AlSi, GG25…" autocomplete="off" spellcheck="false">
@@ -627,15 +661,17 @@ footer b{color:var(--text)}
   <div class="g-chips" id="matChips"></div>
   <div class="g-hint" id="matHint">Cerca il <b>materiale</b> (sigla SAE/DIN/Werkstoff): imposto in automatico <b>kc</b> dal database aziendale e i <b>range consigliati</b> di Vc e avanzamento. Puoi sempre modificare a mano.</div>
   <div class="ctools"><button class="ctbtn ghost" id="btnClear">↺ Svuota campi</button></div>
-  <div class="card">
+  <div class="card" id="secIn">
     <div class="ch"><span id="inHdr">2 · Ingressi di taglio</span><span class="tag" id="inTag"></span></div>
     <div class="cb"><div class="grid" id="inGrid"></div></div>
   </div>
+  <div class="lockmsg" id="secInLock">🔒&nbsp;<b>Scegli prima il materiale</b> (passo 1): poi qui inserisci Ø e Vc.</div>
   <div class="readout" id="readout">
     <div class="rh"><span id="roMode">FRESATURA</span><span>OUTPUT&nbsp;·&nbsp;<b id="roStatus">LIVE</b></span></div>
     <div class="rgrid" id="rgrid"></div>
     <div class="advice" id="roAdvice"></div>
   </div>
+  <div class="subdiv no-print" id="moreDiv">Approfondimenti · potenza · grafici · confronto · salva</div>
   <div class="card">
     <div class="ch"><span>Potenza, coppia, tempo &amp; costo</span><span class="tag">kc operatore</span></div>
     <div class="cb"><div class="grid" id="pwGrid"></div></div>
@@ -1682,7 +1718,7 @@ function recompute(edited){
     if($('#pwgrid'))$('#pwgrid').innerHTML=''; if($('#roAdvice'))$('#roAdvice').innerHTML='';
     if($('#chartCard'))$('#chartCard').hidden=true;
     if($('#roStatus'))$('#roStatus').textContent='IN ATTESA';
-    CUTLAST=null;persistCut();return;}
+    CUTLAST=null;updateGuide();persistCut();return;}
   if($('#roStatus'))$('#roStatus').textContent='LIVE';
   var Dc=d.Dc,vc=d.vc,n=d.n;
   if(cut.lastSpeed==='vc'){n=Dc>0?vc*1000/(PI*Dc):0; d.n=n;} else {vc=PI*Dc*n/1000; d.vc=vc;}
@@ -1725,7 +1761,25 @@ function recompute(edited){
   renderAdvice(m,vc,(m==='mill'?'fz':'fn'),(m==='mill'?fz:fn));
   renderCharts(m,d,n,vc,(m==='mill'?fz:(m==='tap'?0:fn)),(m==='mill'?hm:(m==='turn'?d.fn:(m==='drill'?fz:0))));
   CUTLAST={mode:m,Dc:Dc,vc:vc,n:n,vf:vf,Q:(Q||0),feedVal:(m==='mill'?fz:(m==='tap'?d.P:fn)),feedLbl:(m==='mill'?'fz':(m==='tap'?'p':'fn')),Pc:Pc,Mc:Mc,Tc:Tc,cost:cost,ap:(d.ap!=null&&d.ap!==''?+d.ap:null),ae:(d.ae!=null&&d.ae!==''?+d.ae:null)};
+  updateGuide();
   persistCut();
+}
+
+// ---- Flusso guidato: 1 Materiale · 2 Parametri · 3 Risultati ----
+var GUIDE_STEP=0;
+function updateGuide(){
+  var step = !cut.mat ? 1 : (CUTLAST==null ? 2 : 3);
+  var steps=document.querySelectorAll('#cstepper .cstep');
+  for(var i=0;i<steps.length;i++){var n=i+1; steps[i].classList.toggle('active',n===step); steps[i].classList.toggle('done',n<step);}
+  var secIn=$('#secIn'),secMat=$('#secMat');
+  if(secIn)secIn.classList.toggle('locked',!cut.mat);
+  if(secMat)secMat.classList.toggle('guide-on',step===1);
+  if(secIn)secIn.classList.toggle('guide-on',step===2);
+  if(step!==GUIDE_STEP){
+    var tgt= step===1?secMat : (step===2?secIn : null);
+    if(tgt){tgt.classList.add('flash'); (function(t){setTimeout(function(){t.classList.remove('flash');},1600);})(tgt);}
+    GUIDE_STEP=step;
+  }
 }
 
 function advClass(v,r){return (v>=r[0]&&v<=r[1])?'ok':'warn';}
@@ -1839,6 +1893,12 @@ function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)retur
     '</tbody></table></div></div>'+
     ((function(){var bars=chartCmpBars(A,B,(cut.cmpNames.A||'').trim()||'A',(cut.cmpNames.B||'').trim()||'B'); return bars?'<div class="cb" style="border-top:1px solid var(--line)">'+bars+'</div>':'';})())+
     '</div>';}
+if($('#cstepper'))$('#cstepper').addEventListener('click',function(e){
+  var s=e.target.closest('[data-go-step]'); if(!s)return;
+  var tgt=document.getElementById(s.getAttribute('data-go-step'));
+  if(tgt)tgt.scrollIntoView({behavior:'smooth',block:'center'});
+  if(tgt&&tgt.id==='secMat'){var f=$('#c_matSearch'); if(f)setTimeout(function(){f.focus();},250);}
+});
 if($('#btnClear'))$('#btnClear').addEventListener('click',svuotaCut);
 if($('#btnSaveA'))$('#btnSaveA').addEventListener('click',function(){saveCmp('A');});
 if($('#nameA'))$('#nameA').addEventListener('input',function(){cut.cmpNames.A=this.value; renderCmp(); persistCut();});
