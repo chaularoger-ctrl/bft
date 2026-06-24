@@ -689,24 +689,7 @@ footer b{color:var(--text)}
     <div class="rgrid" id="rgrid"></div>
     <div class="advice" id="roAdvice"></div>
   </div>
-  <div class="subdiv no-print" id="moreDiv">Approfondimenti · consulenza · potenza · economia · grafici · confronto</div>
-
-  <div class="card" id="jobCard">
-    <div class="ch"><span>Dati consulenza</span><span class="tag">intestazione report</span></div>
-    <div class="cb"><div class="grid">
-      <div class="f"><label>Cliente</label><input id="j_client" type="text" placeholder="ragione sociale"></div>
-      <div class="f"><label>Agente</label><input id="j_agent" type="text" placeholder="nome agente"></div>
-      <div class="f"><label>Componente</label><input id="j_part" type="text" placeholder="pezzo / particolare"></div>
-      <div class="f"><label>Stato macchina utensile</label><select id="j_machstate"></select></div>
-      <div class="f"><label>Staffaggio / attrezzatura</label><select id="j_fix"></select></div>
-      <div class="f"><label>Trattamento termico</label><input id="j_heat" type="text" placeholder="es. bonifica · cementazione · nessuno"></div>
-    </div></div>
-  </div>
-
-  <div class="card" id="toolCard">
-    <div class="ch"><span>Utensile</span><span class="tag" id="toolTag">a inserti</span></div>
-    <div class="cb"><div class="grid" id="toolGrid"></div></div>
-  </div>
+  <div class="subdiv no-print" id="moreDiv">Approfondimenti · potenza · economia · grafici · consulenza · confronto</div>
 
   <div class="card">
     <div class="ch"><span>Potenza, coppia &amp; tempo</span><span class="tag">kc operatore</span></div>
@@ -736,6 +719,27 @@ footer b{color:var(--text)}
       <div class="chart-box" id="feedBox"><div class="chart-h">Trade-off: MRR e Ra vs avanzamento</div><div id="feedChart"></div></div>
     </div></div>
   </div>
+
+  <div class="card" id="jobCard">
+    <div class="ch"><span>Dati consulenza</span><span class="tag">intestazione report</span></div>
+    <div class="cb"><div class="grid">
+      <div class="f"><label>Cliente</label><input id="j_client" type="text" placeholder="ragione sociale"></div>
+      <div class="f"><label>Agente</label><input id="j_agent" type="text" placeholder="nome agente"></div>
+      <div class="f"><label>Componente</label><input id="j_part" type="text" placeholder="pezzo / particolare"></div>
+      <div class="f"><label>Macchina utensile</label><input id="j_machine" type="text" placeholder="es. DMG NLX 2500"></div>
+      <div class="f"><label>Stato macchina</label><select id="j_machstate"></select></div>
+      <div class="f"><label>Staffaggio / attrezzatura</label><select id="j_fix"></select></div>
+      <div class="f"><label>Norma</label><input id="j_norm" type="text" placeholder="EN / AISI / DIN / ASTM"></div>
+      <div class="f"><label>Durezza</label><input id="j_hardness" type="text" placeholder="es. 28 HRC · 200 HB"></div>
+      <div class="f"><label>Trattamento termico</label><select id="j_heat"></select></div>
+    </div></div>
+  </div>
+
+  <div class="card" id="toolCard">
+    <div class="ch"><span>Utensile</span><span class="tag" id="toolTag">a inserti</span></div>
+    <div class="cb"><div class="grid" id="toolGrid"></div></div>
+  </div>
+
   <button class="collapse-h" id="cmpToggle" aria-expanded="false" aria-controls="cmpPanel">⇄ Confronta due strategie (A / B)<span class="chev">›</span></button>
   <div class="collapse-b" id="cmpPanel" hidden>
     <div class="cthint">Salva i parametri correnti come <b>A</b>, poi modificali e salva <b>B</b>: vedrai le due strategie a confronto qui sotto (parametri · potenza · costo).</div>
@@ -752,20 +756,15 @@ footer b{color:var(--text)}
     <div class="cb">
       <div class="grid">
         <div class="f"><label>Codice articolo / ID test</label><input id="a_article" type="text" placeholder="es. TJN204-C45-001"></div>
-        <div class="f"><label>Materiale</label><select id="a_material"></select></div>
         <div class="f"><label>Esito</label><select id="a_result"></select></div>
+        <div class="f"><label>Operatore</label><input id="a_operator" type="text" placeholder="nome / iniziali"></div>
       </div>
+      <div class="cthint" style="margin-top:10px">Materiale, utensile, macchina, vita utensile e dati pezzo sono già presi dalle sezioni sopra: qui aggiungi solo ciò che riguarda l’<b>esito della prova</b>.</div>
       <button class="collapse-h" id="detToggle" aria-expanded="false" aria-controls="archDetails" style="margin-top:12px">＋ Aggiungi dettagli<span class="cnt" id="detCnt"></span><span class="chev">›</span></button>
       <div class="collapse-b" id="archDetails" hidden>
         <div class="grid" style="margin-top:12px">
-          <div class="f"><label>Norma</label><input id="a_norm" type="text" placeholder="EN / AISI / DIN / ASTM"></div>
-          <div class="f"><label>Durezza</label><input id="a_hardness" type="text" placeholder="es. 28 HRC · 200 HB"></div>
-          <div class="f"><label>Condizione</label><select id="a_condition"></select></div>
-          <div class="f"><label>Macchina</label><input id="a_machine" type="text" placeholder="es. DMG NLX 2500"></div>
-          <div class="f"><label>Utensile</label><input id="a_tool" type="text" placeholder="codice / descrizione"></div>
           <div class="f"><label>Applicazione</label><select id="a_application"></select></div>
           <div class="f"><label>Refrigerante</label><select id="a_coolant"></select></div>
-          <div class="f"><label>Vita utensile <span class="u">min/pz</span></label><input id="a_toollife" type="text" placeholder="es. 45 min · 120 pz"></div>
           <div class="f"><label>Tipo usura</label><select id="a_weartype"></select></div>
           <div class="f"><label>Entità usura</label><select id="a_wearlevel"></select></div>
           <div class="f"><label>Competitor <span class="u">se presente</span></label><input id="a_competitor" type="text" placeholder="marca / codice"></div>
@@ -774,7 +773,6 @@ footer b{color:var(--text)}
           <div class="f"><label>Finitura Ra <span class="u">µm</span></label><input id="a_ra" type="text" placeholder="es. 0,8"></div>
           <div class="f"><label>Video <span class="u">URL</span></label><input id="a_video" type="text" placeholder="https://…"></div>
           <div class="f"><label>Foto <span class="u">link/percorso</span></label><input id="a_photo" type="text" placeholder="link o percorso file"></div>
-          <div class="f"><label>Operatore</label><input id="a_operator" type="text" placeholder="nome / iniziali"></div>
         </div>
         <div class="f" style="margin-top:12px"><label>Note</label><textarea id="a_notes" rows="2" placeholder="osservazioni, problemi riscontrati, regolazioni…"></textarea></div>
       </div>
@@ -984,6 +982,9 @@ var cut={mode:'mill',mat:'',matGroup:'',kc11:0,mc:0,toolType:'insert',
 /* tipo utensile effettivo: tornitura sempre a inserti, maschiatura sempre integrale */
 function effType(m){m=m||cut.mode; return m==='turn'?'insert':(m==='tap'?'mdi':cut.toolType);}
 function hasToolType(m){m=m||cut.mode; return m==='mill'||m==='drill';}
+function toolLabel(){var t=cut.toolId||{};
+  if(effType()==='mdi')return [t.maker,t.code].filter(Boolean).join(' ');
+  return [t.maker,t.body,(t.ins?'/ '+t.ins:''),(t.grade?'· '+t.grade:'')].filter(Boolean).join(' ').trim();}
 var CUTLAST=null;
 var PH={kr:'90',re:'0.8',eta:'0.8',np:'1'};
 /* Range consigliati per gruppo ISO 513 (Vc / avanzamento) */
@@ -2242,11 +2243,12 @@ function sv(sel,v){var e=$(sel);if(e)e.value=(v==null?'':v);}
 function optS(v,t){return '<option value="'+esc(v)+'">'+esc(t==null?v:t)+'</option>';}
 function setOnce(sel,label,arr,pair){var e=$(sel); if(!e||e.options.length)return; e.innerHTML=optS('',label)+arr.map(function(x){return pair?optS(x[0],x[1]):optS(x);}).join('');}
 function fillArchSelects(){
-  setOnce('#a_material','— materiale —',MATERIALS); setOnce('#a_application','— applicazione —',APPS);
+  setOnce('#a_application','— applicazione —',APPS);
   setOnce('#a_result','— esito —',RESULTS); setOnce('#a_coolant','— refrigerante —',COOLANTS);
-  setOnce('#a_condition','— condizione —',CONDITIONS); setOnce('#a_weartype','— tipo usura —',WEARTYPES);
+  setOnce('#a_weartype','— tipo usura —',WEARTYPES);
   setOnce('#a_wearlevel','— entità usura —',WEARLEVELS);
   setOnce('#j_machstate','— stato macchina —',MACHSTATES); setOnce('#j_fix','— staffaggio —',FIXTURES);
+  setOnce('#j_heat','— trattamento termico —',CONDITIONS);
   setOnce('#fMode','Tutte le lavorazioni',CALC_TABS,true); setOnce('#fMaterial','Tutti i materiali',MATERIALS);
   setOnce('#fResult','Tutti gli esiti',RESULTS); setOnce('#fApplication','Tutte le applicazioni',APPS);
   setOnce('#fCoolant','Tutti i refrigeranti',COOLANTS); setOnce('#fWear','Tutte le usure',WEARLEVELS);
@@ -2267,10 +2269,10 @@ function archiveCurrent(){
     name:gv('#a_name'),mode:m,
     inputs:JSON.parse(JSON.stringify(cut[m])),pw:JSON.parse(JSON.stringify(cut.pw)),
     out:JSON.parse(JSON.stringify(CUTLAST)),
-    meta:{article:gv('#a_article'),material:gv('#a_material'),norm:gv('#a_norm'),hardness:gv('#a_hardness'),
-      condition:gv('#a_condition'),machine:gv('#a_machine'),tool:gv('#a_tool'),
+    meta:{article:gv('#a_article'),material:(cut.matGroup&&GRP[cut.matGroup]?GRP[cut.matGroup].family:''),norm:gv('#j_norm'),hardness:gv('#j_hardness'),
+      condition:gv('#j_heat'),machine:gv('#j_machine'),tool:toolLabel(),
       application:gv('#a_application'),result:gv('#a_result'),operator:gv('#a_operator'),coolant:gv('#a_coolant'),
-      toollife:gv('#a_toollife'),weartype:gv('#a_weartype'),wearlevel:gv('#a_wearlevel'),competitor:gv('#a_competitor'),
+      toollife:(cut.pw.life?''+cut.pw.life:''),weartype:gv('#a_weartype'),wearlevel:gv('#a_wearlevel'),competitor:gv('#a_competitor'),
       comppar:gv('#a_comppar'),compmrr:gv('#a_compmrr'),ra:gv('#a_ra'),video:gv('#a_video'),photo:gv('#a_photo'),
       client:gv('#j_client'),agent:gv('#j_agent'),part:gv('#j_part'),machstate:gv('#j_machstate'),fixture:gv('#j_fix'),heat:gv('#j_heat'),
       toolType:effType(m),toolId:JSON.parse(JSON.stringify(cut.toolId)),
@@ -2429,13 +2431,12 @@ function openRecord(id){
   go('calc');
   var msel=$('#c_matSearch'); if(msel)msel.value=cut.mat||''; var pk0=$('#p_kc'); if(pk0&&!cut.kc11){pk0.readOnly=false; pk0.title='';}
   applyMatHint(); markChips(); recompute(null);
-  sv('#a_name',r.name); sv('#a_article',me.article); sv('#a_material',me.material); sv('#a_norm',me.norm);
-  sv('#a_hardness',me.hardness); sv('#a_condition',me.condition); sv('#a_machine',me.machine);
-  sv('#a_tool',me.tool); sv('#a_application',me.application); sv('#a_result',me.result); sv('#a_notes',me.notes);
-  sv('#a_operator',me.operator); sv('#a_coolant',me.coolant); sv('#a_toollife',me.toollife);
+  sv('#a_name',r.name); sv('#a_article',me.article); sv('#a_application',me.application); sv('#a_result',me.result); sv('#a_notes',me.notes);
+  sv('#a_operator',me.operator); sv('#a_coolant',me.coolant);
   sv('#a_weartype',me.weartype); sv('#a_wearlevel',me.wearlevel); sv('#a_competitor',me.competitor);
   sv('#a_comppar',me.comppar); sv('#a_compmrr',me.compmrr); sv('#a_ra',me.ra); sv('#a_video',me.video); sv('#a_photo',me.photo);
-  sv('#j_client',me.client); sv('#j_agent',me.agent); sv('#j_part',me.part); sv('#j_machstate',me.machstate); sv('#j_fix',me.fixture); sv('#j_heat',me.heat);
+  sv('#j_client',me.client); sv('#j_agent',me.agent); sv('#j_part',me.part); sv('#j_machine',me.machine); sv('#j_machstate',me.machstate); sv('#j_fix',me.fixture);
+  sv('#j_norm',me.norm); sv('#j_hardness',me.hardness); sv('#j_heat',me.heat||me.condition);
   updateDetCnt(); var dp=$('#archDetails'),dt=$('#detToggle');
   if(dp&&$('#detCnt')&&$('#detCnt').textContent&&dp.hidden){dp.hidden=false; if(dt)dt.setAttribute('aria-expanded','true');}
   showToast('Prova caricata nel calcolatore');
@@ -2583,7 +2584,6 @@ function resolveMaterial(text){
   if(!rec){cut.mat=(''+text).trim(); cut.matGroup=''; cut.kc11=0; cut.mc=0; applyMatHint(); persistCut(); recompute(null); return;}
   cut.mat=rec[0]; cut.kc11=rec[1]; cut.mc=rec[2]; cut.matGroup=rec[3];
   var ms=$('#c_matSearch'); if(ms&&ms.value!==rec[0])ms.value=rec[0];
-  var am=$('#a_material'),fam=(GRP[rec[3]]&&GRP[rec[3]].family); if(am&&!am.value&&fam)am.value=fam;
   applyMatHint(); markChips(); persistCut(); recompute(null);}
 function clearMaterial(){cut.mat=''; cut.matGroup=''; cut.kc11=0; cut.mc=0;
   var ms=$('#c_matSearch'); if(ms)ms.value=''; var pk=$('#p_kc'); if(pk){pk.readOnly=false; pk.title='';}
@@ -2610,7 +2610,7 @@ function toggleHint(key){var fh=$('#fhint_'+key); if(!fh)return;
   if(fh.hidden){fh.innerHTML=HELP[key]+rangeText(key); fh.hidden=false;} else fh.hidden=true;}
 function wireCollapse(btnSel,panelSel){var b=$(btnSel),p=$(panelSel); if(!b||!p)return;
   b.addEventListener('click',function(){var open=p.hidden; p.hidden=!open; b.setAttribute('aria-expanded',open?'true':'false');});}
-function updateDetCnt(){var c=$('#detCnt'); if(!c)return; var ids=['a_norm','a_hardness','a_condition','a_machine','a_tool','a_application','a_coolant','a_toollife','a_weartype','a_wearlevel','a_competitor','a_comppar','a_compmrr','a_ra','a_video','a_photo','a_operator','a_notes'];
+function updateDetCnt(){var c=$('#detCnt'); if(!c)return; var ids=['a_application','a_coolant','a_weartype','a_wearlevel','a_competitor','a_comppar','a_compmrr','a_ra','a_video','a_photo','a_notes'];
   var n=0; ids.forEach(function(id){var e=$('#'+id); if(e&&(''+e.value).trim())n++;}); c.textContent=n?(''+n):'';}
 function updateFiltCnt(f){var c=$('#filtCnt'); if(!c)return; var keys=['mode','material','result','application','machine','tool','operator','coolant','wear','from','to'];
   var n=0; keys.forEach(function(k){if(f[k])n++;}); c.textContent=n?(''+n):'';}
