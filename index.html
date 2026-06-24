@@ -357,6 +357,32 @@ td.key{color:var(--text); font-weight:700}
 .g-chips button.on{border-color:var(--yellow);background:var(--sel);color:var(--yellow-text)}
 .g-hint{font-size:11.5px;color:var(--muted);margin:-6px 2px 13px;line-height:1.45}
 .g-hint b{color:var(--text)}
+/* ---------- GRAFICI (SVG) ---------- */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.chart-row{grid-template-columns:1fr}}
+.chart-box{min-width:0}
+.chart-box[hidden]{display:none}
+.chart-h{font-family:var(--sans);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:0 0 7px}
+svg.chart{width:100%;height:auto;display:block;font-family:var(--mono);font-size:9px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+svg.chart .axis{stroke:var(--line-2);stroke-width:1;fill:none}
+svg.chart .tick,svg.chart .lbl{fill:var(--muted)}
+svg.chart .lbl{font-weight:600}
+svg.chart .curve{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+svg.chart .c-mrr,svg.chart .c-kc{stroke:var(--yellow)}
+svg.chart .c-ra{stroke:var(--no-fg)}
+svg.chart .band{fill:var(--sel);opacity:.7}
+svg.chart .guide{stroke:var(--line-2);stroke-dasharray:3 3;stroke-width:1;fill:none}
+svg.chart .pt{stroke:var(--card);stroke-width:1.5}
+svg.chart .pt-mrr{fill:var(--yellow-text)}
+svg.chart .pt-ra{fill:var(--no-fg)}
+svg.chart .ptlbl{fill:var(--text);font-weight:700}
+svg.chart .bar-a{fill:var(--yellow)}
+svg.chart .bar-b{fill:var(--muted-2)}
+svg.chart .bar-win{stroke:var(--ok-fg);stroke-width:2}
+svg.chart .barval{fill:var(--text);font-weight:700}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:7px;font-size:10.5px;color:var(--muted)}
+.chart-legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:3px;margin-right:5px}
+.chart-note{font-size:10.5px;color:var(--muted-2);margin-top:5px}
 /* aiuto "?" per campo */
 .f label .qmark{margin-left:5px;width:15px;height:15px;line-height:13px;text-align:center;border:1px solid var(--line-2);border-radius:50%;background:var(--card);color:var(--muted);font-family:var(--sans);font-size:10px;font-weight:700;cursor:pointer;padding:0;vertical-align:0}
 .f label .qmark:hover{border-color:var(--yellow);color:var(--yellow-text)}
@@ -619,6 +645,13 @@ footer b{color:var(--text)}
     <div class="rgrid" id="pwgrid"></div>
   </div>
   <div class="note"><span>kc = forza di taglio specifica del materiale (indicativi: acciaio ~1500–3000 · ghisa ~800–1500 · alluminio ~400–900 · inox/leghe ~1800–3000 N/mm²). Pc = potenza netta · P motore = Pc/η · Mc = coppia mandrino · Costo pezzo = Tc × tariffa(€/min) + utensile/pz. In filettatura Pc/Mc non applicabili (dominati dalla coppia di avvitamento).</span></div>
+  <div class="card" id="chartCard" hidden>
+    <div class="ch"><span>Grafici</span><span class="tag">andamenti in tempo reale</span></div>
+    <div class="cb"><div class="chart-row">
+      <div class="chart-box" id="kcBox"><div class="chart-h">Forza specifica kc vs spessore truciolo h</div><div id="kcChart"></div></div>
+      <div class="chart-box" id="feedBox"><div class="chart-h">Trade-off: MRR e Ra vs avanzamento</div><div id="feedChart"></div></div>
+    </div></div>
+  </div>
   <button class="collapse-h" id="cmpToggle" aria-expanded="false" aria-controls="cmpPanel">⇄ Confronta due strategie (A / B)<span class="chev">›</span></button>
   <div class="collapse-b" id="cmpPanel" hidden>
     <div class="cthint">Salva i parametri correnti come <b>A</b>, poi modificali e salva <b>B</b>: vedrai le due strategie a confronto qui sotto (parametri · potenza · costo).</div>
@@ -1647,6 +1680,7 @@ function recompute(edited){
     var need=(m==='mill'?'Ø fresa':(m==='turn'?'Ø pezzo':(m==='drill'?'Ø punta':'Ø nominale')));
     if($('#rgrid'))$('#rgrid').innerHTML='<div class="ro-empty"><span class="big">Pronto al calcolo</span>Inserisci <b>'+need+'</b> e <b>Vc</b> (oppure i <b>giri</b>): i risultati appaiono qui in tempo reale.</div>';
     if($('#pwgrid'))$('#pwgrid').innerHTML=''; if($('#roAdvice'))$('#roAdvice').innerHTML='';
+    if($('#chartCard'))$('#chartCard').hidden=true;
     if($('#roStatus'))$('#roStatus').textContent='IN ATTESA';
     CUTLAST=null;persistCut();return;}
   if($('#roStatus'))$('#roStatus').textContent='LIVE';
@@ -1689,6 +1723,7 @@ function recompute(edited){
   var ph=cell('Pc netto',Pc==null?'—':fmt(Pc,Pc<10?2:1),Pc==null?'':'kW','alt')+cell('P motore',Pmot==null?'—':fmt(Pmot,Pmot<10?2:1),Pmot==null?'':'kW')+cell('Mc',Mc==null?'—':fmt(Mc,Mc<10?2:1),Mc==null?'':'Nm')+cell('Tc',Tc==null?'—':fmt(Tc,Tc<1?3:2),Tc==null?'':'min')+cell('Costo/pz',cost==null?'—':itc(fmt(cost,2)),cost==null?'':'€','warn hero');
   if($('#pwgrid'))$('#pwgrid').innerHTML=ph;
   renderAdvice(m,vc,(m==='mill'?'fz':'fn'),(m==='mill'?fz:fn));
+  renderCharts(m,d,n,vc,(m==='mill'?fz:(m==='tap'?0:fn)),(m==='mill'?hm:(m==='turn'?d.fn:(m==='drill'?fz:0))));
   CUTLAST={mode:m,Dc:Dc,vc:vc,n:n,vf:vf,Q:(Q||0),feedVal:(m==='mill'?fz:(m==='tap'?d.P:fn)),feedLbl:(m==='mill'?'fz':(m==='tap'?'p':'fn')),Pc:Pc,Mc:Mc,Tc:Tc,cost:cost,ap:(d.ap!=null&&d.ap!==''?+d.ap:null),ae:(d.ae!=null&&d.ae!==''?+d.ae:null)};
   persistCut();
 }
@@ -1705,6 +1740,76 @@ function renderAdvice(m,vc,fk,fv){
     out+='<span class="adv '+c2+'">'+(c2==='ok'?'✓':'⚠')+' '+fk+' <span class="av">'+itc(fmt(fv,3))+'</span> mm'+(c2==='ok'?' · ok':(' · consigliato '+itc(fmt(fr[0],2))+'–'+itc(fmt(fr[1],2))))+'</span>';}
   if(cut.kc11>0){out+='<span class="adv ok">kc <span class="av">'+fmt(cut.pw.kc,0)+'</span> N/mm² · da kc₁.₁ '+cut.kc11+'</span>';}
   box.innerHTML=out;
+}
+/* ============ GRAFICI SVG (offline, tema-aware) ============ */
+function svgEl(w,h,inner){return '<svg class="chart" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="xMidYMid meet">'+inner+'</svg>';}
+function chLine(cls,pts){if(!pts.length)return ''; return '<polyline class="'+cls+'" fill="none" points="'+pts.map(function(p){return fmt(p[0],1)+','+fmt(p[1],1);}).join(' ')+'"/>';}
+function chPt(cls,x,y,r){return '<circle class="pt '+cls+'" cx="'+fmt(x,1)+'" cy="'+fmt(y,1)+'" r="'+(r||3.2)+'"/>';}
+function chTxt(cls,x,y,t,anchor){return '<text class="'+cls+'" x="'+fmt(x,1)+'" y="'+fmt(y,1)+'"'+(anchor?' text-anchor="'+anchor+'"':'')+'>'+esc(t)+'</text>';}
+function chartCmpBars(A,B,nA,nB){
+  var metrics=[['Q','MRR','cm³/min',1],['Pc','Pc','kW',0],['Tc','Tc','min',-1],['cost','Costo','€',-1]];
+  var gs=metrics.filter(function(mm){var a=A?A[mm[0]]:null,b=B?B[mm[0]]:null; return (a!=null&&!isNaN(a))||(b!=null&&!isNaN(b));});
+  if(!gs.length)return '';
+  var W=Math.max(260,gs.length*88),H=185,padB=44,padT=20,baseY=H-padB,maxBar=baseY-padT,gw=W/gs.length,bw=Math.min(26,gw*0.28);
+  var inner='<line class="axis" x1="6" y1="'+baseY+'" x2="'+(W-6)+'" y2="'+baseY+'"/>';
+  gs.forEach(function(mm,i){
+    var a=A?A[mm[0]]:null,b=B?B[mm[0]]:null; a=(a==null||isNaN(a))?null:a; b=(b==null||isNaN(b))?null:b;
+    var mx=Math.max(a||0,b||0)||1,cx=i*gw+gw/2,xa=cx-bw-3,xb=cx+3,dir=mm[3],winA=false,winB=false;
+    if(dir&&a!=null&&b!=null&&a!==b){ if((dir>0&&a>b)||(dir<0&&a<b))winA=true; else winB=true; }
+    function bar(x,val,cls,win){ if(val==null)return ''; var hh=Math.max((val/mx)*maxBar,1),y=baseY-hh;
+      return '<rect class="'+cls+(win?' bar-win':'')+'" x="'+fmt(x,1)+'" y="'+fmt(y,1)+'" width="'+bw+'" height="'+fmt(hh,1)+'" rx="2"/>'+chTxt('barval',x+bw/2,y-3,fmt(val,val>=100?0:val>=10?1:2),'middle');}
+    inner+=bar(xa,a,'bar-a',winA)+bar(xb,b,'bar-b',winB)+chTxt('lbl',cx,baseY+15,mm[1],'middle')+chTxt('tick',cx,baseY+26,mm[2],'middle');
+  });
+  return '<div class="chart-box"><div class="chart-h">Confronto a colpo d’occhio</div>'+svgEl(W,H,inner)+
+    '<div class="chart-legend"><span><i style="background:var(--yellow)"></i>'+esc(nA)+'</span><span><i style="background:var(--muted-2)"></i>'+esc(nB)+'</span><span>★ = migliore</span></div></div>';
+}
+function chartKc(kc11,mc,hm,kcEff){
+  if(!(kc11>0))return '';
+  var W=300,H=185,padL=42,padR=12,padT=14,padB=28,x0=padL,x1=W-padR,y0=H-padB,y1=padT;
+  var hmax=Math.max(0.6,(hm||0)*1.8,1.0),hmin=0.02;
+  function kcOf(h){return kc11*Math.pow(h,-mc);}
+  var kcMax=kcOf(hmin);
+  function X(h){return x0+(h-hmin)/(hmax-hmin)*(x1-x0);}
+  function Y(k){return y0-(k/kcMax)*(y0-y1);}
+  var inner='<line class="axis" x1="'+x0+'" y1="'+y0+'" x2="'+x1+'" y2="'+y0+'"/><line class="axis" x1="'+x0+'" y1="'+y0+'" x2="'+x0+'" y2="'+y1+'"/>';
+  inner+=chTxt('tick',x0-4,y1+6,fmt(kcMax,0),'end')+chTxt('tick',x0-4,y0,'0','end');
+  inner+=chTxt('lbl',x0-2,y1-3,'kc (N/mm²)','start')+chTxt('lbl',x1,y0+16,'h (mm)','end');
+  if(hmax>=1){var xr=X(1),yr=Y(kc11); inner+='<line class="guide" x1="'+fmt(xr,1)+'" y1="'+y0+'" x2="'+fmt(xr,1)+'" y2="'+fmt(yr,1)+'"/>'+chTxt('tick',xr,y0+10,'1.0','middle');}
+  var pts=[],N=60; for(var i=0;i<=N;i++){var h=hmin+(hmax-hmin)*i/N; pts.push([X(h),Y(kcOf(h))]);}
+  inner+=chLine('curve c-kc',pts);
+  if(hm>0&&kcEff>0){var hh=Math.min(Math.max(hm,hmin),hmax),xo=X(hh),yo=Y(Math.min(kcEff,kcMax));
+    inner+='<line class="guide" x1="'+fmt(xo,1)+'" y1="'+y0+'" x2="'+fmt(xo,1)+'" y2="'+fmt(yo,1)+'"/><line class="guide" x1="'+x0+'" y1="'+fmt(yo,1)+'" x2="'+fmt(xo,1)+'" y2="'+fmt(yo,1)+'"/>'+
+      chPt('pt-mrr',xo,yo,3.6)+chTxt('ptlbl',x1,y1+7,'kc '+fmt(kcEff,0)+' @ h '+fmt(hm,3),'end');}
+  return svgEl(W,H,inner)+'<div class="chart-note">kc₁.₁ '+kc11+' N/mm² · mc '+mc+' · trucioli sottili → kc più alto.</div>';
+}
+function chartFeed(m,d,n,vc,curFeed){
+  if(m==='tap')return ''; var fl=(m==='mill'?'fz':'fn'),re=d.re||0.8,z=d.z||(m==='drill'?2:1);
+  var fmax=Math.max((curFeed||0)*2,0.1),g=GRP[cut.matGroup],band=null;
+  if(g&&g[m]){band=g[m].fz||g[m].fn; if(band)fmax=Math.max(fmax,band[1]*1.25);}
+  function mrrOf(f){ if(m==='mill')return d.ap*d.ae*(f*z*n)/1000; if(m==='turn')return vc*d.ap*f; if(m==='drill')return (Math.PI/4)*d.Dc*d.Dc*(f*n)/1000; return 0;}
+  function raOf(f){return (f*f*1000)/(31.2*re);}
+  var hasRa=(m==='mill'||m==='turn'),mrrMax=mrrOf(fmax)||1,raMax=raOf(fmax)||1;
+  var W=300,H=185,padL=20,padR=12,padT=14,padB=28,x0=padL,x1=W-padR,y0=H-padB,y1=padT;
+  function X(f){return x0+(f/fmax)*(x1-x0);}
+  function Ym(v){return y0-(v/mrrMax)*(y0-y1);}
+  function Yr(v){return y0-(v/raMax)*(y0-y1);}
+  var inner='';
+  if(band){var bx0=X(band[0]),bx1=X(Math.min(band[1],fmax)); inner+='<rect class="band" x="'+fmt(bx0,1)+'" y="'+y1+'" width="'+fmt(Math.max(bx1-bx0,0),1)+'" height="'+fmt(y0-y1,1)+'"/>';}
+  inner+='<line class="axis" x1="'+x0+'" y1="'+y0+'" x2="'+x1+'" y2="'+y0+'"/><line class="axis" x1="'+x0+'" y1="'+y0+'" x2="'+x0+'" y2="'+y1+'"/>';
+  var pm=[],pr=[],N=40; for(var i=0;i<=N;i++){var f=fmax*i/N; pm.push([X(f),Ym(mrrOf(f))]); if(hasRa)pr.push([X(f),Yr(raOf(f))]);}
+  inner+=chLine('curve c-mrr',pm); if(hasRa)inner+=chLine('curve c-ra',pr);
+  if(curFeed>0){var xc=X(Math.min(curFeed,fmax)); inner+='<line class="guide" x1="'+fmt(xc,1)+'" y1="'+y0+'" x2="'+fmt(xc,1)+'" y2="'+y1+'"/>'+chPt('pt-mrr',xc,Ym(mrrOf(Math.min(curFeed,fmax))),3.4); if(hasRa)inner+=chPt('pt-ra',xc,Yr(raOf(Math.min(curFeed,fmax))),3.4);}
+  inner+=chTxt('lbl',x1,y0+16,fl+' (mm)','end')+chTxt('tick',x0+2,y0+10,'0','start')+chTxt('tick',x1,y0+10,fmt(fmax,2),'end');
+  return svgEl(W,H,inner)+'<div class="chart-legend"><span><i style="background:var(--yellow)"></i>MRR ↑</span>'+(hasRa?'<span><i style="background:var(--no-fg)"></i>Ra ↑ (peggiore)</span>':'')+(band?'<span><i style="background:var(--sel)"></i>range consigliato</span>':'')+'</div><div class="chart-note">Scala relativa · il punto è l’avanzamento attuale.</div>';
+}
+function renderCharts(m,d,n,vc,curFeed,hOp){
+  var card=$('#chartCard'); if(!card)return;
+  var kcHtml=(cut.kc11>0&&m!=='tap')?chartKc(cut.kc11,cut.mc||0.22,hOp,cut.pw.kc):'';
+  var fcHtml=(m!=='tap')?chartFeed(m,d,n,vc,curFeed):'';
+  var kcEl=$('#kcChart'),fcEl=$('#feedChart'),kcBox=$('#kcBox');
+  if(kcEl)kcEl.innerHTML=kcHtml; if(fcEl)fcEl.innerHTML=fcHtml;
+  if(kcBox)kcBox.hidden=!kcHtml;
+  card.hidden=!(kcHtml||fcHtml);
 }
 var _toastT=null;
 function showToast(msg){var t=$('#toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); if(_toastT)clearTimeout(_toastT); _toastT=setTimeout(function(){t.classList.remove('show');},1900);}
@@ -1731,7 +1836,9 @@ function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)retur
     R('Prof. assiale aₚ','mm',3,'ap',0)+R('Prof. radiale aₑ','mm',3,'ae',0)+
     R('Vf','mm/min',0,'vf',1)+R('Q (MRR)','cm³/min',2,'Q',1)+R('Pc netto','kW',2,'Pc',0)+R('Mc','Nm',2,'Mc',0)+
     R('Tc','min',3,'Tc',-1)+R('Costo/pz','€',2,'cost',-1)+
-    '</tbody></table></div></div></div>';}
+    '</tbody></table></div></div>'+
+    ((function(){var bars=chartCmpBars(A,B,(cut.cmpNames.A||'').trim()||'A',(cut.cmpNames.B||'').trim()||'B'); return bars?'<div class="cb" style="border-top:1px solid var(--line)">'+bars+'</div>':'';})())+
+    '</div>';}
 if($('#btnClear'))$('#btnClear').addEventListener('click',svuotaCut);
 if($('#btnSaveA'))$('#btnSaveA').addEventListener('click',function(){saveCmp('A');});
 if($('#nameA'))$('#nameA').addEventListener('input',function(){cut.cmpNames.A=this.value; renderCmp(); persistCut();});
