@@ -446,6 +446,9 @@ table.cmp th,table.cmp td{padding:9px 13px;text-align:right;border-bottom:1px so
 table.cmp th.l,table.cmp td.l{text-align:left;font-family:var(--sans);color:var(--muted);font-weight:600}
 table.cmp thead th{background:var(--panel-2);text-transform:uppercase;font-size:11px;letter-spacing:.4px;color:var(--muted);font-family:var(--sans)}
 table.cmp td.win{background:var(--ok-bg);color:var(--ok-fg);font-weight:700}
+table.cmp tfoot tr.sav td{background:var(--sel);border-top:2px solid var(--yellow);border-bottom:1px solid var(--line);font-size:13px}
+table.cmp tfoot tr.sav td.l{color:var(--text);font-weight:700;text-transform:uppercase;letter-spacing:.3px;font-size:11.5px}
+table.cmp tfoot tr.sav td b{color:var(--yellow-text);font-size:15px}
 .tol-hero{padding:18px;text-align:center;background:var(--panel-2);border-bottom:1px solid var(--line)}
 .tol-dk{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
 .tol-dev{font-family:var(--mono);font-size:32px;font-weight:800;color:var(--text);letter-spacing:.5px}
@@ -671,16 +674,41 @@ footer b{color:var(--text)}
     <div class="rgrid" id="rgrid"></div>
     <div class="advice" id="roAdvice"></div>
   </div>
-  <div class="subdiv no-print" id="moreDiv">Approfondimenti · potenza · grafici · confronto · salva</div>
+  <div class="subdiv no-print" id="moreDiv">Approfondimenti · consulenza · potenza · economia · grafici · confronto</div>
+
+  <div class="card" id="jobCard">
+    <div class="ch"><span>Dati consulenza</span><span class="tag">intestazione report</span></div>
+    <div class="cb"><div class="grid">
+      <div class="f"><label>Cliente</label><input id="j_client" type="text" placeholder="ragione sociale"></div>
+      <div class="f"><label>Agente</label><input id="j_agent" type="text" placeholder="nome agente"></div>
+      <div class="f"><label>Componente</label><input id="j_part" type="text" placeholder="pezzo / particolare"></div>
+      <div class="f"><label>Stato macchina utensile</label><select id="j_machstate"></select></div>
+      <div class="f"><label>Staffaggio / attrezzatura</label><select id="j_fix"></select></div>
+      <div class="f"><label>Trattamento termico</label><input id="j_heat" type="text" placeholder="es. bonifica · cementazione · nessuno"></div>
+    </div></div>
+  </div>
+
   <div class="card">
-    <div class="ch"><span>Potenza, coppia, tempo &amp; costo</span><span class="tag">kc operatore</span></div>
+    <div class="ch"><span>Potenza, coppia &amp; tempo</span><span class="tag">kc operatore</span></div>
     <div class="cb"><div class="grid" id="pwGrid"></div></div>
   </div>
   <div class="readout" id="pwReadout">
-    <div class="rh"><span>POTENZA · COPPIA · COSTO</span><span>Pc · Mc · Tc · €</span></div>
+    <div class="rh"><span>POTENZA · COPPIA · TEMPO</span><span>Pc · P&nbsp;mot · Mc · Tc</span></div>
     <div class="rgrid" id="pwgrid"></div>
+    <div class="advice" id="powAdvice"></div>
   </div>
-  <div class="note"><span>kc = forza di taglio specifica del materiale (indicativi: acciaio ~1500–3000 · ghisa ~800–1500 · alluminio ~400–900 · inox/leghe ~1800–3000 N/mm²). Pc = potenza netta · P motore = Pc/η · Mc = coppia mandrino · Costo pezzo = Tc × tariffa(€/min) + utensile/pz. In filettatura Pc/Mc non applicabili (dominati dalla coppia di avvitamento).</span></div>
+
+  <div class="card" id="ecoCard">
+    <div class="ch"><span>Economia: vita utensile · inserti · lotto · fermi</span><span class="tag">costo reale</span></div>
+    <div class="cb"><div class="grid" id="ecoGrid"></div></div>
+  </div>
+  <div class="readout" id="ecoReadout">
+    <div class="rh"><span>COSTO PEZZO · LOTTO</span><span>macchina · taglienti · fermi</span></div>
+    <div class="rgrid" id="ecogrid"></div>
+    <div class="advice" id="ecoAdvice"></div>
+  </div>
+
+  <div class="note"><span>kc = forza di taglio specifica del materiale. Pc = potenza netta · P motore = Pc/η · Mc = coppia mandrino. <b>Costo/pezzo</b> = tempo macchina (Tc × tariffa) + costo taglienti (prezzo inserto ÷ taglienti per inserto + ammortamento corpo) ÷ pezzi per tagliente + fermi macchina (tempo cambio × tariffa fermo) ÷ pezzi per tagliente. <b>Pezzi per tagliente</b> = vita tagliente ÷ Tc. La <b>forza di avanzamento</b> in foratura è una stima indicativa. In filettatura Pc/Mc non applicabili.</span></div>
   <div class="card" id="chartCard" hidden>
     <div class="ch"><span>Grafici</span><span class="tag">andamenti in tempo reale</span></div>
     <div class="cb"><div class="chart-row">
@@ -930,7 +958,8 @@ var cut={mode:'mill',mat:'',matGroup:'',kc11:0,mc:0,
   turn:{Dc:0,vc:0,n:0,fn:0,ap:0,re:0},
   drill:{Dc:0,vc:0,n:0,fn:0,z:0},
   tap:{Dc:0,P:0,vc:0,n:0},
-  pw:{kc:0,eta:0,L:0,np:0,rate:0,tool:0},cmp:{A:null,B:null},cmpNames:{A:'',B:''},lastSpeed:'vc',lastFeed:'fz'};
+  pw:{kc:0,eta:0,L:0,np:0,rate:0,tool:0,rateStop:0,tChange:0,machP:0,life:0,edges:0,insP:0,bodyP:0,bodyLife:0,batch:0},
+  cmp:{A:null,B:null},cmpNames:{A:'',B:''},lastSpeed:'vc',lastFeed:'fz'};
 var CUTLAST=null;
 var PH={kr:'90',re:'0.8',eta:'0.8',np:'1'};
 /* Range consigliati per gruppo ISO 513 (Vc / avanzamento) */
@@ -1702,11 +1731,14 @@ function buildCutInputs(){
   $('#inHdr').textContent='2 · Ingressi di taglio'; $('#inTag').textContent=MODE_TAG[m]; $('#roMode').textContent=MODE_LBL[m];
   $('#calcTitle').textContent=MODE_TITLE[m]; $('#calcSub').textContent=MODE_DESC[m];
 }
-var PWF=[['kc','Forza taglio kc','N/mm²'],['eta','Rendimento η','–'],['L','Lungh. taglio L','mm'],['np','N° passate','×'],['rate','Tariffa al minuto','€/min'],['tool','Costo utens./pz','€']];
-function buildPwInputs(){var g=$('#pwGrid'); if(!g)return; g.innerHTML=''; PWF.forEach(function(f){var key=f[0],d=el('div',{'class':'f'});
+var PWF=[['kc','Forza taglio kc','N/mm²'],['eta','Rendimento η','–'],['L','Lungh. taglio L','mm'],['np','N° passate','×']];
+var ECOF=[['rate','Tariffa macchina in lavoro','€/min'],['rateStop','Tariffa fermo macchina','€/min'],['tChange','Tempo cambio utensile','min'],['machP','Potenza disponibile macchina','kW'],
+  ['life','Vita tagliente','min'],['edges','Taglienti per inserto','n°'],['insP','Prezzo inserto','€'],['bodyP','Prezzo corpo utensile','€'],['bodyLife','Vita corpo','n° tagl.'],['batch','Pezzi del lotto','n°']];
+function buildFieldGrid(grid,defs){var g=$(grid); if(!g)return; g.innerHTML=''; defs.forEach(function(f){var key=f[0],d=el('div',{'class':'f'});
   d.innerHTML='<label>'+f[1]+' <span class="u">'+f[2]+'</span></label>';
   var inp=el('input',{type:'number',id:'p_'+key,step:'any'}); if(PH[key])inp.placeholder=PH[key]; inp.value=cut.pw[key]?cut.pw[key]:''; d.appendChild(inp); g.appendChild(d);
   inp.addEventListener('input',function(){cut.pw[key]=num(inp.value); recompute(null);});});}
+function buildPwInputs(){buildFieldGrid('#pwGrid',PWF); buildFieldGrid('#ecoGrid',ECOF);}
 function onCutInput(key){var data=cut[cut.mode]; data[key]=num($('#c_'+key).value);
   if(key==='vc')cut.lastSpeed='vc'; if(key==='n')cut.lastSpeed='n'; if(key==='fz')cut.lastFeed='fz'; if(key==='vf')cut.lastFeed='vf'; recompute(key);}
 function cell(k,v,u,cls){return '<div class="rcell '+(cls||'')+'"><div class="k">'+k+'</div><div class="v">'+v+(u?' <small>'+u+'</small>':'')+'</div></div>';}
@@ -1755,12 +1787,30 @@ function recompute(edited){
     cut.pw.kc=cut.kc11*Math.pow(hth,-(cut.mc||0.22));
     var pk=$('#p_kc'); if(pk){pk.value=fmt(cut.pw.kc,0); pk.readOnly=true; pk.title='kc da materiale: kc1.1 '+cut.kc11+' · mc '+cut.mc+' · h '+fmt(hth,3)+' mm → kc '+fmt(cut.pw.kc,0)+' N/mm²';}
   }
-  var pw=cut.pw, Pc=(pw.kc>0&&Q)?Q*pw.kc/60000:null, Pmot=(Pc!=null)?Pc/(pw.eta||0.8):null, Mc=(Pc!=null&&n>0)?9549*Pc/n:null, Tc=(pw.L>0&&vf>0)?pw.L*(pw.np||1)/vf:null, cost=(Tc!=null&&(pw.rate>0||pw.tool>0))?Tc*(pw.rate||0)+(pw.tool||0):null;
-  var ph=cell('Pc netto',Pc==null?'—':fmt(Pc,Pc<10?2:1),Pc==null?'':'kW','alt')+cell('P motore',Pmot==null?'—':fmt(Pmot,Pmot<10?2:1),Pmot==null?'':'kW')+cell('Mc',Mc==null?'—':fmt(Mc,Mc<10?2:1),Mc==null?'':'Nm')+cell('Tc',Tc==null?'—':fmt(Tc,Tc<1?3:2),Tc==null?'':'min')+cell('Costo/pz',cost==null?'—':itc(fmt(cost,2)),cost==null?'':'€','warn hero');
+  var pw=cut.pw;
+  var Pc=(pw.kc>0&&Q)?Q*pw.kc/60000:null, Pmot=(Pc!=null)?Pc/(pw.eta||0.8):null, Mc=(Pc!=null&&n>0)?9549*Pc/n:null, Tc=(pw.L>0&&vf>0)?pw.L*(pw.np||1)/vf:null;
+  // Forza di avanzamento (spinta) in foratura — stima indicativa
+  var Ff=(m==='drill'&&pw.kc>0&&Dc>0&&fn>0)?0.5*pw.kc*(Dc/2)*fn:null;
+  // ---- Economia: costo reale per pezzo basato su vita utensile ----
+  var rate=pw.rate||0, rateStop=pw.rateStop||0, tCh=pw.tChange||0, machP=pw.machP||0;
+  var life=pw.life||0, edges=pw.edges||0, insP=pw.insP||0, bodyP=pw.bodyP||0, bodyLife=pw.bodyLife||0, batch=pw.batch||0;
+  var ppe=(life>0&&Tc>0)?life/Tc:null;                               // pezzi per tagliente
+  var costEdge=(edges>0?insP/edges:0)+(bodyLife>0?bodyP/bodyLife:0);  // €/tagliente
+  var cMach=(Tc!=null)?Tc*rate:null;                                 // costo macchina/pz
+  var cTool=(ppe!=null&&ppe>0&&costEdge>0)?costEdge/ppe:0;            // costo taglienti/pz
+  var cStop=(ppe!=null&&ppe>0&&tCh>0&&rateStop>0)?(tCh*rateStop)/ppe:0; // fermi macchina/pz
+  var costPP=(cMach!=null)?cMach+cTool+cStop:null;                   // costo/pz totale
+  var costLot=(costPP!=null&&batch>0)?costPP*batch:null;
+  var powOver=(machP>0&&Pmot!=null&&Pmot>machP), powUse=(machP>0&&Pmot!=null)?100*Pmot/machP:null;
+  var ph=cell('Pc netto',Pc==null?'—':fmt(Pc,Pc<10?2:1),Pc==null?'':'kW','alt')+cell('P motore',Pmot==null?'—':fmt(Pmot,Pmot<10?2:1),Pmot==null?'':'kW',powOver?'warn':'')+cell('Mc',Mc==null?'—':fmt(Mc,Mc<10?2:1),Mc==null?'':'Nm')+cell('Tc',Tc==null?'—':fmt(Tc,Tc<1?3:2),Tc==null?'':'min','hero')+(Ff!=null?cell('Forza avanz.',fmt(Ff,0),'N · stima'):'');
   if($('#pwgrid'))$('#pwgrid').innerHTML=ph;
+  var pa=$('#powAdvice'); if(pa){ if(powOver)pa.innerHTML='<span class="adv warn">⚠ P motore <span class="av">'+fmt(Pmot,1)+'</span> kW supera la macchina ('+fmt(machP,1)+' kW): riduci Vc, ap/ae o avanzamento</span>'; else if(powUse!=null)pa.innerHTML='<span class="adv ok">✓ Mandrino al <span class="av">'+fmt(powUse,0)+'%</span> · '+fmt(Pmot,1)+' / '+fmt(machP,1)+' kW</span>'; else pa.innerHTML=''; }
+  var eg=cell('Pezzi/tagliente',ppe==null?'—':fmt(ppe,ppe>=10?0:1),ppe==null?'':'pz','alt')+cell('Costo macchina',cMach==null?'—':itc(fmt(cMach,3)),cMach==null?'':'€/pz')+cell('Costo taglienti',(costEdge>0&&ppe==null)?'—':itc(fmt(cTool,3)),'€/pz')+cell('Costo fermi',(tCh>0&&rateStop>0&&ppe==null)?'—':itc(fmt(cStop,3)),'€/pz')+cell('Costo/pezzo',costPP==null?'—':itc(fmt(costPP,2)),costPP==null?'':'€','warn hero')+cell('Costo lotto',costLot==null?'—':itc(fmt(costLot,2)),costLot==null?'':'€');
+  if($('#ecogrid'))$('#ecogrid').innerHTML=eg;
+  var ea=$('#ecoAdvice'); if(ea){ if(costEdge>0&&ppe==null)ea.innerHTML='<span class="adv warn">⚠ Inserisci <span class="av">Vita tagliente</span> per avere il costo taglienti e il costo/pezzo completi</span>'; else if(costPP!=null&&batch>0)ea.innerHTML='<span class="adv ok">✓ Costo/pezzo <span class="av">'+itc(fmt(costPP,3))+'</span> € · lotto di '+fmt(batch,0)+' pz = '+itc(fmt(costLot,2))+' €</span>'; else ea.innerHTML=''; }
   renderAdvice(m,vc,(m==='mill'?'fz':'fn'),(m==='mill'?fz:fn));
   renderCharts(m,d,n,vc,(m==='mill'?fz:(m==='tap'?0:fn)),(m==='mill'?hm:(m==='turn'?d.fn:(m==='drill'?fz:0))));
-  CUTLAST={mode:m,Dc:Dc,vc:vc,n:n,vf:vf,Q:(Q||0),feedVal:(m==='mill'?fz:(m==='tap'?d.P:fn)),feedLbl:(m==='mill'?'fz':(m==='tap'?'p':'fn')),Pc:Pc,Mc:Mc,Tc:Tc,cost:cost,ap:(d.ap!=null&&d.ap!==''?+d.ap:null),ae:(d.ae!=null&&d.ae!==''?+d.ae:null)};
+  CUTLAST={mode:m,Dc:Dc,vc:vc,n:n,vf:vf,Q:(Q||0),feedVal:(m==='mill'?fz:(m==='tap'?d.P:fn)),feedLbl:(m==='mill'?'fz':(m==='tap'?'p':'fn')),Pc:Pc,Pmot:Pmot,Mc:Mc,Tc:Tc,Ff:Ff,ppe:ppe,cMach:cMach,cTool:cTool,cStop:cStop,cost:costPP,costPP:costPP,costLot:costLot,batch:batch,machP:machP,powOver:powOver,ap:(d.ap!=null&&d.ap!==''?+d.ap:null),ae:(d.ae!=null&&d.ae!==''?+d.ae:null)};
   updateGuide();
   persistCut();
 }
@@ -1873,6 +1923,18 @@ function svuotaCut(){var m=cut.mode; CUTFIELDS[m].forEach(function(f){if(f[3]&&f
   ['kc','L','rate','tool'].forEach(function(k){cut.pw[k]=0; var e=$('#p_'+k); if(e)e.value='';});
   CUTLAST=null; if($('#rgrid'))$('#rgrid').innerHTML=''; if($('#pwgrid'))$('#pwgrid').innerHTML=''; persistCut(); showToast('Campi svuotati');}
 function saveCmp(slot){if(!CUTLAST){showToast('Nessun dato da salvare');return;} cut.cmp[slot]=JSON.parse(JSON.stringify(CUTLAST)); renderCmp(); persistCut(); showToast(((cut.cmpNames[slot]||'').trim()||('Strategia '+slot))+' salvata');}
+function savFoot(A,B,nA,nB){
+  if(!A||!B)return '';
+  var ca=A.costPP,cb=B.costPP;
+  if(ca==null||cb==null||isNaN(ca)||isNaN(cb))return '';
+  var diff=Math.abs(ca-cb), who=(ca<cb?nA:nB);
+  var batch=A.batch||B.batch||0, savLot=(batch>0)?diff*batch:null;
+  if(diff===0)return '<tfoot><tr class="sav"><td class="l">Risparmio</td><td colspan="2">strategie equivalenti come costo</td></tr></tfoot>';
+  return '<tfoot>'+
+    '<tr class="sav"><td class="l">Risparmio / pezzo</td><td colspan="2"><b>'+itc(fmt(diff,3))+' €</b> a favore di '+esc(who)+'</td></tr>'+
+    (savLot!=null?'<tr class="sav"><td class="l">Risparmio sul lotto ('+fmt(batch,0)+' pz)</td><td colspan="2"><b>'+itc(fmt(savLot,2))+' €</b></td></tr>':'')+
+    '</tfoot>';
+}
 function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)return; document.body.classList.toggle('cmp-active',!!(A||B));
   if(A||B){var cp=$('#cmpPanel'),ct=$('#cmpToggle'); if(cp&&cp.hidden){cp.hidden=false; if(ct)ct.setAttribute('aria-expanded','true');}}
   if(!A&&!B){out.innerHTML='';return;} var nA=esc((cut.cmpNames.A||'').trim()||'A'),nB=esc((cut.cmpNames.B||'').trim()||'B');
@@ -1882,15 +1944,16 @@ function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)retur
     if(dir&&a!=null&&b!=null&&!isNaN(a)&&!isNaN(b)&&a!==b){if((dir>0&&a>b)||(dir<0&&a<b))wa=' class="win"';else wb=' class="win"';}
     return '<tr><td class="l">'+lbl+(unit?' <span class="u">'+unit+'</span>':'')+'</td><td'+wa+'>'+ta+'</td><td'+wb+'>'+tb+'</td></tr>';}
   function ft(S){return S?S.feedLbl+' '+itc(fmt(S.feedVal,S.feedLbl==='fz'?4:3)):'—';}
-  out.innerHTML='<div class="card"><div class="ch"><span>Confronto strategie A / B</span><span class="tag">parametri · potenza · costo</span></div>'+
+  out.innerHTML='<div class="card"><div class="ch"><span>Confronto strategie A / B</span><span class="tag">parametri · potenza · costo · risparmio</span></div>'+
     '<div class="cb" style="padding:0"><div class="tbl-wrap"><table class="cmp"><thead><tr><th class="l">Parametro</th><th>'+nA+'</th><th>'+nB+'</th></tr></thead><tbody>'+
     '<tr><td class="l">Operazione</td><td>'+(A?ML[A.mode]:'—')+'</td><td>'+(B?ML[B.mode]:'—')+'</td></tr>'+
     R('Ø','mm',3,'Dc',0)+R('Vc','m/min',1,'vc',0)+R('n','rpm',0,'n',0)+
     '<tr><td class="l">Avanzamento <span class="u">mm</span></td><td>'+ft(A)+'</td><td>'+ft(B)+'</td></tr>'+
     R('Prof. assiale aₚ','mm',3,'ap',0)+R('Prof. radiale aₑ','mm',3,'ae',0)+
-    R('Vf','mm/min',0,'vf',1)+R('Q (MRR)','cm³/min',2,'Q',1)+R('Pc netto','kW',2,'Pc',0)+R('Mc','Nm',2,'Mc',0)+
-    R('Tc','min',3,'Tc',-1)+R('Costo/pz','€',2,'cost',-1)+
-    '</tbody></table></div></div>'+
+    R('Vf','mm/min',0,'vf',1)+R('Q (MRR)','cm³/min',2,'Q',1)+R('Pc netto','kW',2,'Pc',0)+R('P motore','kW',2,'Pmot',0)+R('Mc','Nm',2,'Mc',0)+R('Tc','min',3,'Tc',-1)+
+    R('Pezzi / tagliente','pz',1,'ppe',1)+R('Costo macchina','€/pz',3,'cMach',-1)+R('Costo taglienti','€/pz',3,'cTool',-1)+R('Costo fermi','€/pz',3,'cStop',-1)+
+    R('Costo / pezzo','€',3,'costPP',-1)+R('Costo lotto','€',2,'costLot',-1)+
+    '</tbody>'+savFoot(A,B,nA,nB)+'</table></div></div>'+
     ((function(){var bars=chartCmpBars(A,B,(cut.cmpNames.A||'').trim()||'A',(cut.cmpNames.B||'').trim()||'B'); return bars?'<div class="cb" style="border-top:1px solid var(--line)">'+bars+'</div>':'';})())+
     '</div>';}
 if($('#cstepper'))$('#cstepper').addEventListener('click',function(e){
@@ -2125,6 +2188,8 @@ var COOLANTS=['Emulsione','Olio intero','Aria','MQL (lubr. minimale)','A secco',
 var CONDITIONS=['Bonificato','Ricotto','Normalizzato','Grezzo','Forgiato','Laminato','Cementato','Temprato','Altro'];
 var WEARTYPES=['Assente','Fianchetto (VB)','Cratere (KT)','Scheggiatura','Deformazione plastica','BUE','Usura al centro','Rottura'];
 var WEARLEVELS=['Assente','Lieve','Moderata','Avanzata','Rottura'];
+var MACHSTATES=['Ottimo','Buono','Discreto','Usurato','Da revisionare'];
+var FIXTURES=['Rigido','Buono','Medio','Debole / a sbalzo','Pareti sottili'];
 var SORTS=[['date_desc','Più recenti'],['date_asc','Più vecchi'],['dc_desc','Ø maggiore'],['vc_desc','Vc maggiore'],['q_desc','MRR maggiore'],['cost_asc','Costo minore']];
 function archLoad(){try{var a=JSON.parse(store.get(ARCH_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
 function archStore(list){store.set(ARCH_KEY,JSON.stringify(list));}
@@ -2137,6 +2202,7 @@ function fillArchSelects(){
   setOnce('#a_result','— esito —',RESULTS); setOnce('#a_coolant','— refrigerante —',COOLANTS);
   setOnce('#a_condition','— condizione —',CONDITIONS); setOnce('#a_weartype','— tipo usura —',WEARTYPES);
   setOnce('#a_wearlevel','— entità usura —',WEARLEVELS);
+  setOnce('#j_machstate','— stato macchina —',MACHSTATES); setOnce('#j_fix','— staffaggio —',FIXTURES);
   setOnce('#fMode','Tutte le lavorazioni',CALC_TABS,true); setOnce('#fMaterial','Tutti i materiali',MATERIALS);
   setOnce('#fResult','Tutti gli esiti',RESULTS); setOnce('#fApplication','Tutte le applicazioni',APPS);
   setOnce('#fCoolant','Tutti i refrigeranti',COOLANTS); setOnce('#fWear','Tutte le usure',WEARLEVELS);
@@ -2162,6 +2228,7 @@ function archiveCurrent(){
       application:gv('#a_application'),result:gv('#a_result'),operator:gv('#a_operator'),coolant:gv('#a_coolant'),
       toollife:gv('#a_toollife'),weartype:gv('#a_weartype'),wearlevel:gv('#a_wearlevel'),competitor:gv('#a_competitor'),
       comppar:gv('#a_comppar'),compmrr:gv('#a_compmrr'),ra:gv('#a_ra'),video:gv('#a_video'),photo:gv('#a_photo'),
+      client:gv('#j_client'),agent:gv('#j_agent'),part:gv('#j_part'),machstate:gv('#j_machstate'),fixture:gv('#j_fix'),heat:gv('#j_heat'),
       matdb:cut.mat,kc11:cut.kc11,mc:cut.mc,notes:gv('#a_notes')}};
   var list=archLoad(); list.unshift(rec); archStore(list); updateArchCount(); cloudPush(rec);
   showToast('Salvato in archivio'+(rec.name?' · '+rec.name:''));
@@ -2321,6 +2388,7 @@ function openRecord(id){
   sv('#a_operator',me.operator); sv('#a_coolant',me.coolant); sv('#a_toollife',me.toollife);
   sv('#a_weartype',me.weartype); sv('#a_wearlevel',me.wearlevel); sv('#a_competitor',me.competitor);
   sv('#a_comppar',me.comppar); sv('#a_compmrr',me.compmrr); sv('#a_ra',me.ra); sv('#a_video',me.video); sv('#a_photo',me.photo);
+  sv('#j_client',me.client); sv('#j_agent',me.agent); sv('#j_part',me.part); sv('#j_machstate',me.machstate); sv('#j_fix',me.fixture); sv('#j_heat',me.heat);
   updateDetCnt(); var dp=$('#archDetails'),dt=$('#detToggle');
   if(dp&&$('#detCnt')&&$('#detCnt').textContent&&dp.hidden){dp.hidden=false; if(dt)dt.setAttribute('aria-expanded','true');}
   showToast('Prova caricata nel calcolatore');
