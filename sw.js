@@ -1,6 +1,9 @@
 /* Service worker BFT CALC — funzionamento offline e installazione PWA.
  * Cambia CACHE_VERSION quando aggiorni l'app per forzare il refresh della cache. */
-const CACHE_VERSION = 'bft-calc-v21';
+const CACHE_VERSION = 'bft-calc-v22';
+
+// Media opzionali: precache se presenti, senza far fallire l'install se mancano.
+const OPTIONAL_ASSETS = ['./media/hero.mp4'];
 
 // App shell: percorsi relativi alla posizione del service worker.
 const APP_SHELL = [
@@ -24,7 +27,8 @@ const RUNTIME_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_VERSION)
-      .then((cache) => cache.addAll(APP_SHELL))
+      .then((cache) => cache.addAll(APP_SHELL)
+        .then(() => Promise.all(OPTIONAL_ASSETS.map((u) => cache.add(u).catch(() => {})))))
       .then(() => self.skipWaiting())
   );
 });
