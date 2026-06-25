@@ -398,6 +398,8 @@ td.key{color:var(--text); font-weight:700}
 .chart-box{min-width:0}
 .chart-box[hidden]{display:none}
 .chart-h{font-family:var(--sans);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:0 0 7px}
+.chart-cap{font-size:11px;color:var(--muted);line-height:1.45;margin:8px 1px 0;border-top:1px dashed var(--line);padding-top:7px}
+.chart-cap b{color:var(--text)}
 svg.chart{width:100%;height:auto;display:block;font-family:var(--mono);font-size:9px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
 svg.chart .axis{stroke:var(--line-2);stroke-width:1;fill:none}
 svg.chart .tick,svg.chart .lbl{fill:var(--muted)}
@@ -491,7 +493,7 @@ html[data-theme="dark"] .thr-svg svg{filter:invert(1) hue-rotate(180deg)}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   @page{margin:13mm}
   body{background:var(--card)}
-  .subnav,.pdfbtn,.hstatus,.ctools,.cthint,.tbl-foot,#thrSearch,.rowhint,.back,.arch-toolbar,.arch-count,#archCard,.arec .acts,.collapse-h,.qmark,.onboard,.g-hint{display:none !important}
+  .subnav,.pdfbtn,.hstatus,.ctools,.cthint,.tbl-foot,#thrSearch,.rowhint,.back,.arch-toolbar,.arch-count,#archCard,.arec .acts,.collapse-h,.qmark,.fhint,.onboard,.g-hint{display:none !important}
   .arec{break-inside:avoid;page-break-inside:avoid}
   .masthead{position:static;box-shadow:none;border-bottom:1.5px solid #111}
   .wrap{max-width:none;margin:0}
@@ -715,8 +717,8 @@ footer b{color:var(--text)}
   <div class="card" id="chartCard" hidden>
     <div class="ch"><span>Grafici</span><span class="tag">andamenti in tempo reale</span></div>
     <div class="cb"><div class="chart-row">
-      <div class="chart-box" id="kcBox"><div class="chart-h">Forza specifica kc vs spessore truciolo h</div><div id="kcChart"></div></div>
-      <div class="chart-box" id="feedBox"><div class="chart-h">Trade-off: MRR e Ra vs avanzamento</div><div id="feedChart"></div></div>
+      <div class="chart-box" id="kcBox"><div class="chart-h">Forza specifica kc vs spessore truciolo h</div><div id="kcChart"></div><div class="chart-cap">Mostra come la forza di taglio specifica <b>kc</b> aumenta quando il truciolo si assottiglia (effetto Kienzle). Il punto giallo è il <b>tuo</b> spessore di truciolo: se sta troppo a sinistra (truciolo sottile) la kc è alta, l’utensile sfrega e scalda invece di tagliare → conviene <b>alzare l’avanzamento</b> per ingrossare il truciolo.</div></div>
+      <div class="chart-box" id="feedBox"><div class="chart-h">Trade-off: MRR e Ra vs avanzamento</div><div id="feedChart"></div><div class="chart-cap">Al crescere dell’avanzamento la produttività <b>MRR</b> (linea oro) sale, ma la rugosità <b>Ra</b> (linea rossa) peggiora: più produci, meno fine è la finitura. La <b>fascia verde</b> è l’avanzamento consigliato per questo materiale; il punto è il tuo valore attuale. Tienilo nella fascia per bilanciare resa e qualità.</div></div>
     </div></div>
   </div>
 
@@ -1727,7 +1729,51 @@ var HELP={
   ae:'Larghezza di taglio radiale (quanto è largo l’impegno laterale). aₑ = Ø fresa per scanalatura piena.',
   kr:'Angolo di registrazione del tagliente (°). 90° per spallamenti, 45° per sgrossatura più dolce.',
   re:'Raggio di punta dell’inserto (mm). Più grande = finitura migliore e tagliente più robusto.',
-  P:'Passo della filettatura (mm): avanza esattamente di un passo a ogni giro.'
+  P:'Passo della filettatura (mm): avanza esattamente di un passo a ogni giro.',
+  kc:'Forza di taglio specifica del materiale (N/mm²): quanta forza serve per asportare il truciolo. La calcolo dal database in base a materiale e spessore di truciolo; puoi forzarla a mano.',
+  eta:'Rendimento meccanico del mandrino (0–1, tipico 0,8). Serve a passare dalla potenza netta di taglio alla potenza assorbita dal motore.',
+  L:'Lunghezza di lavoro per passata (mm): il percorso che l’utensile compie nel pezzo. Serve a calcolare il tempo di lavorazione Tc.',
+  np:'Numero di passate per completare la lavorazione. Moltiplica il tempo macchina.',
+  rate:'Costo della macchina al minuto mentre lavora (€/min): manodopera, ammortamento, energia. È la base del costo/pezzo.',
+  rateStop:'Costo al minuto quando la macchina è ferma per il cambio utensile (€/min). Spesso uguale o poco inferiore alla tariffa in lavoro.',
+  tChange:'Tempo (min) per fermare, cambiare o indicizzare il tagliente e ripartire. Genera il costo dei fermi macchina.',
+  machP:'Potenza disponibile del mandrino (kW). Se la potenza richiesta la supera, te lo segnalo in rosso: la strategia non regge su quella macchina.',
+  life:'Durata del tagliente (o dell’utensile MDI) in minuti di taglio effettivo. Da qui ricavo quanti pezzi fa ogni tagliente: vita ÷ Tc.',
+  toolPrice:'Prezzo dell’utensile integrale (MDI). Spalmato sui pezzi che fa nella sua vita dà il costo utensile per pezzo.',
+  edges:'Numero di taglienti utilizzabili su ogni inserto (es. inserto quadro = 4). Più taglienti = costo per tagliente più basso.',
+  insP:'Prezzo del singolo inserto. Diviso per i taglienti per inserto dà il costo di ogni tagliente.',
+  bodyP:'Prezzo del corpo portainserti (fresa a inserti, barra, portautensile): la parte che non si butta a ogni tagliente.',
+  bodyLife:'Quanti taglienti monta il corpo in tutta la sua vita prima di scartarlo. Ammortizza il corpo: prezzo corpo ÷ vita corpo = costo corpo per tagliente. Lascia vuoto se non vuoi ammortizzarlo.',
+  batch:'Numero di pezzi del lotto da produrre. Moltiplica il costo/pezzo per dare costo totale del lotto e risparmio complessivo.',
+  maker:'Marca/produttore dell’utensile a confronto.',
+  code:'Codice commerciale dell’utensile integrale (MDI).',
+  body:'Codice del corpo portainserti (fresa a inserti, barra, portautensile).',
+  ins:'Codice commerciale dell’inserto montato.',
+  grade:'Qualità/rivestimento dell’inserto (es. SPU25): incide su velocità di taglio e durata.',
+  client:'Cliente per cui esegui la prova. Compare nell’intestazione del report PDF.',
+  agent:'Agente o tecnico che segue la consulenza.',
+  part:'Pezzo o particolare lavorato.',
+  machine:'Macchina utensile usata (marca/modello).',
+  machstate:'Condizione della macchina: una macchina usurata sopporta meno spinta e potenza.',
+  fix:'Rigidità del bloccaggio pezzo: un staffaggio debole o a sbalzo limita avanzamento e profondità per via delle vibrazioni.',
+  norm:'Norma del materiale (EN, AISI, DIN, ASTM).',
+  hardness:'Durezza del materiale (HB o HRC): più è duro, più crescono kc e usura.',
+  heat:'Trattamento termico/stato del materiale (bonificato, ricotto, cementato…): cambia durezza e lavorabilità.',
+  article:'Codice articolo o identificativo della prova, per ritrovarla in archivio.',
+  result:'Esito della prova: positivo, negativo o da rivedere.',
+  operator:'Chi ha eseguito la prova.',
+  application:'Tipo di operazione: sgrossatura, finitura, foratura…',
+  coolant:'Refrigerante/lubrificazione usata (emulsione, aria, MQL, a secco…).',
+  weartype:'Tipo di usura osservata sul tagliente (fianchetto, cratere, scheggiatura, BUE…).',
+  wearlevel:'Entità dell’usura riscontrata.',
+  competitor:'Marca/codice dell’utensile concorrente, se confronti contro un competitor.',
+  comppar:'Parametri usati dal competitor (Vc / fz / aₚ) per il confronto.',
+  compmrr:'Asportazione del competitor (mm³/min) per il confronto diretto.',
+  ra:'Rugosità Ra effettivamente misurata sul pezzo (µm).',
+  video:'Link a un video della prova.',
+  photo:'Link o percorso a foto della prova o dell’usura.',
+  name:'Nome facoltativo della prova, per riconoscerla a colpo d’occhio in archivio.',
+  notes:'Osservazioni libere: problemi riscontrati, regolazioni, accorgimenti.'
 };
 function buildCutInputs(){
   var m=cut.mode,fields=CUTFIELDS[m],data=cut[m],g=$('#inGrid'); g.innerHTML='';
@@ -1778,6 +1824,7 @@ function buildPwInputs(){
   var bar=$('#toolTypeBar'); if(bar){ bar.hidden=!hasToolType();
     Array.prototype.forEach.call(bar.querySelectorAll('.tt-opt'),function(b){b.classList.toggle('on',b.getAttribute('data-ttype')===cut.toolType);}); }
   var tt=$('#toolTag'); if(tt)tt.textContent=(et==='mdi'?'integrale (MDI)':'a inserti');
+  attachHints('#pwGrid'); attachHints('#ecoGrid'); attachHints('#toolGrid');
 }
 function setToolType(tp){ if(tp!=='mdi'&&tp!=='insert')return; if(cut.toolType===tp)return; cut.toolType=tp; buildPwInputs(); recompute(null); persistCut(); }
 function onCutInput(key){var data=cut[cut.mode]; data[key]=num($('#c_'+key).value);
@@ -1998,7 +2045,7 @@ function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)retur
     R('Pezzi / tagliente','pz',1,'ppe',1)+R('Costo macchina','€/pz',3,'cMach',-1)+R('Costo taglienti','€/pz',3,'cTool',-1)+R('Costo fermi','€/pz',3,'cStop',-1)+
     R('Costo / pezzo','€',3,'costPP',-1)+R('Costo lotto','€',2,'costLot',-1)+
     '</tbody>'+savFoot(A,B,nA,nB)+'</table></div></div>'+
-    ((function(){var bars=chartCmpBars(A,B,(cut.cmpNames.A||'').trim()||'A',(cut.cmpNames.B||'').trim()||'B'); return bars?'<div class="cb" style="border-top:1px solid var(--line)">'+bars+'</div>':'';})())+
+    ((function(){var bars=chartCmpBars(A,B,(cut.cmpNames.A||'').trim()||'A',(cut.cmpNames.B||'').trim()||'B'); return bars?'<div class="cb" style="border-top:1px solid var(--line)">'+bars+'<div class="chart-cap">Barre affiancate delle due strategie. Per <b>MRR</b> vince la barra più alta (più produttiva); per <b>Tc</b> e <b>Costo</b> vince la più bassa (più veloce/economica). Il cerchietto verde segna il vincitore di ogni voce.</div></div>':'';})())+
     '</div>';}
 if($('#cstepper'))$('#cstepper').addEventListener('click',function(e){
   var s=e.target.closest('[data-go-step]'); if(!s)return;
@@ -2608,6 +2655,14 @@ function rangeText(key){var g=GRP[cut.matGroup]; if(!g)return ''; var m=cut.mode
   return '<br><b>Consigliato '+(g.label||'')+':</b> '+lbl+' '+itc(fmt(r[0],r[0]<10?2:0))+'–'+itc(fmt(r[1],r[1]<10?2:0));}
 function toggleHint(key){var fh=$('#fhint_'+key); if(!fh)return;
   if(fh.hidden){fh.innerHTML=HELP[key]+rangeText(key); fh.hidden=false;} else fh.hidden=true;}
+function attachHints(sel){var root=$(sel); if(!root)return;
+  Array.prototype.forEach.call(root.querySelectorAll('.f'),function(f){
+    var ctrl=f.querySelector('input,select,textarea'); if(!ctrl||!ctrl.id)return;
+    var key=ctrl.id.replace(/^[a-z]+_/,''); if(!HELP[key])return;
+    var lab=f.querySelector('label'); if(!lab||lab.querySelector('.qmark'))return;
+    var b=el('button',{type:'button','class':'qmark','data-k':key,'aria-label':'Aiuto'}); b.textContent='?'; lab.appendChild(b);
+    if(!$('#fhint_'+key)){var fh=el('div',{'class':'fhint',id:'fhint_'+key}); fh.hidden=true; f.appendChild(fh);}
+  });}
 function wireCollapse(btnSel,panelSel){var b=$(btnSel),p=$(panelSel); if(!b||!p)return;
   b.addEventListener('click',function(){var open=p.hidden; p.hidden=!open; b.setAttribute('aria-expanded',open?'true':'false');});}
 function updateDetCnt(){var c=$('#detCnt'); if(!c)return; var ids=['a_application','a_coolant','a_weartype','a_wearlevel','a_competitor','a_comppar','a_compmrr','a_ra','a_video','a_photo','a_notes'];
@@ -2622,7 +2677,8 @@ function wireGuide(){
   var clr=$('#matClear'); if(clr)clr.addEventListener('click',clearMaterial);
   var ch=$('#matChips'); if(ch)ch.addEventListener('click',function(e){var b=e.target.closest('button[data-term]'); if(b)resolveMaterial(b.getAttribute('data-term'));});
   applyMatHint(); markChips();
-  if($('#inGrid'))$('#inGrid').addEventListener('click',function(e){var b=e.target.closest('.qmark'); if(b)toggleHint(b.getAttribute('data-k'));});
+  attachHints('#jobCard'); attachHints('#archCard');
+  if($('#view-calc'))$('#view-calc').addEventListener('click',function(e){var b=e.target.closest('.qmark'); if(b){e.preventDefault(); toggleHint(b.getAttribute('data-k'));}});
   wireCollapse('#cmpToggle','#cmpPanel'); wireCollapse('#detToggle','#archDetails'); wireCollapse('#archFiltToggle','#archFilters');
   var det=$('#archDetails'); if(det)det.addEventListener('input',updateDetCnt); updateDetCnt();
   var ob=$('#onboard'); if(ob){ if(!store.get('seen1'))ob.hidden=false; var obx=$('#obClose'); if(obx)obx.addEventListener('click',function(){ob.hidden=true; store.set('seen1','1');}); }
