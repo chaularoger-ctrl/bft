@@ -506,6 +506,12 @@ html[data-theme="dark"] .tp.pf{background:#262111}
 html[data-theme="dark"] .tp.pf .k{color:var(--yellow-text)}
 html[data-theme="dark"] .tl.hi{background:#211f12}
 html[data-theme="dark"] .toast{background:#E8E9EC;color:#15181D}
+.updbar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:10000;display:flex;align-items:center;gap:12px;background:#17181A;color:#fff;font-family:var(--sans);font-size:13.5px;font-weight:600;padding:10px 12px 10px 18px;border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,.34);max-width:calc(100vw - 28px)}
+.updbar[hidden]{display:none}
+.updbar .ub-tx b{color:var(--yellow)}
+.updbar .ub-go{font-family:var(--sans);font-weight:700;font-size:13px;background:var(--yellow);color:#1a1500;border:0;border-radius:7px;padding:9px 16px;cursor:pointer;white-space:nowrap}
+.updbar .ub-x{background:transparent;border:0;color:#b9bbc0;font-size:20px;line-height:1;cursor:pointer;padding:0 4px}
+.updbar .ub-x:hover{color:#fff}
 html[data-theme="dark"] .seg button.on{background:var(--panel-2);border-color:var(--line-2);box-shadow:none}
 html[data-theme="dark"] .thr-svg svg{filter:invert(1) hue-rotate(180deg)}
 @media print{
@@ -1795,7 +1801,12 @@ var HELP={
   video:'Link a un video della prova.',
   photo:'Link o percorso a foto della prova o dell’usura.',
   name:'Nome facoltativo della prova, per riconoscerla a colpo d’occhio in archivio.',
-  notes:'Osservazioni libere: problemi riscontrati, regolazioni, accorgimenti.'
+  notes:'Osservazioni libere: problemi riscontrati, regolazioni, accorgimenti.',
+  tolD:'Quota nominale (mm): il diametro o la lunghezza di base su cui applichi la tolleranza.',
+  tolL:'Scostamento fondamentale (lettera ISO): posiziona la fascia di tolleranza rispetto alla linea zero. Maiuscole per i fori (H, G…), minuscole per gli alberi (h, g, f…).',
+  tolG:'Grado di tolleranza IT: ampiezza della fascia. Numero basso = tolleranza stretta (più precisa); numero alto = più larga.',
+  drawFam:'Tipo/profilo di filettatura: metrica (M), passo fine, trapezia (Tr), Whitworth (BSW/BSP), UNC/UNF, NPT…',
+  drawSize:'Misura nominale della filettatura selezionata (diametro × passo).'
 };
 function buildCutInputs(){
   var m=cut.mode,fields=CUTFIELDS[m],data=cut[m],g=$('#inGrid'); g.innerHTML='';
@@ -2733,8 +2744,8 @@ function wireGuide(){
   var clr=$('#matClear'); if(clr)clr.addEventListener('click',clearMaterial);
   var ch=$('#matChips'); if(ch)ch.addEventListener('click',function(e){var b=e.target.closest('button[data-term]'); if(b)resolveMaterial(b.getAttribute('data-term'));});
   applyMatHint(); markChips();
-  attachHints('#jobCard'); attachHints('#archCard');
-  if($('#view-calc'))$('#view-calc').addEventListener('click',function(e){var b=e.target.closest('.qmark'); if(b){e.preventDefault(); toggleHint(b.getAttribute('data-k'));}});
+  attachHints('#jobCard'); attachHints('#archCard'); attachHints('#tab-tol'); attachHints('#tab-thread');
+  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.qmark'); if(b){e.preventDefault(); toggleHint(b.getAttribute('data-k'));}});
   wireCollapse('#cmpToggle','#cmpPanel'); wireCollapse('#detToggle','#archDetails'); wireCollapse('#archFiltToggle','#archFilters');
   var det=$('#archDetails'); if(det)det.addEventListener('input',updateDetCnt); updateDetCnt();
   var ob=$('#onboard'); if(ob){ if(!store.get('seen1'))ob.hidden=false; var obx=$('#obClose'); if(obx)obx.addEventListener('click',function(){ob.hidden=true; store.set('seen1','1');}); }
@@ -2754,13 +2765,34 @@ go('home');
 })();
 </script>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="updateBanner" class="updbar no-print" role="alert" hidden>
+  <span class="ub-tx">È disponibile una <b>nuova versione</b>.</span>
+  <button id="updateBtn" class="ub-go" type="button">Aggiorna</button>
+  <button id="updateDismiss" class="ub-x" type="button" aria-label="Ignora">×</button>
+</div>
 
 <!-- Registrazione service worker per il funzionamento offline / installazione PWA -->
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
-    navigator.serviceWorker.register('sw.js').catch(function(err){
-      console.warn('Service worker non registrato:',err);
+    var wantReload=false;
+    function showUpdate(reg){
+      var b=document.getElementById('updateBanner'); if(!b)return; b.hidden=false;
+      var go=document.getElementById('updateBtn'),x=document.getElementById('updateDismiss');
+      if(go)go.onclick=function(){var w=reg.waiting||reg.installing; b.hidden=true; if(w){wantReload=true; w.postMessage({type:'SKIP_WAITING'});} else {window.location.reload();}};
+      if(x)x.onclick=function(){b.hidden=true;};
+    }
+    navigator.serviceWorker.register('sw.js').then(function(reg){
+      if(reg.waiting && navigator.serviceWorker.controller)showUpdate(reg);
+      reg.addEventListener('updatefound',function(){
+        var nw=reg.installing; if(!nw)return;
+        nw.addEventListener('statechange',function(){
+          if(nw.state==='installed' && navigator.serviceWorker.controller)showUpdate(reg);
+        });
+      });
+    }).catch(function(err){console.warn('Service worker non registrato:',err);});
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(wantReload){wantReload=false; window.location.reload();}
     });
   });
 }
