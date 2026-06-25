@@ -207,6 +207,17 @@ textarea:focus{outline:none;border-color:var(--yellow);background:var(--card);bo
 .det-cell .v{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text);margin-top:2px;word-break:break-word}
 .det-cell.txt .v{font-family:var(--sans);font-size:13.5px;font-weight:600}
 .det-cell.txt .v a{color:var(--link);text-decoration:underline;word-break:break-all}
+.det-cons{font-size:12px;color:var(--muted);margin-bottom:12px;font-family:var(--mono)}
+.det-cons b{color:var(--text)}
+.det-grid.hero-row{grid-template-columns:repeat(auto-fit,minmax(124px,1fr))}
+.det-cell.hero{background:var(--surface)}
+.det-cell.hero .k{color:var(--yellow-text)}
+.det-cell.hero .v{font-size:23px;line-height:1.05}
+.det-cell.hero .v small{font-size:11px;color:var(--muted);font-weight:600}
+.det-charts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.det-charts{grid-template-columns:1fr}}
+.det-chart{border:1px solid var(--line);border-radius:6px;padding:10px;background:var(--card);min-width:0}
+.det-chart .dc-h{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700;margin-bottom:7px}
 .det-notes{margin-top:10px;font-size:13px;color:var(--text);background:var(--surface);border-left:3px solid var(--line-2);padding:9px 12px;border-radius:4px;white-space:pre-wrap}
 .det-acts{display:flex;gap:8px;flex-wrap:wrap;padding:13px 16px;border-top:1px solid var(--line);background:var(--panel-2)}
 .det-acts button{font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 14px;border:1px solid var(--line);background:var(--card);border-radius:6px;color:var(--text);cursor:pointer;min-height:42px}
@@ -2363,42 +2374,76 @@ function archCardHTML(r){
 var DET_ID=null;
 function detCell(k,v,txt){return (v==null||v===''||v==='—')?'':'<div class="det-cell'+(txt?' txt':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+(txt===true?esc(v):v)+'</div></div>';}
 function recDetailHTML(r){
-  var m=r.mode,mt=MODE_TITLE[m]||m,inp=r.inputs||{},o=r.out||{},pw=r.pw||{},me=r.meta||{};
+  var m=r.mode,mt=MODE_TITLE[m]||m,inp=r.inputs||{},o=r.out||{},pw=r.pw||{},me=r.meta||{},tid=me.toolId||{};
+  var etype=me.toolType||o.etype||(m==='turn'?'insert':(m==='tap'?'mdi':'insert'));
   var title=esc(r.name||me.article||mt);
-  var inRows=(CUTFIELDS[m]||[]).map(function(f){
-    if(f[3]&&f[3].type==='preset')return '';
-    var k=f[0],v=inp[k]; if(v==null||v===''||+v===0)return '';
-    var dec=(k==='fz')?4:((k==='fn'||k==='P')?3:((k==='Dc'||k==='ap'||k==='ae'||k==='re')?2:((k==='vc')?1:0)));
-    return detCell(f[1]+(f[2]?' ('+f[2]+')':''),fmt(v,dec));
-  }).join('');
-  var feed=o.feedLbl?(o.feedLbl+' '+itc(fmt(o.feedVal,o.feedLbl==='fz'?4:3))):'';
+  var matRow=(me.matdb&&typeof findMat==='function')?findMat(me.matdb):null, grp=matRow?matRow[3]:'', fam=(grp&&GRP[grp])?GRP[grp].family:'';
+  function n0(v,d){return (v==null||v===''||isNaN(+v)||+v===0)?'':fmt(+v,d);}
+  function eu(v,d){return (v==null||v===''||isNaN(+v)||+v===0)?'':itc(fmt(+v,d==null?2:d));}
+  var feed=o.feedLbl?(o.feedLbl+' '+itc(fmt(o.feedVal,o.feedLbl==='fz'?4:3))+' mm'):'';
   var apv=(inp.ap!=null&&inp.ap!=='')?+inp.ap:(o.ap!=null?o.ap:null);
   var aev=(inp.ae!=null&&inp.ae!=='')?+inp.ae:(o.ae!=null?o.ae:null);
-  var outRows=detCell('Ø (mm)',o.Dc!=null?fmt(o.Dc,2):'')+detCell('Vc (m/min)',o.vc!=null?fmt(o.vc,1):'')+
-    detCell('n (rpm)',o.n!=null?fmt(o.n,0):'')+detCell('Vf (mm/min)',o.vf!=null?fmt(o.vf,0):'')+
-    detCell('Avanzamento (mm)',feed)+detCell('aₚ (mm)',apv?fmt(apv,2):'')+detCell('aₑ (mm)',aev?fmt(aev,2):'')+
-    detCell('Q (cm³/min)',o.Q?fmt(o.Q,2):'')+detCell('Pc netto (kW)',o.Pc!=null?fmt(o.Pc,2):'')+
-    detCell('Mc (Nm)',o.Mc!=null?fmt(o.Mc,2):'')+detCell('Tc (min)',o.Tc!=null?fmt(o.Tc,3):'')+
-    detCell('Costo/pz (€)',o.cost!=null?itc(fmt(o.cost,2)):'');
-  var pwRows=PWF.map(function(f){var v=pw[f[0]]; if(v==null||v===''||+v===0)return ''; var dec=(f[0]==='eta')?2:((f[0]==='rate'||f[0]==='tool')?2:0);
-    return detCell(f[1]+(f[2]&&f[2]!=='–'?' ('+f[2]+')':''),fmt(v,dec));}).join('');
-  var metaPairs=[['Articolo',me.article],['Materiale',me.material],['Materiale DB',me.matdb],
-    ['kc₁.₁ (N/mm²)',me.kc11?(''+me.kc11):''],['mc',me.mc?(''+me.mc):''],
-    ['Norma',me.norm],['Durezza',me.hardness],['Condizione',me.condition],
-    ['Macchina',me.machine],['Utensile',me.tool],['Applicazione',me.application],['Esito',me.result],['Refrigerante',me.coolant],
-    ['Vita utensile',me.toollife],['Tipo usura',me.weartype],['Entità usura',me.wearlevel],['Finitura Ra (µm)',me.ra],
-    ['Operatore',me.operator],['Competitor',me.competitor],['Par. competitor',me.comppar],['MRR comp.',me.compmrr]];
-  var metaRows=metaPairs.map(function(p){return detCell(p[0],p[1],true);}).join('');
+  var fRa=(m==='mill'||m==='turn')?o.feedVal:0, raTeo=(fRa>0)?(fRa*fRa*1000)/(31.2*(inp.re||0.8)):null;
+  function dc(k,v,txt){return detCell(k,v,txt);}
+  function hc(k,v,u){return (v==null||v==='')?'':'<div class="det-cell hero"><div class="k">'+esc(k)+'</div><div class="v">'+v+(u?' <small>'+u+'</small>':'')+'</div></div>';}
+  function sec(t,rows){return rows?'<div class="det-sec"><h4>'+t+'</h4><div class="det-grid">'+rows+'</div></div>':'';}
+  // 1 · Materiale
+  var matRows=dc('Materiale',me.matdb||me.material,true)+(grp?dc('Gruppo ISO',grp+(fam?' · '+fam:''),true):'')+
+    dc('Norma',me.norm,true)+dc('Durezza',me.hardness,true)+dc('Trattamento termico',me.condition,true)+
+    dc('kc₁.₁ (N/mm²)',n0(me.kc11,0))+dc('mc',n0(me.mc,2));
+  // 2 · Macchina
+  var macRows=dc('Macchina',me.machine,true)+dc('Stato macchina',me.machstate,true)+dc('Staffaggio',me.fixture,true)+dc('Potenza disp. (kW)',n0(pw.machP,1));
+  // 3 · Utensile
+  var toolRows=dc('Tipo utensile',etype==='mdi'?'Integrale (MDI)':'A inserti',true)+dc('Fabbricante',tid.maker,true);
+  if(etype==='mdi'){toolRows+=dc('Codice utensile',tid.code,true);}
+  else{toolRows+=dc('Codice corpo / fresa',tid.body,true)+dc('Codice inserto',tid.ins,true)+dc('Rivestimento / qualità',tid.grade,true)+dc('Taglienti per inserto',n0(pw.edges,0));}
+  toolRows+=dc('Ø (mm)',n0(o.Dc!=null?o.Dc:inp.Dc,2))+(((m==='mill'||m==='drill')&&inp.z)?dc('N° taglienti',n0(inp.z,0)):'')+
+    (inp.kr?dc(m==='drill'?'Angolo di punta (°)':'κr (°)',n0(inp.kr,0)):'')+(inp.re?dc('Raggio punta (mm)',n0(inp.re,2)):'');
+  // 4 · Parametri
+  var parRows=dc('Vc (m/min)',n0(o.vc,1))+dc('n (rpm)',n0(o.n,0))+dc('Avanzamento',feed,true)+
+    dc('Vf (mm/min)',n0(o.vf,0))+(apv!=null?dc('aₚ (mm)',n0(apv,2)):'')+(aev!=null?dc('aₑ (mm)',n0(aev,2)):'');
+  // 5 · Risultati (hero)
+  var resHero=hc('MRR',n0(o.Q,o.Q>=100?0:2),'cm³/min')+hc('Pc netto',n0(o.Pc,2),'kW')+hc('Tc',n0(o.Tc,3),'min')+
+    (o.costPP!=null?hc('Costo/pezzo',eu(o.costPP,3),'€'):'')+(raTeo!=null?hc('Ra teorica',n0(raTeo,2),'µm'):'');
+  var res2=dc('P motore (kW)',n0(o.Pmot,2))+dc('Mc (Nm)',n0(o.Mc,2))+(o.Ff!=null?dc('Forza avanz. (N)',n0(o.Ff,0)):'')+
+    (o.ppe!=null?dc(etype==='mdi'?'Pezzi/utensile':'Pezzi/tagliente',n0(o.ppe,o.ppe>=10?0:1)):'');
+  var resSec=resHero?'<div class="det-sec"><h4>5 · Risultati</h4><div class="det-grid hero-row">'+resHero+'</div>'+(res2?'<div class="det-grid" style="margin-top:1px">'+res2+'</div>':'')+'</div>':'';
+  // 6 · Economia
+  var ecoHero=(o.costPP!=null?hc('Costo/pezzo',eu(o.costPP,3),'€'):'')+(o.costLot!=null?hc('Costo lotto',eu(o.costLot,2),'€'):'');
+  var ecoRows=dc(etype==='mdi'?'Vita utensile (min)':'Vita tagliente (min)',n0(pw.life,0))+
+    (o.ppe!=null?dc(etype==='mdi'?'Pezzi/utensile':'Pezzi/tagliente',n0(o.ppe,o.ppe>=10?0:1)):'')+
+    (o.cMach!=null?dc('Costo macchina (€/pz)',eu(o.cMach,3)):'')+(o.cTool?dc(etype==='mdi'?'Costo utensile (€/pz)':'Costo taglienti (€/pz)',eu(o.cTool,3)):'')+
+    (o.cStop?dc('Costo fermi (€/pz)',eu(o.cStop,3)):'')+dc('Pezzi lotto',n0(o.batch||pw.batch,0))+
+    dc('Tariffa lavoro (€/min)',eu(pw.rate,2))+dc('Tariffa fermo (€/min)',eu(pw.rateStop,2))+dc('Tempo cambio (min)',n0(pw.tChange,1))+
+    (etype==='mdi'?dc('Prezzo utensile (€)',eu(pw.toolPrice,2)):dc('Prezzo inserto (€)',eu(pw.insP,2))+dc('Prezzo corpo (€)',eu(pw.bodyP,2))+dc('Vita corpo (n° tagl.)',n0(pw.bodyLife,0)));
+  var ecoSec=(ecoHero||ecoRows)?'<div class="det-sec"><h4>6 · Economia</h4>'+(ecoHero?'<div class="det-grid hero-row">'+ecoHero+'</div>':'')+(ecoRows?'<div class="det-grid" style="margin-top:1px">'+ecoRows+'</div>':'')+'</div>':'';
+  // 7 · Usura & verifica
+  var verRows=dc('Applicazione',me.application,true)+dc('Refrigerante',me.coolant,true)+dc('Vita utensile (campo)',me.toollife,true)+
+    dc('Tipo usura',me.weartype,true)+dc('Entità usura',me.wearlevel,true)+dc('Ra misurata (µm)',me.ra,true)+
+    dc('Operatore',me.operator,true)+dc('Competitor',me.competitor,true)+dc('Par. competitor',me.comppar,true)+dc('MRR comp. (mm³/min)',me.compmrr,true);
+  // 8 · Grafici (ricostruiti dai dati salvati)
+  var charts='';
+  if(me.kc11>0&&pw.kc>0&&me.mc>0&&m!=='tap'){
+    var hmW=Math.pow(me.kc11/pw.kc,1/me.mc), kcHtml=chartKc(me.kc11,me.mc,hmW,pw.kc);
+    var savedG=cut.matGroup; cut.matGroup=grp;
+    var fcHtml=chartFeed(m,{Dc:(o.Dc!=null?o.Dc:inp.Dc),ap:apv,ae:aev,re:inp.re,z:inp.z},o.n,o.vc,o.feedVal);
+    cut.matGroup=savedG;
+    if(kcHtml||fcHtml)charts='<div class="det-sec"><h4>8 · Grafici</h4><div class="det-charts">'+
+      (kcHtml?'<div class="det-chart"><div class="dc-h">Forza specifica kc vs spessore truciolo</div>'+kcHtml+'</div>':'')+
+      (fcHtml?'<div class="det-chart"><div class="dc-h">MRR e Ra vs avanzamento</div>'+fcHtml+'</div>':'')+'</div></div>';
+  }
+  // 9 · Conclusioni / media
   function mlinkCell(lbl,v){if(!v)return ''; var s=esc(v); var inner=/^https?:\/\//i.test(v)?'<a href="'+s+'" target="_blank" rel="noopener">'+s+'</a>':s;
     return '<div class="det-cell txt"><div class="k">'+esc(lbl)+'</div><div class="v">'+inner+'</div></div>';}
-  var mediaRows=mlinkCell('🎥 Video',me.video)+mlinkCell('📷 Foto',me.photo);
-  function sec(t,rows){return rows?'<div class="det-sec"><h4>'+t+'</h4><div class="det-grid">'+rows+'</div></div>':'';}
-  var notes=me.notes?'<div class="det-sec"><h4>Note</h4><div class="det-notes">'+esc(me.notes)+'</div></div>':'';
+  var media=mlinkCell('🎥 Video',me.video)+mlinkCell('📷 Foto',me.photo);
+  var concl=(me.notes||media)?'<div class="det-sec"><h4>9 · Conclusioni / Note</h4>'+(me.notes?'<div class="det-notes">'+esc(me.notes)+'</div>':'')+(media?'<div class="det-grid" style="margin-top:10px">'+media+'</div>':'')+'</div>':'';
+  var consBits=[me.client&&('Cliente: '+me.client),me.agent&&('Agente: '+me.agent),me.part&&('Componente: '+me.part)].filter(Boolean);
+  var consLine=consBits.length?'<div class="det-cons">'+consBits.map(function(b){return esc(b);}).join(' · ')+'</div>':'';
   return '<div class="det-sheet" role="dialog" aria-modal="true">'+
-    '<div class="det-head"><span class="ttl">'+title+'</span><span class="badge mode">'+esc(mt)+'</span>'+badgeRes(me.result)+
+    '<div class="det-head"><span class="ttl">'+title+'</span><span class="badge mode">'+esc(mt)+' · '+(etype==='mdi'?'MDI':'inserti')+'</span>'+badgeRes(me.result)+
       '<span class="when">'+archFmtDate(r.date)+'</span><button class="det-close" data-det="close" aria-label="Chiudi">×</button></div>'+
-    '<div class="det-body">'+sec('Dati di taglio (ingressi)',inRows)+sec('Risultati calcolati',outRows)+
-      sec('Potenza e costo',pwRows)+sec('Scheda prova',metaRows+mediaRows)+notes+'</div>'+
+    '<div class="det-body">'+consLine+sec('1 · Materiale lavorato',matRows)+sec('2 · Macchina',macRows)+sec('3 · Utensile',toolRows)+
+      sec('4 · Parametri di taglio',parRows)+resSec+ecoSec+sec('7 · Usura & verifica',verRows)+charts+concl+'</div>'+
     '<div class="det-acts"><button class="pdf" data-det="pdf">⎙ Scarica PDF</button>'+
       '<button data-det="open">↗ Apri nel calcolatore</button>'+
       '<button class="del grow" data-det="del">Elimina</button>'+
