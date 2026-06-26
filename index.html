@@ -741,7 +741,7 @@ footer b{color:var(--text)}
     <div class="advice" id="ecoAdvice"></div>
   </div>
 
-  <div class="note"><span>kc = forza di taglio specifica del materiale. Pc = potenza netta · P motore = Pc/η · Mc = coppia mandrino. <b>Costo/pezzo</b> = tempo macchina (Tc × tariffa) + costo taglienti (prezzo inserto ÷ taglienti per inserto + ammortamento corpo) ÷ pezzi per tagliente + fermi macchina (tempo cambio × tariffa fermo) ÷ pezzi per tagliente. <b>Pezzi per tagliente</b> = vita tagliente ÷ Tc. La <b>forza di avanzamento</b> in foratura è una stima indicativa. In filettatura Pc/Mc non applicabili.</span></div>
+  <div class="note"><span>kc = forza di taglio specifica del materiale. Pc = potenza netta · P motore = Pc/η · Mc = coppia mandrino. <b>Costo/pezzo</b> = tempo macchina (Tc × tariffa) + costo taglienti (n° inserti fresa × costo per tagliente ÷ pezzi per tagliente) + fermi macchina (tempo cambio × tariffa fermo ÷ pezzi per tagliente). Costo per tagliente = prezzo inserto ÷ taglienti per inserto + ammortamento corpo. <b>Pezzi per tagliente</b> = vita tagliente ÷ Tc. Su una fresa a più inserti i taglienti si usurano e si cambiano insieme, perciò il consumo (e gli <b>inserti da comprare per il lotto</b>) scala col numero di inserti. La <b>forza di avanzamento</b> in foratura è una stima indicativa.</span></div>
   <div class="card" id="chartCard" hidden>
     <div class="ch"><span>Grafici</span><span class="tag">andamenti in tempo reale</span></div>
     <div class="cb"><div class="chart-row">
@@ -1917,24 +1917,34 @@ function recompute(edited){
   var etype=effType(m);
   var rate=pw.rate||0, rateStop=pw.rateStop||0, tCh=pw.tChange||0, machP=pw.machP||0;
   var life=pw.life||0, edges=pw.edges||0, insP=pw.insP||0, bodyP=pw.bodyP||0, bodyLife=pw.bodyLife||0, batch=pw.batch||0, toolPrice=pw.toolPrice||0;
-  var ppe=(life>0&&Tc>0)?life/Tc:null;                               // pezzi per vita (tagliente o utensile)
-  var costUnit=(etype==='mdi')?toolPrice:((edges>0?insP/edges:0)+(bodyLife>0?bodyP/bodyLife:0)); // € per vita
+  // zEco = taglienti che si usurano insieme e si cambiano in una sola indicizzazione.
+  // Fresa: n° inserti montati (d.z). Foratura a inserti: ~2. Tornitura/MDI/maschio: 1 (utensile unico).
+  var zEco=(etype==='mdi')?1:(m==='mill'?(d.z||1):(m==='drill'?(d.z||2):1));
+  var ppe=(life>0&&Tc>0)?life/Tc:null;                               // pezzi per vita di UN tagliente
+  var costUnit=(etype==='mdi')?toolPrice:((edges>0?insP/edges:0)+(bodyLife>0?bodyP/bodyLife:0)); // € per tagliente/utensile
   var cMach=(Tc!=null)?Tc*rate:null;                                 // costo macchina/pz
-  var cTool=(ppe!=null&&ppe>0&&costUnit>0)?costUnit/ppe:0;           // costo utensile/taglienti per pz
-  var cStop=(ppe!=null&&ppe>0&&tCh>0&&rateStop>0)?(tCh*rateStop)/ppe:0; // fermi macchina/pz
+  var cTool=(ppe!=null&&ppe>0&&costUnit>0)?zEco*costUnit/ppe:0;      // costo utensile/taglienti per pz (z taglienti ogni ppe pezzi)
+  var cStop=(ppe!=null&&ppe>0&&tCh>0&&rateStop>0)?(tCh*rateStop)/ppe:0; // fermi: una sosta per indicizzazione (no z)
   var costPP=(cMach!=null)?cMach+cTool+cStop:null;                   // costo/pz totale
   var costLot=(costPP!=null&&batch>0)?costPP*batch:null;
+  // Consumabili per il lotto
+  var edgesLot=(ppe!=null&&ppe>0&&batch>0)?Math.ceil(zEco*batch/ppe):null;          // taglienti/lotto
+  var insLot=(edgesLot!=null&&etype!=='mdi'&&edges>0)?Math.ceil(edgesLot/edges):null; // inserti da comprare/lotto
+  var toolsLot=(etype==='mdi'&&ppe!=null&&ppe>0&&batch>0)?Math.ceil(batch/ppe):null;  // utensili/lotto (MDI)
+  var bodyImpossible=(etype!=='mdi'&&bodyLife>0&&zEco*Math.max(edges,1)>bodyLife);    // vita corpo < taglienti montati
   var powOver=(machP>0&&Pmot!=null&&Pmot>machP), powUse=(machP>0&&Pmot!=null)?100*Pmot/machP:null;
   var ph=cell('Pc netto',Pc==null?'—':fmt(Pc,Pc<10?2:1),Pc==null?'':'kW','alt')+cell('P motore',Pmot==null?'—':fmt(Pmot,Pmot<10?2:1),Pmot==null?'':'kW',powOver?'warn':'')+cell('Mc',Mc==null?'—':fmt(Mc,Mc<10?2:1),Mc==null?'':'Nm')+cell('Tc',Tc==null?'—':fmt(Tc,Tc<1?3:2),Tc==null?'':'min','hero')+(Ff!=null?cell('Forza avanz.',fmt(Ff,0),'N · stima'):'');
   if($('#pwgrid'))$('#pwgrid').innerHTML=ph;
   var pa=$('#powAdvice'); if(pa){ if(powOver)pa.innerHTML='<span class="adv warn">⚠ P motore <span class="av">'+fmt(Pmot,1)+'</span> kW supera la macchina ('+fmt(machP,1)+' kW): riduci Vc, ap/ae o avanzamento</span>'; else if(powUse!=null)pa.innerHTML='<span class="adv ok">✓ Mandrino al <span class="av">'+fmt(powUse,0)+'%</span> · '+fmt(Pmot,1)+' / '+fmt(machP,1)+' kW</span>'; else pa.innerHTML=''; }
   var ppeLbl=(etype==='mdi'?'Pezzi/utensile':'Pezzi/tagliente'), toolLbl=(etype==='mdi'?'Costo utensile':'Costo taglienti'), lifeLbl=(etype==='mdi'?'Vita utensile':'Vita tagliente');
-  var eg=cell(ppeLbl,ppe==null?'—':fmt(ppe,ppe>=10?0:1),ppe==null?'':'pz','alt')+cell('Costo macchina',cMach==null?'—':itc(fmt(cMach,3)),cMach==null?'':'€/pz')+cell(toolLbl,(costUnit>0&&ppe==null)?'—':itc(fmt(cTool,3)),'€/pz')+cell('Costo fermi',(tCh>0&&rateStop>0&&ppe==null)?'—':itc(fmt(cStop,3)),'€/pz')+cell('Costo/pezzo',costPP==null?'—':itc(fmt(costPP,2)),costPP==null?'':'€','warn hero')+cell('Costo lotto',costLot==null?'—':itc(fmt(costLot,2)),costLot==null?'':'€');
+  var lotCells=(etype==='mdi')?cell('Utensili/lotto',toolsLot==null?'—':fmt(toolsLot,0),toolsLot==null?'':'pz')
+    :cell('Taglienti/lotto',edgesLot==null?'—':fmt(edgesLot,0),edgesLot==null?'':'tagl.')+cell('Inserti/lotto',insLot==null?'—':fmt(insLot,0),insLot==null?'':'pz','alt');
+  var eg=cell(ppeLbl,ppe==null?'—':fmt(ppe,ppe>=10?0:1),ppe==null?'':'pz','alt')+cell('Costo macchina',cMach==null?'—':itc(fmt(cMach,3)),cMach==null?'':'€/pz')+cell(toolLbl,(costUnit>0&&ppe==null)?'—':itc(fmt(cTool,3)),'€/pz')+cell('Costo fermi',(tCh>0&&rateStop>0&&ppe==null)?'—':itc(fmt(cStop,3)),'€/pz')+cell('Costo/pezzo',costPP==null?'—':itc(fmt(costPP,2)),costPP==null?'':'€','warn hero')+cell('Costo lotto',costLot==null?'—':itc(fmt(costLot,2)),costLot==null?'':'€')+lotCells;
   if($('#ecogrid'))$('#ecogrid').innerHTML=eg;
-  var ea=$('#ecoAdvice'); if(ea){ if(costUnit>0&&ppe==null)ea.innerHTML='<span class="adv warn">⚠ Inserisci <span class="av">'+lifeLbl+'</span> per avere il costo '+(etype==='mdi'?'utensile':'taglienti')+' e il costo/pezzo completi</span>'; else if(costPP!=null&&batch>0)ea.innerHTML='<span class="adv ok">✓ Costo/pezzo <span class="av">'+itc(fmt(costPP,3))+'</span> € · lotto di '+fmt(batch,0)+' pz = '+itc(fmt(costLot,2))+' €</span>'; else ea.innerHTML=''; }
+  var ea=$('#ecoAdvice'); if(ea){ if(bodyImpossible)ea.innerHTML='<span class="adv warn">⚠ <span class="av">Vita corpo</span> ('+fmt(bodyLife,0)+') inferiore ai taglienti montati ('+fmt(zEco*Math.max(edges,1),0)+'): valore non plausibile, è la durata totale del corpo su molti lotti</span>'; else if(costUnit>0&&ppe==null)ea.innerHTML='<span class="adv warn">⚠ Inserisci <span class="av">'+lifeLbl+'</span> per avere il costo '+(etype==='mdi'?'utensile':'taglienti')+' e il costo/pezzo completi</span>'; else if(costPP!=null&&batch>0)ea.innerHTML='<span class="adv ok">✓ Costo/pezzo <span class="av">'+itc(fmt(costPP,3))+'</span> € · lotto di '+fmt(batch,0)+' pz = '+itc(fmt(costLot,2))+' €'+(insLot!=null?' · '+fmt(insLot,0)+' inserti da comprare':(toolsLot!=null?' · '+fmt(toolsLot,0)+' utensili':''))+'</span>'; else ea.innerHTML=''; }
   renderAdvice(m,vc,(m==='mill'?'fz':'fn'),(m==='mill'?fz:fn));
   renderCharts(m,d,n,vc,(m==='mill'?fz:(m==='tap'?0:fn)),(m==='mill'?hm:(m==='turn'?d.fn:(m==='drill'?fz:0))));
-  CUTLAST={mode:m,Dc:Dc,vc:vc,n:n,vf:vf,Q:(Q||0),feedVal:(m==='mill'?fz:(m==='tap'?d.P:fn)),feedLbl:(m==='mill'?'fz':(m==='tap'?'p':'fn')),Pc:Pc,Pmot:Pmot,Mc:Mc,Tc:Tc,Ff:Ff,ppe:ppe,cMach:cMach,cTool:cTool,cStop:cStop,cost:costPP,costPP:costPP,costLot:costLot,batch:batch,machP:machP,powOver:powOver,etype:etype,ap:(d.ap!=null&&d.ap!==''?+d.ap:null),ae:(d.ae!=null&&d.ae!==''?+d.ae:null)};
+  CUTLAST={mode:m,Dc:Dc,vc:vc,n:n,vf:vf,Q:(Q||0),feedVal:(m==='mill'?fz:(m==='tap'?d.P:fn)),feedLbl:(m==='mill'?'fz':(m==='tap'?'p':'fn')),Pc:Pc,Pmot:Pmot,Mc:Mc,Tc:Tc,Ff:Ff,ppe:ppe,cMach:cMach,cTool:cTool,cStop:cStop,cost:costPP,costPP:costPP,costLot:costLot,batch:batch,machP:machP,powOver:powOver,etype:etype,zEco:zEco,edgesLot:edgesLot,insLot:insLot,toolsLot:toolsLot,ap:(d.ap!=null&&d.ap!==''?+d.ap:null),ae:(d.ae!=null&&d.ae!==''?+d.ae:null)};
   updateGuide();
   persistCut();
 }
@@ -2076,7 +2086,7 @@ function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)retur
     R('Prof. assiale aₚ','mm',3,'ap',0)+R('Prof. radiale aₑ','mm',3,'ae',0)+
     R('Vf','mm/min',0,'vf',1)+R('Q (MRR)','cm³/min',2,'Q',1)+R('Pc netto','kW',2,'Pc',0)+R('P motore','kW',2,'Pmot',0)+R('Mc','Nm',2,'Mc',0)+R('Tc','min',3,'Tc',-1)+
     R('Pezzi / tagliente','pz',1,'ppe',1)+R('Costo macchina','€/pz',3,'cMach',-1)+R('Costo taglienti','€/pz',3,'cTool',-1)+R('Costo fermi','€/pz',3,'cStop',-1)+
-    R('Costo / pezzo','€',3,'costPP',-1)+R('Costo lotto','€',2,'costLot',-1)+
+    R('Costo / pezzo','€',3,'costPP',-1)+R('Costo lotto','€',2,'costLot',-1)+R('Inserti / lotto','pz',0,'insLot',-1)+R('Utensili / lotto','pz',0,'toolsLot',-1)+
     '</tbody>'+savFoot(A,B,nA,nB)+'</table></div></div>'+
     ((function(){var bars=chartCmpBars(A,B,(cut.cmpNames.A||'').trim()||'A',(cut.cmpNames.B||'').trim()||'B'); return bars?'<div class="cb" style="border-top:1px solid var(--line)">'+bars+'<div class="chart-cap">Barre affiancate delle due strategie. Per <b>MRR</b> vince la barra più alta (più produttiva); per <b>Tc</b> e <b>Costo</b> vince la più bassa (più veloce/economica). Il cerchietto verde segna il vincitore di ogni voce.</div></div>':'';})())+
     '</div>';}
@@ -2436,6 +2446,7 @@ function recDetailHTML(r){
     (o.ppe!=null?dc(etype==='mdi'?'Pezzi/utensile':'Pezzi/tagliente',n0(o.ppe,o.ppe>=10?0:1)):'')+
     (o.cMach!=null?dc('Costo macchina (€/pz)',eu(o.cMach,3)):'')+(o.cTool?dc(etype==='mdi'?'Costo utensile (€/pz)':'Costo taglienti (€/pz)',eu(o.cTool,3)):'')+
     (o.cStop?dc('Costo fermi (€/pz)',eu(o.cStop,3)):'')+dc('Pezzi lotto',n0(o.batch||pw.batch,0))+
+    (etype==='mdi'?(o.toolsLot!=null?dc('Utensili / lotto',n0(o.toolsLot,0)):''):(o.edgesLot!=null?dc('Taglienti / lotto',n0(o.edgesLot,0)):'')+(o.insLot!=null?dc('Inserti da comprare / lotto',n0(o.insLot,0)):''))+
     dc('Tariffa lavoro (€/min)',eu(pw.rate,2))+dc('Tariffa fermo (€/min)',eu(pw.rateStop,2))+dc('Tempo cambio (min)',n0(pw.tChange,1))+
     (etype==='mdi'?dc('Prezzo utensile (€)',eu(pw.toolPrice,2)):dc('Prezzo inserto (€)',eu(pw.insP,2))+dc('Prezzo corpo (€)',eu(pw.bodyP,2))+dc('Vita corpo (n° tagl.)',n0(pw.bodyLife,0)));
   var ecoSec=(ecoHero||ecoRows)?'<div class="det-sec"><h4>6 · Economia</h4>'+(ecoHero?'<div class="det-grid hero-row">'+ecoHero+'</div>':'')+(ecoRows?'<div class="det-grid" style="margin-top:1px">'+ecoRows+'</div>':'')+'</div>':'';
