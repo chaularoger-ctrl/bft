@@ -266,8 +266,8 @@ textarea:focus{outline:none;border-color:var(--yellow);background:var(--card);bo
 
 /* ---------- INPUTS ---------- */
 .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:12px 14px}
-.f{display:flex; flex-direction:column; gap:5px}
-.f label{font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:600}
+.f{display:flex; flex-direction:column; gap:5px; justify-content:flex-end}
+.f label{font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:600; line-height:1.25}
 .f label .u{color:var(--muted-2); font-weight:400; text-transform:none; letter-spacing:0}
 .f input,.f select{font-family:var(--mono); font-size:15px; padding:9px 10px; border:1px solid var(--line-2); background:var(--panel-2); color:var(--text); width:100%; border-radius:var(--rs); -webkit-appearance:none; appearance:none}
 .f input:focus,.f select:focus{outline:none; border-color:var(--yellow); background:var(--card); box-shadow:0 0 0 3px var(--sel)}
@@ -465,6 +465,13 @@ svg.chart .barval{fill:var(--text);font-weight:700}
 .collapse-h:hover{border-color:var(--yellow-dim)}
 .collapse-h .chev{margin-left:auto;transition:transform .15s;color:var(--muted);font-size:13px}
 .collapse-h[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.collapse-h.cmp-cta{background:var(--sel); border:1.5px solid var(--yellow); padding:14px 16px; box-shadow:0 2px 0 var(--yellow-dim)}
+.collapse-h.cmp-cta:hover{background:var(--card)}
+.cmp-cta .cc-ico{flex:0 0 auto; width:34px; height:34px; border-radius:8px; background:var(--yellow); color:#1a1500; display:grid; place-items:center; font-size:19px; font-weight:700}
+.cmp-cta .cc-tx{display:flex; flex-direction:column; gap:2px; min-width:0; text-transform:none; letter-spacing:0}
+.cmp-cta .cc-tx b{font-family:var(--display); font-weight:700; text-transform:uppercase; letter-spacing:.4px; font-size:14px; color:var(--text)}
+.cmp-cta .cc-tx small{font-family:var(--sans); font-weight:500; font-size:11px; color:var(--muted); white-space:normal}
+.cmp-cta .chev{font-size:22px; color:var(--yellow-text); font-weight:700}
 .collapse-h .cnt{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);background:var(--card);border:1px solid var(--line-2);border-radius:20px;padding:2px 8px}
 .collapse-h .cnt:empty{display:none}
 .collapse-b[hidden]{display:none}
@@ -770,7 +777,7 @@ footer b{color:var(--text)}
     <div class="cb"><div class="grid" id="toolGrid"></div></div>
   </div>
 
-  <button class="collapse-h" id="cmpToggle" aria-expanded="false" aria-controls="cmpPanel">⇄ Confronta due strategie (A / B)<span class="chev">›</span></button>
+  <button class="collapse-h cmp-cta" id="cmpToggle" aria-expanded="false" aria-controls="cmpPanel"><span class="cc-ico">⇄</span><span class="cc-tx"><b>Confronta due strategie (A / B)</b><small>Tocca per salvare due set di parametri e vederli a confronto</small></span><span class="chev">›</span></button>
   <div class="collapse-b" id="cmpPanel" hidden>
     <div class="cthint">Salva i parametri correnti come <b>A</b>, poi modificali e salva <b>B</b>: vedrai le due strategie a confronto qui sotto (parametri · potenza · costo).</div>
     <div class="ctools">
@@ -945,6 +952,9 @@ function el(t,a,h){var e=document.createElement(t); if(a)for(var k in a)e.setAtt
 function num(v){v=parseFloat(v); return isFinite(v)?v:0;}
 function fmt(x,d){ if(!isFinite(x))return '—'; if(d==null){var a=Math.abs(x); d=a>=1000?0:a>=100?1:a>=10?2:a>=1?3:4;} return x.toFixed(d); }
 function itc(x){return (''+x).replace('.',',');}
+function fmtTime(min){ if(min==null||!isFinite(min)||min<0)return '—';
+  var s=Math.round(min*60), h=Math.floor(s/3600); s-=h*3600; var m=Math.floor(s/60); s-=m*60;
+  var p=[]; if(h>0)p.push(h+' h'); if(m>0)p.push(m+' min'); if(s>0||p.length===0)p.push(s+' s'); return p.join(' '); }
 function D3(x){return fmt(x,3).replace('.',',');}
 function sign(x){return (x>0?'+':'')+x;}
 var store={get:function(k){try{return localStorage.getItem('bftcalc_'+k);}catch(e){return null;}},
@@ -1933,7 +1943,7 @@ function recompute(edited){
   var toolsLot=(etype==='mdi'&&ppe!=null&&ppe>0&&batch>0)?Math.ceil(batch/ppe):null;  // utensili/lotto (MDI)
   var bodyImpossible=(etype!=='mdi'&&bodyLife>0&&zEco*Math.max(edges,1)>bodyLife);    // vita corpo < taglienti montati
   var powOver=(machP>0&&Pmot!=null&&Pmot>machP), powUse=(machP>0&&Pmot!=null)?100*Pmot/machP:null;
-  var ph=cell('Pc netto',Pc==null?'—':fmt(Pc,Pc<10?2:1),Pc==null?'':'kW','alt')+cell('P motore',Pmot==null?'—':fmt(Pmot,Pmot<10?2:1),Pmot==null?'':'kW',powOver?'warn':'')+cell('Mc',Mc==null?'—':fmt(Mc,Mc<10?2:1),Mc==null?'':'Nm')+cell('Tc',Tc==null?'—':fmt(Tc,Tc<1?3:2),Tc==null?'':'min','hero')+(Ff!=null?cell('Forza avanz.',fmt(Ff,0),'N · stima'):'');
+  var ph=cell('Pc netto',Pc==null?'—':fmt(Pc,Pc<10?2:1),Pc==null?'':'kW','alt')+cell('P motore',Pmot==null?'—':fmt(Pmot,Pmot<10?2:1),Pmot==null?'':'kW',powOver?'warn':'')+cell('Mc',Mc==null?'—':fmt(Mc,Mc<10?2:1),Mc==null?'':'Nm')+cell('Tc / pezzo',Tc==null?'—':fmtTime(Tc),'','hero')+(Ff!=null?cell('Forza avanz.',fmt(Ff,0),'N · stima'):'');
   if($('#pwgrid'))$('#pwgrid').innerHTML=ph;
   var pa=$('#powAdvice'); if(pa){ if(powOver)pa.innerHTML='<span class="adv warn">⚠ P motore <span class="av">'+fmt(Pmot,1)+'</span> kW supera la macchina ('+fmt(machP,1)+' kW): riduci Vc, ap/ae o avanzamento</span>'; else if(powUse!=null)pa.innerHTML='<span class="adv ok">✓ Mandrino al <span class="av">'+fmt(powUse,0)+'%</span> · '+fmt(Pmot,1)+' / '+fmt(machP,1)+' kW</span>'; else pa.innerHTML=''; }
   var ppeLbl=(etype==='mdi'?'Pezzi/utensile':'Pezzi/tagliente'), toolLbl=(etype==='mdi'?'Costo utensile':'Costo taglienti'), lifeLbl=(etype==='mdi'?'Vita utensile':'Vita tagliente');
@@ -2073,8 +2083,8 @@ function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)retur
   if(A||B){var cp=$('#cmpPanel'),ct=$('#cmpToggle'); if(cp&&cp.hidden){cp.hidden=false; if(ct)ct.setAttribute('aria-expanded','true');}}
   if(!A&&!B){out.innerHTML='';return;} var nA=esc((cut.cmpNames.A||'').trim()||'A'),nB=esc((cut.cmpNames.B||'').trim()||'B');
   var ML={mill:'Fresatura',turn:'Tornitura',drill:'Foratura',tap:'Filettatura'};
-  function R(lbl,unit,dec,key,dir){var a=A?A[key]:null,b=B?B[key]:null;
-    var ta=(a==null||isNaN(a))?'—':fmt(a,dec),tb=(b==null||isNaN(b))?'—':fmt(b,dec),wa='',wb='';
+  function R(lbl,unit,dec,key,dir,fmtFn){var a=A?A[key]:null,b=B?B[key]:null;
+    var ta=(a==null||isNaN(a))?'—':(fmtFn?fmtFn(a):fmt(a,dec)),tb=(b==null||isNaN(b))?'—':(fmtFn?fmtFn(b):fmt(b,dec)),wa='',wb='';
     if(dir&&a!=null&&b!=null&&!isNaN(a)&&!isNaN(b)&&a!==b){if((dir>0&&a>b)||(dir<0&&a<b))wa=' class="win"';else wb=' class="win"';}
     return '<tr><td class="l">'+lbl+(unit?' <span class="u">'+unit+'</span>':'')+'</td><td'+wa+'>'+ta+'</td><td'+wb+'>'+tb+'</td></tr>';}
   function ft(S){return S?S.feedLbl+' '+itc(fmt(S.feedVal,S.feedLbl==='fz'?4:3)):'—';}
@@ -2084,8 +2094,8 @@ function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)retur
     R('Ø','mm',3,'Dc',0)+R('Vc','m/min',1,'vc',0)+R('n','rpm',0,'n',0)+
     '<tr><td class="l">Avanzamento <span class="u">mm</span></td><td>'+ft(A)+'</td><td>'+ft(B)+'</td></tr>'+
     R('Prof. assiale aₚ','mm',3,'ap',0)+R('Prof. radiale aₑ','mm',3,'ae',0)+
-    R('Vf','mm/min',0,'vf',1)+R('Q (MRR)','cm³/min',2,'Q',1)+R('Pc netto','kW',2,'Pc',0)+R('P motore','kW',2,'Pmot',0)+R('Mc','Nm',2,'Mc',0)+R('Tc','min',3,'Tc',-1)+
-    R('Pezzi / tagliente','pz',1,'ppe',1)+R('Costo macchina','€/pz',3,'cMach',-1)+R('Costo taglienti','€/pz',3,'cTool',-1)+R('Costo fermi','€/pz',3,'cStop',-1)+
+    R('Vf','mm/min',0,'vf',1)+R('Q (MRR)','cm³/min',2,'Q',1)+R('Pc netto','kW',2,'Pc',0)+R('P motore','kW',2,'Pmot',0)+R('Mc','Nm',2,'Mc',0)+
+    R('Tc / pezzo','',3,'Tc',-1,fmtTime)+R('Pezzi / tagliente','pz',1,'ppe',1)+R('Costo macchina','€/pz',3,'cMach',-1)+R('Costo taglienti','€/pz',3,'cTool',-1)+R('Costo fermi','€/pz',3,'cStop',-1)+
     R('Costo / pezzo','€',3,'costPP',-1)+R('Costo lotto','€',2,'costLot',-1)+R('Inserti / lotto','pz',0,'insLot',-1)+R('Utensili / lotto','pz',0,'toolsLot',-1)+
     '</tbody>'+savFoot(A,B,nA,nB)+'</table></div></div>'+
     ((function(){var bars=chartCmpBars(A,B,(cut.cmpNames.A||'').trim()||'A',(cut.cmpNames.B||'').trim()||'B'); return bars?'<div class="cb" style="border-top:1px solid var(--line)">'+bars+'<div class="chart-cap">Barre affiancate delle due strategie. Per <b>MRR</b> vince la barra più alta (più produttiva); per <b>Tc</b> e <b>Costo</b> vince la più bassa (più veloce/economica). Il cerchietto verde segna il vincitore di ogni voce.</div></div>':'';})())+
@@ -2435,7 +2445,7 @@ function recDetailHTML(r){
   var parRows=dc('Vc (m/min)',n0(o.vc,1))+dc('n (rpm)',n0(o.n,0))+dc('Avanzamento',feed,true)+
     dc('Vf (mm/min)',n0(o.vf,0))+(apv!=null?dc('aₚ (mm)',n0(apv,2)):'')+(aev!=null?dc('aₑ (mm)',n0(aev,2)):'');
   // 5 · Risultati (hero)
-  var resHero=hc('MRR',n0(o.Q,o.Q>=100?0:2),'cm³/min')+hc('Pc netto',n0(o.Pc,2),'kW')+hc('Tc',n0(o.Tc,3),'min')+
+  var resHero=hc('MRR',n0(o.Q,o.Q>=100?0:2),'cm³/min')+hc('Pc netto',n0(o.Pc,2),'kW')+hc('Tc / pezzo',o.Tc!=null?fmtTime(o.Tc):'','')+
     (o.costPP!=null?hc('Costo/pezzo',eu(o.costPP,3),'€'):'')+(raTeo!=null?hc('Ra teorica',n0(raTeo,2),'µm'):'');
   var res2=dc('P motore (kW)',n0(o.Pmot,2))+dc('Mc (Nm)',n0(o.Mc,2))+(o.Ff!=null?dc('Forza avanz. (N)',n0(o.Ff,0)):'')+
     (o.ppe!=null?dc(etype==='mdi'?'Pezzi/utensile':'Pezzi/tagliente',n0(o.ppe,o.ppe>=10?0:1)):'');
