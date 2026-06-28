@@ -492,6 +492,15 @@ table.cmp tfoot tr.sav td b{color:var(--yellow-text);font-size:15px}
 .tol-sub{font-size:11.5px;color:var(--muted);margin-top:8px}
 .rough-tbl td.sym{text-align:center;font-size:15px;letter-spacing:2px;color:var(--yellow-text)}
 .rough-tbl th:last-child{text-align:center}
+.rseg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+@media(max-width:560px){.rseg{grid-template-columns:1fr}}
+.rseg button{display:flex;flex-direction:column;gap:2px;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;color:var(--muted)}
+.rseg button b{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.3px;font-size:13px;color:var(--text)}
+.rseg button small{font-size:11px;color:var(--muted)}
+.rseg button:hover{border-color:var(--yellow-dim)}
+.rseg button.on{border-color:var(--yellow);background:var(--sel);box-shadow:inset 0 -2px 0 var(--yellow)}
+.rtool{display:none}.rtool.on{display:block}
+@media print{.rseg{display:none}.rtool{display:none!important}.rtool.on{display:block!important}}
 .tol-lims{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--line)}
 .tl{background:var(--card);padding:13px 16px}
 .tl .k{font-size:10.5px;letter-spacing:.3px;color:var(--muted);text-transform:uppercase;font-weight:600}
@@ -669,6 +678,7 @@ footer b{color:var(--text)}
       <div class="hubitems">
         <button class="hubitem" data-go="tables" data-sub="tol"><span class="dot"></span><span class="lab">Tolleranze</span><span class="desc">ISO 286 · quota</span><span class="chev">›</span></button>
         <button class="hubitem" data-go="tables" data-sub="thread"><span class="dot"></span><span class="lab">Filettature</span><span class="desc">M · UNC · UNF</span><span class="chev">›</span></button>
+        <button class="hubitem" data-go="tables" data-sub="rough"><span class="dot"></span><span class="lab">Rugosità</span><span class="desc">Ra/Rz/N · finitura tornio e fresa</span><span class="chev">›</span></button>
       </div>
     </div>
 
@@ -940,35 +950,47 @@ footer b{color:var(--text)}
   <div id="tab-rough" class="tsub">
     <div class="sechead">
       <span class="eyebrow">Tabelle</span>
-      <h2>Rugosità superficiale</h2>
-      <span class="sub">conversione Ra · Rz · N e avanzamento di finitura</span>
+      <h2 id="roughTitle">Rugosità superficiale</h2>
+      <span class="sub" id="roughSub">scegli lo strumento</span>
     </div>
 
-    <div class="card">
-      <div class="ch"><span>Conversione Ra · Rz · N</span><span class="tag">ISO 1302</span></div>
-      <div class="cb" style="padding:0"><div class="tbl-wrap"><table class="cmp rough-tbl" id="roughTbl"></table></div></div>
-    </div>
-    <div class="note"><span><b>Ra</b> = rugosità media · <b>Rz</b> = altezza max del profilo (valori <b>indicativi</b>: Rz/Ra varia ~4–7× col profilo) · <b>N</b> = numero di grado ISO 1302 · ▽ simbolo di finitura (ISO 1302:1978).</span></div>
+    <nav class="rseg" id="rseg" role="tablist">
+      <button type="button" data-r="conv" class="on"><b>Conversione</b><small>Ra · Rz · N</small></button>
+      <button type="button" data-r="turn"><b>Finitura tornitura</b><small>Ra → avanzamento</small></button>
+      <button type="button" data-r="mill"><b>Finitura fresatura</b><small>scallop fresa a sfera</small></button>
+    </nav>
 
-    <div class="card">
-      <div class="ch"><span>Avanzamento di finitura · tornitura</span><span class="tag">Ra → fn</span></div>
-      <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-        <div class="f"><label>Ra desiderata <span class="u">µm</span></label><input id="tfRa" type="number" value="0.8" min="0.05" step="0.1" inputmode="decimal"></div>
-        <div class="f"><label>Raggio punta rε <span class="u">mm</span></label><input id="tfRe" type="number" value="0.8" min="0.1" step="0.1" inputmode="decimal"></div>
-      </div></div>
+    <div class="rtool on" id="rtool-conv">
+      <div class="card">
+        <div class="ch"><span>Conversione Ra · Rz · N</span><span class="tag">ISO 1302</span></div>
+        <div class="cb" style="padding:0"><div class="tbl-wrap"><table class="cmp rough-tbl" id="roughTbl"></table></div></div>
+      </div>
+      <div class="note"><span><b>Ra</b> = rugosità media · <b>Rz</b> = altezza max del profilo (valori <b>indicativi</b>: Rz/Ra varia ~4–7× col profilo) · <b>N</b> = numero di grado ISO 1302 · ▽ simbolo di finitura (ISO 1302:1978).</span></div>
     </div>
-    <div id="tfOut"></div>
-    <div class="note"><span>fn = √(Ra · rε · 31,2 / 1000) — avanzamento per giro teorico per la Ra voluta (costante 31,2 coerente col resto dell'app). Macchina, utensile e staffaggio influenzano la rugosità reale.</span></div>
 
-    <div class="card">
-      <div class="ch"><span>Rugosità di fresatura · fresa a sfera</span><span class="tag">Dc · aₑ → Rth</span></div>
-      <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-        <div class="f"><label>Ø fresa Dc <span class="u">mm</span></label><input id="mfDc" type="number" value="10" min="0.5" step="0.5" inputmode="decimal"></div>
-        <div class="f"><label>Larghezza taglio aₑ <span class="u">mm</span></label><input id="mfAe" type="number" value="1" min="0.01" step="0.1" inputmode="decimal"></div>
-      </div></div>
+    <div class="rtool" id="rtool-turn">
+      <div class="card">
+        <div class="ch"><span>Avanzamento di finitura · tornitura</span><span class="tag">Ra → fn</span></div>
+        <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+          <div class="f"><label>Ra desiderata <span class="u">µm</span></label><input id="tfRa" type="number" value="0.8" min="0.05" step="0.1" inputmode="decimal"></div>
+          <div class="f"><label>Raggio punta rε <span class="u">mm</span></label><input id="tfRe" type="number" value="0.8" min="0.1" step="0.1" inputmode="decimal"></div>
+        </div></div>
+      </div>
+      <div id="tfOut"></div>
+      <div class="note"><span>fn = √(Ra · rε · 31,2 / 1000) — avanzamento per giro teorico per la Ra voluta (costante 31,2 coerente col resto dell'app). Macchina, utensile e staffaggio influenzano la rugosità reale.</span></div>
     </div>
-    <div id="mfOut"></div>
-    <div class="note"><span>Rth = Dc/2 − √((Dc² − aₑ²)/4) = altezza dello scallop tra due passate affiancate (fresa a sfera/raggiata). Inverso: aₑ = 2·√(Rth·(Dc − Rth)).</span></div>
+
+    <div class="rtool" id="rtool-mill">
+      <div class="card">
+        <div class="ch"><span>Rugosità di fresatura · fresa a sfera</span><span class="tag">Dc · aₑ → Rth</span></div>
+        <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+          <div class="f"><label>Ø fresa Dc <span class="u">mm</span></label><input id="mfDc" type="number" value="10" min="0.5" step="0.5" inputmode="decimal"></div>
+          <div class="f"><label>Larghezza taglio aₑ <span class="u">mm</span></label><input id="mfAe" type="number" value="1" min="0.01" step="0.1" inputmode="decimal"></div>
+        </div></div>
+      </div>
+      <div id="mfOut"></div>
+      <div class="note"><span>Rth = Dc/2 − √((Dc² − aₑ²)/4) = altezza dello scallop tra due passate affiancate (fresa a sfera/raggiata). Inverso: aₑ = 2·√(Rth·(Dc − Rth)).</span></div>
+    </div>
 
     <div class="tbl-foot"><button class="pdfbtn pdfprint" title="Stampa / salva come PDF">⎙ PDF</button></div>
   </div>
@@ -1000,10 +1022,10 @@ var store={get:function(k){try{return localStorage.getItem('bftcalc_'+k);}catch(
            set:function(k,v){try{localStorage.setItem('bftcalc_'+k,v);}catch(e){}}};
 
 /* ================= NAVIGATION ================= */
-var V={view:'home',mode:'mill',tsub:'tol'};
+var V={view:'home',mode:'mill',tsub:'tol',rsub:'conv'};
 var CALC_TABS=[['mill','Fresatura'],['turn','Tornitura'],['drill','Foratura'],['tap','Filettatura']];
 var TABLE_TABS=[['tol','Tolleranze'],['thread','Filettature'],['rough','Rugosità']];
-function persistNav(){store.set('nav',JSON.stringify({mode:V.mode,tsub:V.tsub}));}
+function persistNav(){store.set('nav',JSON.stringify({mode:V.mode,tsub:V.tsub,rsub:V.rsub}));}
 function buildCrumb(){var c=$('#crumb');
   if(V.view==='home'){c.textContent='Home'; return;}
   if(V.view==='calc'){c.textContent='Calcolatrice'; return;}
@@ -2822,7 +2844,7 @@ function wireGuide(){
 
 /* ================= INIT ================= */
 (function(){
-  var nv=store.get('nav'); if(nv){try{var n2=JSON.parse(nv); if(n2.mode)V.mode=n2.mode; if(n2.tsub)V.tsub=n2.tsub;}catch(e){}} if(['tol','thread','rough'].indexOf(V.tsub)<0)V.tsub='tol';})();
+  var nv=store.get('nav'); if(nv){try{var n2=JSON.parse(nv); if(n2.mode)V.mode=n2.mode; if(n2.tsub)V.tsub=n2.tsub; if(n2.rsub)V.rsub=n2.rsub;}catch(e){}} if(['tol','thread','rough'].indexOf(V.tsub)<0)V.tsub='tol'; if(['conv','turn','mill'].indexOf(V.rsub)<0)V.rsub='conv';})();
 
 /* ---- Rugosità: conversione Ra/Rz/N + finitura tornitura/fresatura ---- */
 var ROUGH_TABLE=[['N12',50,160,'▽'],['N11',25,100,'▽'],['N10',12.5,63,'▽'],['N9',6.3,40,'▽▽'],['N8',3.2,20,'▽▽'],['N7',1.6,10,'▽▽▽'],['N6',0.8,6.3,'▽▽▽'],['N5',0.4,4,'▽▽▽'],['N4',0.2,2.5,'▽▽▽▽'],['N3',0.1,1,'▽▽▽▽'],['N2',0.05,0.5,'▽▽▽▽'],['N1',0.025,0.25,'▽▽▽▽']];
@@ -2844,7 +2866,15 @@ function renderMillFin(){var out=$('#mfOut'); if(!out)return;
   out.innerHTML=roughResBox('Profondità di rugosità Rth',itc(fmt(Rth,4)),'mm','≈ '+itc(fmt(Rth*1000,1))+' µm · Dc '+itc(fmt(Dc,2))+' mm · aₑ '+itc(fmt(ae,2))+' mm');}
 ['#tfRa','#tfRe'].forEach(function(s){var e=$(s); if(e)e.addEventListener('input',renderTurnFin);});
 ['#mfDc','#mfAe'].forEach(function(s){var e=$(s); if(e)e.addEventListener('input',renderMillFin);});
-buildTolLetters(); renderTol(); buildThreadFamilies(); fillDrawFam(); fillDrawSize('mc'); (function(){var rs=THR.fam.mc.rows; for(var i=0;i<rs.length;i++){if(rs[i][0]===8&&rs[i][1]===1.25){$('#drawSize').value=i;break;}}})(); renderDraw(); wireThreadRows(); renderRoughTbl(); renderTurnFin(); renderMillFin(); renderCmp(); archInit(); themeInit(); wireGuide();
+var ROUGH_SUB={conv:['Conversione Ra · Rz · N','tabella ISO 1302'],turn:['Avanzamento di finitura · tornitura','dalla Ra desiderata all’avanzamento fn'],mill:['Rugosità di fresatura · fresa a sfera','altezza scallop Rth da Dc e larghezza aₑ']};
+function setRsub(key){ if(!ROUGH_SUB[key])key='conv'; V.rsub=key;
+  $$('#rseg button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-r')===key);});
+  $$('.rtool').forEach(function(t){t.classList.toggle('on',t.id==='rtool-'+key);});
+  var ti=$('#roughTitle'),su=$('#roughSub'); if(ti)ti.textContent=ROUGH_SUB[key][0]; if(su)su.textContent=ROUGH_SUB[key][1];
+  if(key==='turn')renderTurnFin(); else if(key==='mill')renderMillFin();
+  persistNav(); }
+if($('#rseg'))$('#rseg').addEventListener('click',function(e){var b=e.target.closest('[data-r]'); if(b)setRsub(b.getAttribute('data-r'));});
+buildTolLetters(); renderTol(); buildThreadFamilies(); fillDrawFam(); fillDrawSize('mc'); (function(){var rs=THR.fam.mc.rows; for(var i=0;i<rs.length;i++){if(rs[i][0]===8&&rs[i][1]===1.25){$('#drawSize').value=i;break;}}})(); renderDraw(); wireThreadRows(); renderRoughTbl(); renderTurnFin(); renderMillFin(); setRsub(V.rsub); renderCmp(); archInit(); themeInit(); wireGuide();
 go('home');
 })();
 </script>
