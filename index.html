@@ -489,6 +489,9 @@ table.cmp tfoot tr.sav td b{color:var(--yellow-text);font-size:15px}
 .tol-dk{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
 .tol-dev{font-family:var(--mono);font-size:32px;font-weight:800;color:var(--text);letter-spacing:.5px}
 .tol-dev span{font-size:14px;color:var(--muted);font-weight:600;margin-left:8px}
+.tol-sub{font-size:11.5px;color:var(--muted);margin-top:8px}
+.rough-tbl td.sym{text-align:center;font-size:15px;letter-spacing:2px;color:var(--yellow-text)}
+.rough-tbl th:last-child{text-align:center}
 .tol-lims{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--line)}
 .tl{background:var(--card);padding:13px 16px}
 .tl .k{font-size:10.5px;letter-spacing:.3px;color:var(--muted);text-transform:uppercase;font-weight:600}
@@ -933,6 +936,42 @@ footer b{color:var(--text)}
     <div class="tbl-foot"><button class="pdfbtn pdfprint" title="Stampa / salva come PDF">⎙ PDF</button></div>
   </div>
 
+  <!-- --- RUGOSITÀ --- -->
+  <div id="tab-rough" class="tsub">
+    <div class="sechead">
+      <span class="eyebrow">Tabelle</span>
+      <h2>Rugosità superficiale</h2>
+      <span class="sub">conversione Ra · Rz · N e avanzamento di finitura</span>
+    </div>
+
+    <div class="card">
+      <div class="ch"><span>Conversione Ra · Rz · N</span><span class="tag">ISO 1302</span></div>
+      <div class="cb" style="padding:0"><div class="tbl-wrap"><table class="cmp rough-tbl" id="roughTbl"></table></div></div>
+    </div>
+    <div class="note"><span><b>Ra</b> = rugosità media · <b>Rz</b> = altezza max del profilo (valori <b>indicativi</b>: Rz/Ra varia ~4–7× col profilo) · <b>N</b> = numero di grado ISO 1302 · ▽ simbolo di finitura (ISO 1302:1978).</span></div>
+
+    <div class="card">
+      <div class="ch"><span>Avanzamento di finitura · tornitura</span><span class="tag">Ra → fn</span></div>
+      <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+        <div class="f"><label>Ra desiderata <span class="u">µm</span></label><input id="tfRa" type="number" value="0.8" min="0.05" step="0.1" inputmode="decimal"></div>
+        <div class="f"><label>Raggio punta rε <span class="u">mm</span></label><input id="tfRe" type="number" value="0.8" min="0.1" step="0.1" inputmode="decimal"></div>
+      </div></div>
+    </div>
+    <div id="tfOut"></div>
+    <div class="note"><span>fn = √(Ra · rε · 31,2 / 1000) — avanzamento per giro teorico per la Ra voluta (costante 31,2 coerente col resto dell'app). Macchina, utensile e staffaggio influenzano la rugosità reale.</span></div>
+
+    <div class="card">
+      <div class="ch"><span>Rugosità di fresatura · fresa a sfera</span><span class="tag">Dc · aₑ → Rth</span></div>
+      <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+        <div class="f"><label>Ø fresa Dc <span class="u">mm</span></label><input id="mfDc" type="number" value="10" min="0.5" step="0.5" inputmode="decimal"></div>
+        <div class="f"><label>Larghezza taglio aₑ <span class="u">mm</span></label><input id="mfAe" type="number" value="1" min="0.01" step="0.1" inputmode="decimal"></div>
+      </div></div>
+    </div>
+    <div id="mfOut"></div>
+    <div class="note"><span>Rth = Dc/2 − √((Dc² − aₑ²)/4) = altezza dello scallop tra due passate affiancate (fresa a sfera/raggiata). Inverso: aₑ = 2·√(Rth·(Dc − Rth)).</span></div>
+
+    <div class="tbl-foot"><button class="pdfbtn pdfprint" title="Stampa / salva come PDF">⎙ PDF</button></div>
+  </div>
 
 </section>
 
@@ -963,13 +1002,13 @@ var store={get:function(k){try{return localStorage.getItem('bftcalc_'+k);}catch(
 /* ================= NAVIGATION ================= */
 var V={view:'home',mode:'mill',tsub:'tol'};
 var CALC_TABS=[['mill','Fresatura'],['turn','Tornitura'],['drill','Foratura'],['tap','Filettatura']];
-var TABLE_TABS=[['tol','Tolleranze'],['thread','Filettature']];
+var TABLE_TABS=[['tol','Tolleranze'],['thread','Filettature'],['rough','Rugosità']];
 function persistNav(){store.set('nav',JSON.stringify({mode:V.mode,tsub:V.tsub}));}
 function buildCrumb(){var c=$('#crumb');
   if(V.view==='home'){c.textContent='Home'; return;}
   if(V.view==='calc'){c.textContent='Calcolatrice'; return;}
   if(V.view==='archive'){c.textContent='Archivio'; return;}
-  var name={tol:'Tolleranze',thread:'Filettature'}[V.tsub];
+  var name={tol:'Tolleranze',thread:'Filettature',rough:'Rugosità'}[V.tsub];
   c.innerHTML='Tabelle<span class="sep">/</span><span class="dim">'+name+'</span>';}
 function render(){
   $$('.view').forEach(function(s){s.classList.toggle('on',s.id==='view-'+V.view);});
@@ -1816,7 +1855,11 @@ var HELP={
   tolL:'Scostamento fondamentale (lettera ISO): posiziona la fascia di tolleranza rispetto alla linea zero. Maiuscole per i fori (H, G…), minuscole per gli alberi (h, g, f…).',
   tolG:'Grado di tolleranza IT: ampiezza della fascia. Numero basso = tolleranza stretta (più precisa); numero alto = più larga.',
   drawFam:'Tipo/profilo di filettatura: metrica (M), passo fine, trapezia (Tr), Whitworth (BSW/BSP), UNC/UNF, NPT…',
-  drawSize:'Misura nominale della filettatura selezionata (diametro × passo).'
+  drawSize:'Misura nominale della filettatura selezionata (diametro × passo).',
+  tfRa:'Rugosità media Ra che vuoi ottenere (µm). La app calcola l’avanzamento per giro fn teorico per raggiungerla in tornitura di finitura.',
+  tfRe:'Raggio di punta dell’inserto (mm). A parità di avanzamento, un raggio più grande migliora la finitura.',
+  mfDc:'Diametro della fresa a sfera/raggiata (mm).',
+  mfAe:'Larghezza di taglio (stepover) tra due passate affiancate (mm). Più è piccola, più basso è lo scallop e più fine la superficie.'
 };
 function buildCutInputs(){
   var m=cut.mode,fields=CUTFIELDS[m],data=cut[m],g=$('#inGrid'); g.innerHTML='';
@@ -2765,7 +2808,7 @@ function wireGuide(){
   var clr=$('#matClear'); if(clr)clr.addEventListener('click',clearMaterial);
   var ch=$('#matChips'); if(ch)ch.addEventListener('click',function(e){var b=e.target.closest('button[data-term]'); if(b)resolveMaterial(b.getAttribute('data-term'));});
   applyMatHint(); markChips();
-  attachHints('#jobCard'); attachHints('#archCard'); attachHints('#tab-tol'); attachHints('#tab-thread');
+  attachHints('#jobCard'); attachHints('#archCard'); attachHints('#tab-tol'); attachHints('#tab-thread'); attachHints('#tab-rough');
   document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.qmark'); if(b){e.preventDefault(); toggleHint(b.getAttribute('data-k'));}});
   wireCollapse('#cmpToggle','#cmpPanel'); wireCollapse('#detToggle','#archDetails'); wireCollapse('#archFiltToggle','#archFilters');
   var det=$('#archDetails'); if(det)det.addEventListener('input',updateDetCnt); updateDetCnt();
@@ -2779,9 +2822,29 @@ function wireGuide(){
 
 /* ================= INIT ================= */
 (function(){
-  var nv=store.get('nav'); if(nv){try{var n2=JSON.parse(nv); if(n2.mode)V.mode=n2.mode; if(n2.tsub)V.tsub=n2.tsub;}catch(e){}} if(V.tsub!=='tol'&&V.tsub!=='thread')V.tsub='tol';})();
+  var nv=store.get('nav'); if(nv){try{var n2=JSON.parse(nv); if(n2.mode)V.mode=n2.mode; if(n2.tsub)V.tsub=n2.tsub;}catch(e){}} if(['tol','thread','rough'].indexOf(V.tsub)<0)V.tsub='tol';})();
 
-buildTolLetters(); renderTol(); buildThreadFamilies(); fillDrawFam(); fillDrawSize('mc'); (function(){var rs=THR.fam.mc.rows; for(var i=0;i<rs.length;i++){if(rs[i][0]===8&&rs[i][1]===1.25){$('#drawSize').value=i;break;}}})(); renderDraw(); wireThreadRows(); renderCmp(); archInit(); themeInit(); wireGuide();
+/* ---- Rugosità: conversione Ra/Rz/N + finitura tornitura/fresatura ---- */
+var ROUGH_TABLE=[['N12',50,160,'▽'],['N11',25,100,'▽'],['N10',12.5,63,'▽'],['N9',6.3,40,'▽▽'],['N8',3.2,20,'▽▽'],['N7',1.6,10,'▽▽▽'],['N6',0.8,6.3,'▽▽▽'],['N5',0.4,4,'▽▽▽'],['N4',0.2,2.5,'▽▽▽▽'],['N3',0.1,1,'▽▽▽▽'],['N2',0.05,0.5,'▽▽▽▽'],['N1',0.025,0.25,'▽▽▽▽']];
+function roughResBox(label,value,unit,sub){return '<div class="card tol-res"><div class="tol-hero"><div class="tol-dk">'+label+'</div><div class="tol-dev">'+value+(unit?' <span>'+unit+'</span>':'')+'</div>'+(sub?'<div class="tol-sub">'+sub+'</div>':'')+'</div></div>';}
+function renderRoughTbl(){var t=$('#roughTbl'); if(!t)return;
+  var rows=ROUGH_TABLE.map(function(r){return '<tr><td class="l">'+r[0]+'</td><td>'+itc(fmt(r[1],r[1]<1?3:(r[1]<10?1:0)))+'</td><td>'+itc(fmt(r[2],r[2]<1?2:(r[2]<10?1:0)))+'</td><td class="sym">'+r[3]+'</td></tr>';}).join('');
+  t.innerHTML='<thead><tr><th class="l">Grado N</th><th>Ra <span class="u">µm</span></th><th>Rz <span class="u">µm</span></th><th>Simbolo</th></tr></thead><tbody>'+rows+'</tbody>';}
+function nGrade(ra){var best=null,bd=1e9; ROUGH_TABLE.forEach(function(r){var dd=Math.abs(Math.log(r[1])-Math.log(ra)); if(dd<bd){bd=dd;best=r;}}); return best;}
+function renderTurnFin(){var out=$('#tfOut'); if(!out)return;
+  var Ra=num($('#tfRa').value),re=num($('#tfRe').value);
+  if(Ra<=0||re<=0){out.innerHTML='<div class="warnbox">Inserisci Ra desiderata e raggio punta maggiori di 0.</div>';return;}
+  var fn=Math.sqrt(Ra*re*31.2/1000),g=nGrade(Ra);
+  out.innerHTML=roughResBox('Avanzamento di finitura fn',itc(fmt(fn,3)),'mm/giro','per Ra '+itc(fmt(Ra,2))+' µm · rε '+itc(fmt(re,2))+' mm'+(g?' · grado ≈ '+g[0]+' '+g[3]:''));}
+function renderMillFin(){var out=$('#mfOut'); if(!out)return;
+  var Dc=num($('#mfDc').value),ae=num($('#mfAe').value);
+  if(Dc<=0||ae<=0){out.innerHTML='<div class="warnbox">Inserisci Ø fresa e larghezza di taglio maggiori di 0.</div>';return;}
+  if(ae>Dc){out.innerHTML='<div class="warnbox">La larghezza di taglio aₑ non può superare il Ø della fresa.</div>';return;}
+  var Rth=Dc/2-Math.sqrt((Dc*Dc-ae*ae)/4);
+  out.innerHTML=roughResBox('Profondità di rugosità Rth',itc(fmt(Rth,4)),'mm','≈ '+itc(fmt(Rth*1000,1))+' µm · Dc '+itc(fmt(Dc,2))+' mm · aₑ '+itc(fmt(ae,2))+' mm');}
+['#tfRa','#tfRe'].forEach(function(s){var e=$(s); if(e)e.addEventListener('input',renderTurnFin);});
+['#mfDc','#mfAe'].forEach(function(s){var e=$(s); if(e)e.addEventListener('input',renderMillFin);});
+buildTolLetters(); renderTol(); buildThreadFamilies(); fillDrawFam(); fillDrawSize('mc'); (function(){var rs=THR.fam.mc.rows; for(var i=0;i<rs.length;i++){if(rs[i][0]===8&&rs[i][1]===1.25){$('#drawSize').value=i;break;}}})(); renderDraw(); wireThreadRows(); renderRoughTbl(); renderTurnFin(); renderMillFin(); renderCmp(); archInit(); themeInit(); wireGuide();
 go('home');
 })();
 </script>
