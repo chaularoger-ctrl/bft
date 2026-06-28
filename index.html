@@ -493,13 +493,25 @@ table.cmp tfoot tr.sav td b{color:var(--yellow-text);font-size:15px}
 .rough-tbl td.sym{text-align:center;font-size:15px;letter-spacing:2px;color:var(--yellow-text)}
 .rough-tbl th:last-child{text-align:center}
 .rseg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
-@media(max-width:560px){.rseg{grid-template-columns:1fr}}
+#useg{grid-template-columns:repeat(4,1fr)}
+@media(max-width:560px){.rseg{grid-template-columns:1fr}#useg{grid-template-columns:repeat(2,1fr)}}
 .rseg button{display:flex;flex-direction:column;gap:2px;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;color:var(--muted)}
 .rseg button b{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.3px;font-size:13px;color:var(--text)}
 .rseg button small{font-size:11px;color:var(--muted)}
 .rseg button:hover{border-color:var(--yellow-dim)}
 .rseg button.on{border-color:var(--yellow);background:var(--sel);box-shadow:inset 0 -2px 0 var(--yellow)}
 .rtool{display:none}.rtool.on{display:block}
+.rdiag{width:100%;max-width:360px;height:auto;display:block;margin:0 auto}
+.rdiag text{font-family:var(--mono);font-size:11px;fill:var(--yellow-text);font-weight:700}
+.rdiag .tool{fill:var(--panel-2);stroke:var(--muted);stroke-width:1.5}
+.rdiag .flute{fill:none;stroke:var(--muted);stroke-width:1;opacity:.7}
+.rdiag .wp{fill:var(--surface);stroke:var(--text);stroke-width:1.5;stroke-linejoin:round}
+.rdiag .dim{stroke:var(--muted);stroke-width:1}
+.rdiag .dimd{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 2}
+.kv2grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.kv2{background:var(--card);padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.kv2 span{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600}
+.kv2 b{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--text)}
 @media print{.rseg{display:none}.rtool{display:none!important}.rtool.on{display:block!important}}
 .tol-lims{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--line)}
 .tl{background:var(--card);padding:13px 16px}
@@ -679,6 +691,7 @@ footer b{color:var(--text)}
         <button class="hubitem" data-go="tables" data-sub="tol"><span class="dot"></span><span class="lab">Tolleranze</span><span class="desc">ISO 286 · quota</span><span class="chev">›</span></button>
         <button class="hubitem" data-go="tables" data-sub="thread"><span class="dot"></span><span class="lab">Filettature</span><span class="desc">M · UNC · UNF</span><span class="chev">›</span></button>
         <button class="hubitem" data-go="tables" data-sub="rough"><span class="dot"></span><span class="lab">Rugosità</span><span class="desc">Ra/Rz/N · finitura tornio e fresa</span><span class="chev">›</span></button>
+        <button class="hubitem" data-go="tables" data-sub="units"><span class="dot"></span><span class="lab">Convertitore</span><span class="desc">mm/pollici · angoli · durezza · rugosità</span><span class="chev">›</span></button>
       </div>
     </div>
 
@@ -981,6 +994,19 @@ footer b{color:var(--text)}
     </div>
 
     <div class="rtool" id="rtool-mill">
+      <div class="card"><div class="cb" style="padding:14px">
+        <svg class="rdiag" viewBox="0 0 320 168" preserveAspectRatio="xMidYMid meet" aria-label="Schema scallop fresatura a sfera">
+          <path class="tool" d="M145 12 L145 66 A15 15 0 0 0 175 66 L175 12 Z"/>
+          <path class="flute" d="M159 20 Q150 46 162 74"/>
+          <path class="wp" d="M30 100 Q62 73 94 100 Q126 73 158 100 Q190 73 222 100 Q254 73 286 100 L286 158 L30 158 Z"/>
+          <line class="dim" x1="145" y1="9" x2="175" y2="9"/><line class="dim" x1="145" y1="6" x2="145" y2="12"/><line class="dim" x1="175" y1="6" x2="175" y2="12"/>
+          <text x="160" y="6" text-anchor="middle">Dc</text>
+          <line class="dimd" x1="94" y1="100" x2="94" y2="122"/><line class="dimd" x1="158" y1="100" x2="158" y2="122"/><line class="dim" x1="94" y1="118" x2="158" y2="118"/>
+          <text x="126" y="133" text-anchor="middle">aₑ</text>
+          <line class="dimd" x1="190" y1="86" x2="232" y2="86"/><line class="dimd" x1="222" y1="100" x2="232" y2="100"/><line class="dim" x1="229" y1="86" x2="229" y2="100"/>
+          <text x="236" y="97">Rth</text>
+        </svg>
+      </div></div>
       <div class="card">
         <div class="ch"><span>Rugosità di fresatura · fresa a sfera</span><span class="tag">Dc · aₑ → Rth</span></div>
         <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
@@ -990,6 +1016,68 @@ footer b{color:var(--text)}
       </div>
       <div id="mfOut"></div>
       <div class="note"><span>Rth = Dc/2 − √((Dc² − aₑ²)/4) = altezza dello scallop tra due passate affiancate (fresa a sfera/raggiata). Inverso: aₑ = 2·√(Rth·(Dc − Rth)).</span></div>
+    </div>
+
+    <div class="tbl-foot"><button class="pdfbtn pdfprint" title="Stampa / salva come PDF">⎙ PDF</button></div>
+  </div>
+
+  <!-- --- CONVERTITORE --- -->
+  <div id="tab-units" class="tsub">
+    <div class="sechead">
+      <span class="eyebrow">Tabelle</span>
+      <h2 id="uTitle">Convertitore di unità</h2>
+      <span class="sub" id="uSub">scegli la grandezza da convertire</span>
+    </div>
+
+    <nav class="rseg" id="useg" role="tablist">
+      <button type="button" data-u="len" class="on"><b>mm / pollici</b><small>lunghezze</small></button>
+      <button type="button" data-u="ang"><b>Angoli</b><small>° · rad · gon</small></button>
+      <button type="button" data-u="hard"><b>Durezza</b><small>HRC · HV · HB · Rm</small></button>
+      <button type="button" data-u="rough"><b>Rugosità</b><small>Ra · Rz · N · µin</small></button>
+    </nav>
+
+    <div class="rtool on" id="utool-len">
+      <div class="card"><div class="ch"><span>Lunghezze</span><span class="tag">mm · pollici · mil</span></div>
+        <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+          <div class="f"><label>Millimetri <span class="u">mm</span></label><input id="cv_mm" type="number" value="25.4" step="any" inputmode="decimal"></div>
+          <div class="f"><label>Pollici <span class="u">in</span></label><input id="cv_in" type="number" value="1" step="any" inputmode="decimal"></div>
+          <div class="f"><label>Mil / thou <span class="u">0,001 in</span></label><input id="cv_thou" type="number" value="1000" step="any" inputmode="decimal"></div>
+        </div></div>
+      </div>
+      <div class="note"><span>1 pollice = 25,4 mm = 1000 mil. Modifica un campo qualsiasi: gli altri si aggiornano.</span></div>
+    </div>
+
+    <div class="rtool" id="utool-ang">
+      <div class="card"><div class="ch"><span>Angoli</span><span class="tag">° · rad · gon</span></div>
+        <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+          <div class="f"><label>Gradi <span class="u">°</span></label><input id="cv_deg" type="number" value="45" step="any" inputmode="decimal"></div>
+          <div class="f"><label>Radianti <span class="u">rad</span></label><input id="cv_rad" type="number" step="any" inputmode="decimal"></div>
+          <div class="f"><label>Gon <span class="u">grad</span></label><input id="cv_gon" type="number" step="any" inputmode="decimal"></div>
+        </div></div>
+      </div>
+      <div id="cv_angOut"></div>
+      <div class="note"><span>1 rad = 57,2958° · 1 gon (grad) = 0,9°. In basso anche gradi/primi/secondi.</span></div>
+    </div>
+
+    <div class="rtool" id="utool-hard">
+      <div class="card"><div class="ch"><span>Durezza</span><span class="tag">acciai · indicativo</span></div>
+        <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+          <div class="f"><label>Valore</label><input id="cv_hval" type="number" value="40" step="any" inputmode="decimal"></div>
+          <div class="f"><label>Scala</label><select id="cv_hscale"><option value="HRC">HRC</option><option value="HV">HV (Vickers)</option><option value="HB">HB (Brinell)</option><option value="HRB">HRB</option><option value="Rm">Rm (MPa)</option></select></div>
+        </div></div>
+      </div>
+      <div id="cv_hout"></div>
+      <div class="note"><span>Conversione indicativa per <b>acciai non legati/bassolegati</b> (rif. ASTM E140 / ISO 18265). HB valida fino a ~450 HB, HRB nel campo tenero, Rm correlazione solo per acciai.</span></div>
+    </div>
+
+    <div class="rtool" id="utool-rough">
+      <div class="card"><div class="ch"><span>Rugosità</span><span class="tag">Ra → Rz · N · µin</span></div>
+        <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+          <div class="f"><label>Ra <span class="u">µm</span></label><input id="cv_ra" type="number" value="0.8" step="any" inputmode="decimal"></div>
+        </div></div>
+      </div>
+      <div id="cv_rout"></div>
+      <div class="note"><span>1 µm = 39,37 µin. Rz e grado N sono <b>indicativi</b> (Rz/Ra varia col profilo). Per la tabella completa vedi <b>Tabelle → Rugosità</b>.</span></div>
     </div>
 
     <div class="tbl-foot"><button class="pdfbtn pdfprint" title="Stampa / salva come PDF">⎙ PDF</button></div>
@@ -1022,15 +1110,15 @@ var store={get:function(k){try{return localStorage.getItem('bftcalc_'+k);}catch(
            set:function(k,v){try{localStorage.setItem('bftcalc_'+k,v);}catch(e){}}};
 
 /* ================= NAVIGATION ================= */
-var V={view:'home',mode:'mill',tsub:'tol',rsub:'conv'};
+var V={view:'home',mode:'mill',tsub:'tol',rsub:'conv',usub:'len'};
 var CALC_TABS=[['mill','Fresatura'],['turn','Tornitura'],['drill','Foratura'],['tap','Filettatura']];
-var TABLE_TABS=[['tol','Tolleranze'],['thread','Filettature'],['rough','Rugosità']];
-function persistNav(){store.set('nav',JSON.stringify({mode:V.mode,tsub:V.tsub,rsub:V.rsub}));}
+var TABLE_TABS=[['tol','Tolleranze'],['thread','Filettature'],['rough','Rugosità'],['units','Convertitore']];
+function persistNav(){store.set('nav',JSON.stringify({mode:V.mode,tsub:V.tsub,rsub:V.rsub,usub:V.usub}));}
 function buildCrumb(){var c=$('#crumb');
   if(V.view==='home'){c.textContent='Home'; return;}
   if(V.view==='calc'){c.textContent='Calcolatrice'; return;}
   if(V.view==='archive'){c.textContent='Archivio'; return;}
-  var name={tol:'Tolleranze',thread:'Filettature',rough:'Rugosità'}[V.tsub];
+  var name={tol:'Tolleranze',thread:'Filettature',rough:'Rugosità',units:'Convertitore'}[V.tsub];
   c.innerHTML='Tabelle<span class="sep">/</span><span class="dim">'+name+'</span>';}
 function render(){
   $$('.view').forEach(function(s){s.classList.toggle('on',s.id==='view-'+V.view);});
@@ -2844,7 +2932,7 @@ function wireGuide(){
 
 /* ================= INIT ================= */
 (function(){
-  var nv=store.get('nav'); if(nv){try{var n2=JSON.parse(nv); if(n2.mode)V.mode=n2.mode; if(n2.tsub)V.tsub=n2.tsub; if(n2.rsub)V.rsub=n2.rsub;}catch(e){}} if(['tol','thread','rough'].indexOf(V.tsub)<0)V.tsub='tol'; if(['conv','turn','mill'].indexOf(V.rsub)<0)V.rsub='conv';})();
+  var nv=store.get('nav'); if(nv){try{var n2=JSON.parse(nv); if(n2.mode)V.mode=n2.mode; if(n2.tsub)V.tsub=n2.tsub; if(n2.rsub)V.rsub=n2.rsub; if(n2.usub)V.usub=n2.usub;}catch(e){}} if(['tol','thread','rough','units'].indexOf(V.tsub)<0)V.tsub='tol'; if(['conv','turn','mill'].indexOf(V.rsub)<0)V.rsub='conv'; if(['len','ang','hard','rough'].indexOf(V.usub)<0)V.usub='len';})();
 
 /* ---- Rugosità: conversione Ra/Rz/N + finitura tornitura/fresatura ---- */
 var ROUGH_TABLE=[['N12',50,160,'▽'],['N11',25,100,'▽'],['N10',12.5,63,'▽'],['N9',6.3,40,'▽▽'],['N8',3.2,20,'▽▽'],['N7',1.6,10,'▽▽▽'],['N6',0.8,6.3,'▽▽▽'],['N5',0.4,4,'▽▽▽'],['N4',0.2,2.5,'▽▽▽▽'],['N3',0.1,1,'▽▽▽▽'],['N2',0.05,0.5,'▽▽▽▽'],['N1',0.025,0.25,'▽▽▽▽']];
@@ -2869,12 +2957,53 @@ function renderMillFin(){var out=$('#mfOut'); if(!out)return;
 var ROUGH_SUB={conv:['Conversione Ra · Rz · N','tabella ISO 1302'],turn:['Avanzamento di finitura · tornitura','dalla Ra desiderata all’avanzamento fn'],mill:['Rugosità di fresatura · fresa a sfera','altezza scallop Rth da Dc e larghezza aₑ']};
 function setRsub(key){ if(!ROUGH_SUB[key])key='conv'; V.rsub=key;
   $$('#rseg button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-r')===key);});
-  $$('.rtool').forEach(function(t){t.classList.toggle('on',t.id==='rtool-'+key);});
+  $$('#tab-rough .rtool').forEach(function(t){t.classList.toggle('on',t.id==='rtool-'+key);});
   var ti=$('#roughTitle'),su=$('#roughSub'); if(ti)ti.textContent=ROUGH_SUB[key][0]; if(su)su.textContent=ROUGH_SUB[key][1];
   if(key==='turn')renderTurnFin(); else if(key==='mill')renderMillFin();
   persistNav(); }
 if($('#rseg'))$('#rseg').addEventListener('click',function(e){var b=e.target.closest('[data-r]'); if(b)setRsub(b.getAttribute('data-r'));});
-buildTolLetters(); renderTol(); buildThreadFamilies(); fillDrawFam(); fillDrawSize('mc'); (function(){var rs=THR.fam.mc.rows; for(var i=0;i<rs.length;i++){if(rs[i][0]===8&&rs[i][1]===1.25){$('#drawSize').value=i;break;}}})(); renderDraw(); wireThreadRows(); renderRoughTbl(); renderTurnFin(); renderMillFin(); setRsub(V.rsub); renderCmp(); archInit(); themeInit(); wireGuide();
+
+/* ---- Convertitore di unità ---- */
+function fmtCv(x){ if(!isFinite(x))return ''; var a=Math.abs(x),d=a===0?0:(a>=100?3:a>=1?4:6); return parseFloat(x.toFixed(d)).toString(); }
+var cvBusy=false;
+function cvLen(src){ if(cvBusy)return; cvBusy=true;
+  var mm=src==='in'?num($('#cv_in').value)*25.4:src==='thou'?num($('#cv_thou').value)*0.0254:num($('#cv_mm').value);
+  if(src!=='mm')$('#cv_mm').value=fmtCv(mm); if(src!=='in')$('#cv_in').value=fmtCv(mm/25.4); if(src!=='thou')$('#cv_thou').value=fmtCv(mm/0.0254);
+  cvBusy=false; }
+function toDMS(deg){var sg=deg<0?'−':'';deg=Math.abs(deg);var d=Math.floor(deg),mf=(deg-d)*60,m=Math.floor(mf),s=Math.round((mf-m)*60);if(s>=60){s-=60;m++;}if(m>=60){m-=60;d++;}return sg+d+'° '+m+'′ '+s+'″';}
+function cvAng(src){ if(cvBusy)return; cvBusy=true;
+  var deg=src==='rad'?num($('#cv_rad').value)*180/Math.PI:src==='gon'?num($('#cv_gon').value)*0.9:num($('#cv_deg').value);
+  if(src!=='deg')$('#cv_deg').value=fmtCv(deg); if(src!=='rad')$('#cv_rad').value=fmtCv(deg*Math.PI/180); if(src!=='gon')$('#cv_gon').value=fmtCv(deg/0.9);
+  var o=$('#cv_angOut'); if(o)o.innerHTML='<div class="card tol-res"><div class="cb"><div class="kv2grid"><div class="kv2"><span>Gradi · primi · secondi</span><b>'+toDMS(deg)+'</b></div></div></div></div>';
+  cvBusy=false; }
+/* Durezza — tabella acciai, HV master [HV,HB,HRC,HRB,Rm(MPa)] (null = non applicabile) */
+var HARD=[[90,86,null,48,290],[100,95,null,56,320],[110,105,null,62,350],[120,114,null,67,385],[130,124,null,71,415],[140,133,null,75,450],[150,143,null,78,480],[160,152,null,81,510],[170,162,null,83,545],[180,171,null,85,580],[190,181,null,87,610],[200,190,null,89,640],[210,199,null,91,675],[220,209,null,92,710],[230,219,null,94,740],[240,228,20.3,95,770],[250,238,22.2,96,800],[260,247,24,null,835],[270,257,25.6,null,865],[280,266,27.1,null,900],[290,276,28.5,null,930],[300,285,29.8,null,965],[310,295,31,null,995],[320,304,32.2,null,1030],[330,314,33.3,null,1060],[340,323,34.4,null,1095],[350,333,35.5,null,1125],[360,342,36.6,null,1155],[370,352,37.7,null,1190],[380,361,38.8,null,1220],[390,371,39.8,null,1255],[400,380,40.8,null,1290],[410,390,41.8,null,1320],[420,399,42.7,null,1350],[430,409,43.6,null,1385],[440,418,44.5,null,1420],[450,428,45.3,null,1455],[460,437,46.1,null,1485],[470,447,46.9,null,1520],[480,456,47.7,null,1555],[490,466,48.4,null,1595],[500,475,49.1,null,1630],[520,null,50.5,null,1700],[540,null,51.7,null,1770],[560,null,53,null,1840],[580,null,54.1,null,null],[600,null,55.2,null,null],[620,null,56.3,null,null],[640,null,57.3,null,null],[660,null,58.3,null,null],[680,null,59.2,null,null],[700,null,60.1,null,null],[720,null,61,null,null],[740,null,61.8,null,null],[760,null,62.5,null,null],[780,null,63.3,null,null],[800,null,64,null,null],[840,null,65.3,null,null],[880,null,66.4,null,null],[920,null,67.5,null,null]];
+var HCOL={HV:0,HB:1,HRC:2,HRB:3,Rm:4};
+function hardInterp(ci,hv){var rs=HARD.filter(function(r){return r[ci]!=null;}); if(!rs.length)return null; if(hv<rs[0][0]||hv>rs[rs.length-1][0])return null;
+  for(var i=1;i<rs.length;i++){if(hv<=rs[i][0]){var a=rs[i-1],b=rs[i],t=(hv-a[0])/(b[0]-a[0]);return a[ci]+(b[ci]-a[ci])*t;}} return rs[rs.length-1][ci];}
+function hvFromScale(ci,val){ if(ci===0)return val; var rs=HARD.filter(function(r){return r[ci]!=null;}); if(!rs.length)return null; if(val<rs[0][ci]||val>rs[rs.length-1][ci])return null;
+  for(var i=1;i<rs.length;i++){if(val<=rs[i][ci]){var a=rs[i-1],b=rs[i]; if(b[ci]===a[ci])return a[0]; var t=(val-a[ci])/(b[ci]-a[ci]);return a[0]+(b[0]-a[0])*t;}} return rs[rs.length-1][0];}
+function hardConv(){var scale=$('#cv_hscale').value,val=num($('#cv_hval').value),out=$('#cv_hout'); if(!out)return; if(!(val>0)){out.innerHTML='';return;}
+  var hv=hvFromScale(HCOL[scale],val); if(hv==null){out.innerHTML='<div class="warnbox">Valore fuori dal campo di conversione per acciai.</div>';return;}
+  function kv(name,ci,dec,unit){var v=(ci===0)?hv:hardInterp(ci,hv); return '<div class="kv2"><span>'+name+'</span><b>'+(v==null?'—':itc(fmt(v,dec))+(unit?' '+unit:''))+'</b></div>';}
+  out.innerHTML='<div class="card tol-res"><div class="cb"><div class="kv2grid">'+kv('HRC',HCOL.HRC,1,'')+kv('HV',HCOL.HV,0,'')+kv('HB',HCOL.HB,0,'')+kv('HRB',HCOL.HRB,0,'')+kv('Rm',HCOL.Rm,0,'MPa')+'</div></div></div>'; }
+function rzFromRa(ra){var t=ROUGH_TABLE.slice().sort(function(a,b){return a[1]-b[1];}); if(ra<=t[0][1])return ra*(t[0][2]/t[0][1]);
+  for(var i=1;i<t.length;i++){if(ra<=t[i][1]){var a=t[i-1],b=t[i],lt=(Math.log(ra)-Math.log(a[1]))/(Math.log(b[1])-Math.log(a[1]));return Math.exp(Math.log(a[2])+(Math.log(b[2])-Math.log(a[2]))*lt);}} return ra*(t[t.length-1][2]/t[t.length-1][1]); }
+function cvRough(){var ra=num($('#cv_ra').value),out=$('#cv_rout'); if(!out)return; if(!(ra>0)){out.innerHTML='';return;}
+  var rz=rzFromRa(ra),g=nGrade(ra);
+  out.innerHTML='<div class="card tol-res"><div class="cb"><div class="kv2grid"><div class="kv2"><span>Ra</span><b>'+itc(fmt(ra,3))+' µm</b></div><div class="kv2"><span>Ra</span><b>'+itc(fmt(ra*39.37,1))+' µin</b></div><div class="kv2"><span>Rz ≈</span><b>'+itc(fmt(rz,rz<10?2:1))+' µm</b></div><div class="kv2"><span>Rz ≈</span><b>'+itc(fmt(rz*39.37,0))+' µin</b></div><div class="kv2"><span>Grado</span><b>'+(g?g[0]+' '+g[3]:'—')+'</b></div></div></div></div>'; }
+var UNIT_SUB={len:['Lunghezze','mm · pollici · mil'],ang:['Angoli','gradi · radianti · gon'],hard:['Durezza','HRC · HV · HB · HRB · Rm'],rough:['Rugosità','Ra · Rz · N · µin']};
+function setUsub(key){ if(!UNIT_SUB[key])key='len'; V.usub=key;
+  $$('#useg button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-u')===key);});
+  $$('#tab-units .rtool').forEach(function(t){t.classList.toggle('on',t.id==='utool-'+key);});
+  var ti=$('#uTitle'),su=$('#uSub'); if(ti)ti.textContent=UNIT_SUB[key][0]; if(su)su.textContent=UNIT_SUB[key][1];
+  if(key==='hard')hardConv(); else if(key==='rough')cvRough();
+  persistNav(); }
+if($('#useg'))$('#useg').addEventListener('click',function(e){var b=e.target.closest('[data-u]'); if(b)setUsub(b.getAttribute('data-u'));});
+(function(){var L=$('#cv_mm');if(L)L.addEventListener('input',function(){cvLen('mm');}); var I=$('#cv_in');if(I)I.addEventListener('input',function(){cvLen('in');}); var T=$('#cv_thou');if(T)T.addEventListener('input',function(){cvLen('thou');});
+  var D=$('#cv_deg');if(D)D.addEventListener('input',function(){cvAng('deg');}); var R=$('#cv_rad');if(R)R.addEventListener('input',function(){cvAng('rad');}); var G=$('#cv_gon');if(G)G.addEventListener('input',function(){cvAng('gon');});
+  var HVL=$('#cv_hval');if(HVL)HVL.addEventListener('input',hardConv); var HS=$('#cv_hscale');if(HS)HS.addEventListener('change',hardConv); var RA=$('#cv_ra');if(RA)RA.addEventListener('input',cvRough);})();
+buildTolLetters(); renderTol(); buildThreadFamilies(); fillDrawFam(); fillDrawSize('mc'); (function(){var rs=THR.fam.mc.rows; for(var i=0;i<rs.length;i++){if(rs[i][0]===8&&rs[i][1]===1.25){$('#drawSize').value=i;break;}}})(); renderDraw(); wireThreadRows(); renderRoughTbl(); renderTurnFin(); renderMillFin(); setRsub(V.rsub); cvLen('mm'); cvAng('deg'); hardConv(); cvRough(); setUsub(V.usub); renderCmp(); archInit(); themeInit(); wireGuide();
 go('home');
 })();
 </script>
