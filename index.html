@@ -512,6 +512,14 @@ table.cmp tfoot tr.sav td b{color:var(--yellow-text);font-size:15px}
 .kv2{background:var(--card);padding:10px 12px;display:flex;flex-direction:column;gap:3px}
 .kv2 span{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600}
 .kv2 b{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--text)}
+.rmargin{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.rmargin>label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:600}
+.rmargin>label b{color:var(--yellow-text);font-family:var(--mono);font-size:13px;margin-left:6px}
+.rmargin-ends{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted-2);margin-top:2px}
+input[type=range].rsl{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:5px;background:var(--line-2);outline:none;margin:10px 0 4px;cursor:pointer}
+input[type=range].rsl::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;background:var(--yellow);border:3px solid var(--card);cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.35)}
+input[type=range].rsl::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--yellow);border:3px solid var(--card);cursor:pointer}
+input[type=range].rsl:focus{box-shadow:0 0 0 3px var(--sel)}
 @media print{.rseg{display:none}.rtool{display:none!important}.rtool.on{display:block!important}}
 .tol-lims{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--line)}
 .tl{background:var(--card);padding:13px 16px}
@@ -987,10 +995,15 @@ footer b{color:var(--text)}
         <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
           <div class="f"><label>Ra desiderata <span class="u">µm</span></label><input id="tfRa" type="number" value="0.8" min="0.05" step="0.1" inputmode="decimal"></div>
           <div class="f"><label>Raggio punta rε <span class="u">mm</span></label><input id="tfRe" type="number" value="0.8" min="0.1" step="0.1" inputmode="decimal"></div>
+        </div>
+        <div class="rmargin">
+          <label>Margine di sicurezza <b id="tfMargVal">10%</b></label>
+          <input type="range" class="rsl" id="tfMarg" min="0" max="30" value="10" step="1" aria-label="Margine di sicurezza">
+          <div class="rmargin-ends"><span>Teorico · max resa</span><span>Prudente</span></div>
         </div></div>
       </div>
       <div id="tfOut"></div>
-      <div class="note"><span>fn = √(Ra · rε · 31,2 / 1000) — avanzamento per giro teorico per la Ra voluta (costante 31,2 coerente col resto dell'app). Macchina, utensile e staffaggio influenzano la rugosità reale.</span></div>
+      <div class="note"><span>fn <b>teorico</b> = √(Ra · rε · 31,2 / 1000): è il limite geometrico ideale (coerente col resto dell'app). Il <b>margine di sicurezza</b> riduce l'avanzamento per tener conto di tagliente di riporto, vibrazioni e usura, così è più facile centrare davvero la Ra. fn consigliato = fn teorico × (1 − margine).</span></div>
     </div>
 
     <div class="rtool" id="rtool-mill">
@@ -2942,17 +2955,18 @@ function renderRoughTbl(){var t=$('#roughTbl'); if(!t)return;
   t.innerHTML='<thead><tr><th class="l">Grado N</th><th>Ra <span class="u">µm</span></th><th>Rz <span class="u">µm</span></th><th>Simbolo</th></tr></thead><tbody>'+rows+'</tbody>';}
 function nGrade(ra){var best=null,bd=1e9; ROUGH_TABLE.forEach(function(r){var dd=Math.abs(Math.log(r[1])-Math.log(ra)); if(dd<bd){bd=dd;best=r;}}); return best;}
 function renderTurnFin(){var out=$('#tfOut'); if(!out)return;
-  var Ra=num($('#tfRa').value),re=num($('#tfRe').value);
+  var Ra=num($('#tfRa').value),re=num($('#tfRe').value),marg=num($('#tfMarg').value)/100;
+  var mv=$('#tfMargVal'); if(mv)mv.textContent=Math.round(marg*100)+'%';
   if(Ra<=0||re<=0){out.innerHTML='<div class="warnbox">Inserisci Ra desiderata e raggio punta maggiori di 0.</div>';return;}
-  var fn=Math.sqrt(Ra*re*31.2/1000),g=nGrade(Ra);
-  out.innerHTML=roughResBox('Avanzamento di finitura fn',itc(fmt(fn,3)),'mm/giro','per Ra '+itc(fmt(Ra,2))+' µm · rε '+itc(fmt(re,2))+' mm'+(g?' · grado ≈ '+g[0]+' '+g[3]:''));}
+  var fnTeo=Math.sqrt(Ra*re*31.2/1000),fn=fnTeo*(1-marg),g=nGrade(Ra);
+  out.innerHTML=roughResBox('Avanzamento consigliato fn',itc(fmt(fn,3)),'mm/giro','teorico '+itc(fmt(fnTeo,3))+' mm/g · margine '+Math.round(marg*100)+'%'+(marg>0?' (−'+itc(fmt((fnTeo-fn),3))+')':'')+' · per Ra '+itc(fmt(Ra,2))+' µm · rε '+itc(fmt(re,2))+' mm'+(g?' · grado ≈ '+g[0]+' '+g[3]:''));}
 function renderMillFin(){var out=$('#mfOut'); if(!out)return;
   var Dc=num($('#mfDc').value),ae=num($('#mfAe').value);
   if(Dc<=0||ae<=0){out.innerHTML='<div class="warnbox">Inserisci Ø fresa e larghezza di taglio maggiori di 0.</div>';return;}
   if(ae>Dc){out.innerHTML='<div class="warnbox">La larghezza di taglio aₑ non può superare il Ø della fresa.</div>';return;}
   var Rth=Dc/2-Math.sqrt((Dc*Dc-ae*ae)/4);
   out.innerHTML=roughResBox('Profondità di rugosità Rth',itc(fmt(Rth,4)),'mm','≈ '+itc(fmt(Rth*1000,1))+' µm · Dc '+itc(fmt(Dc,2))+' mm · aₑ '+itc(fmt(ae,2))+' mm');}
-['#tfRa','#tfRe'].forEach(function(s){var e=$(s); if(e)e.addEventListener('input',renderTurnFin);});
+['#tfRa','#tfRe','#tfMarg'].forEach(function(s){var e=$(s); if(e)e.addEventListener('input',renderTurnFin);});
 ['#mfDc','#mfAe'].forEach(function(s){var e=$(s); if(e)e.addEventListener('input',renderMillFin);});
 var ROUGH_SUB={conv:['Conversione Ra · Rz · N','tabella ISO 1302'],turn:['Avanzamento di finitura · tornitura','dalla Ra desiderata all’avanzamento fn'],mill:['Rugosità di fresatura · fresa a sfera','altezza scallop Rth da Dc e larghezza aₑ']};
 function setRsub(key){ if(!ROUGH_SUB[key])key='conv'; V.rsub=key;
