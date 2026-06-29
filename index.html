@@ -819,6 +819,8 @@ footer b{color:var(--text)}
       <div class="ctpair"><input type="text" id="nameB" placeholder="Nome strategia B" maxlength="24"><button class="ctsave" id="btnSaveB">Salva B</button></div>
       <button class="ctbtn ghost" id="btnClrCmp">Pulisci confronto</button>
     </div>
+    <div class="cthint" style="margin-top:6px">Compila più sotto i dati prova (esito, note…) e salva l'intero confronto come prova in archivio.</div>
+    <div class="ctools"><button class="ctbtn prim" id="btnSaveCmp" disabled>＋ Salva confronto in archivio</button></div>
   </div>
   <div id="cmpOut"></div>
 
@@ -838,9 +840,6 @@ footer b{color:var(--text)}
           <div class="f"><label>Refrigerante</label><select id="a_coolant"></select></div>
           <div class="f"><label>Tipo usura</label><select id="a_weartype"></select></div>
           <div class="f"><label>Entità usura</label><select id="a_wearlevel"></select></div>
-          <div class="f"><label>Competitor <span class="u">se presente</span></label><input id="a_competitor" type="text" placeholder="marca / codice"></div>
-          <div class="f"><label>Parametri competitor</label><input id="a_comppar" type="text" placeholder="Vc / fz / ap a confronto"></div>
-          <div class="f"><label>MRR competitor <span class="u">mm³/min</span></label><input id="a_compmrr" type="text" placeholder="es. 95"></div>
           <div class="f"><label>Finitura Ra <span class="u">µm</span></label><input id="a_ra" type="text" placeholder="es. 0,8"></div>
           <div class="f"><label>Video <span class="u">URL</span></label><input id="a_video" type="text" placeholder="https://…"></div>
           <div class="f"><label>Foto <span class="u">link/percorso</span></label><input id="a_photo" type="text" placeholder="link o percorso file"></div>
@@ -983,10 +982,10 @@ footer b{color:var(--text)}
 
     <div class="rtool on" id="rtool-conv">
       <div class="card">
-        <div class="ch"><span>Conversione Ra · Rz · N</span><span class="tag">ISO 1302</span></div>
+        <div class="ch"><span>Conversione Ra · Rz · N</span><span class="tag">ISO 21920 · 1302</span></div>
         <div class="cb" style="padding:0"><div class="tbl-wrap"><table class="cmp rough-tbl" id="roughTbl"></table></div></div>
       </div>
-      <div class="note"><span><b>Ra</b> = rugosità media · <b>Rz</b> = altezza max del profilo (valori <b>indicativi</b>: Rz/Ra varia ~4–7× col profilo) · <b>N</b> = numero di grado ISO 1302 · ▽ simbolo di finitura (ISO 1302:1978).</span></div>
+      <div class="note"><span><b>Ra</b> = rugosità media · <b>Rz</b> = altezza max del profilo (valori <b>indicativi</b>: Rz/Ra varia ~4–7× col profilo). I parametri Ra/Rz sono definiti dalla <b>ISO 21920</b> (2021, sostituisce ISO 4287/4288). <b>N</b> = numero di grado e ▽ simbolo di finitura secondo la <b>ISO 1302</b> (indicazione sul disegno).</span></div>
     </div>
 
     <div class="rtool" id="rtool-turn">
@@ -1046,7 +1045,7 @@ footer b{color:var(--text)}
       <button type="button" data-u="len" class="on"><b>mm / pollici</b><small>lunghezze</small></button>
       <button type="button" data-u="ang"><b>Angoli</b><small>° · rad · gon</small></button>
       <button type="button" data-u="hard"><b>Durezza</b><small>HRC · HV · HB · Rm</small></button>
-      <button type="button" data-u="rough"><b>Rugosità</b><small>Ra · Rz · N · µin</small></button>
+      <button type="button" data-u="rough"><b>Rugosità</b><small>Ra · Rz · N</small></button>
     </nav>
 
     <div class="rtool on" id="utool-len">
@@ -1084,13 +1083,13 @@ footer b{color:var(--text)}
     </div>
 
     <div class="rtool" id="utool-rough">
-      <div class="card"><div class="ch"><span>Rugosità</span><span class="tag">Ra → Rz · N · µin</span></div>
+      <div class="card"><div class="ch"><span>Rugosità</span><span class="tag">Ra → Rz · N</span></div>
         <div class="cb"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
           <div class="f"><label>Ra <span class="u">µm</span></label><input id="cv_ra" type="number" value="0.8" step="any" inputmode="decimal"></div>
         </div></div>
       </div>
       <div id="cv_rout"></div>
-      <div class="note"><span>1 µm = 39,37 µin. Rz e grado N sono <b>indicativi</b> (Rz/Ra varia col profilo). Per la tabella completa vedi <b>Tabelle → Rugosità</b>.</span></div>
+      <div class="note"><span>Rz e grado N sono <b>indicativi</b> (Rz/Ra varia col profilo). Per la tabella completa vedi <b>Tabelle → Rugosità</b>.</span></div>
     </div>
 
     <div class="tbl-foot"><button class="pdfbtn pdfprint" title="Stampa / salva come PDF">⎙ PDF</button></div>
@@ -1982,7 +1981,15 @@ var HELP={
   tfRa:'Rugosità media Ra che vuoi ottenere (µm). La app calcola l’avanzamento per giro fn teorico per raggiungerla in tornitura di finitura.',
   tfRe:'Raggio di punta dell’inserto (mm). A parità di avanzamento, un raggio più grande migliora la finitura.',
   mfDc:'Diametro della fresa a sfera/raggiata (mm).',
-  mfAe:'Larghezza di taglio (stepover) tra due passate affiancate (mm). Più è piccola, più basso è lo scallop e più fine la superficie.'
+  mfAe:'Larghezza di taglio (stepover) tra due passate affiancate (mm). Più è piccola, più basso è lo scallop e più fine la superficie.',
+  mm:'Lunghezza in millimetri.',
+  in:'Lunghezza in pollici (inch). 1 pollice = 25,4 mm.',
+  thou:'Lunghezza in mil/thou (millesimi di pollice). 1000 mil = 1 pollice = 25,4 mm.',
+  deg:'Angolo in gradi sessagesimali (°).',
+  rad:'Angolo in radianti. 1 rad = 57,2958°.',
+  gon:'Angolo in gon (centesimali/grad). 1 gon = 0,9°.',
+  hval:'Valore di durezza da convertire, espresso nella scala scelta accanto.',
+  hscale:'Scala di durezza del valore inserito: HRC, HV (Vickers), HB (Brinell), HRB o Rm (resistenza a trazione).'
 };
 function buildCutInputs(){
   var m=cut.mode,fields=CUTFIELDS[m],data=cut[m],g=$('#inGrid'); g.innerHTML='';
@@ -2245,17 +2252,14 @@ function savFoot(A,B,nA,nB){
     (savLot!=null?'<tr class="sav"><td class="l">Risparmio sul lotto ('+fmt(batch,0)+' pz)</td><td colspan="2"><b>'+itc(fmt(savLot,2))+' €</b></td></tr>':'')+
     '</tfoot>';
 }
-function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)return; document.body.classList.toggle('cmp-active',!!(A||B));
-  if(A||B){var cp=$('#cmpPanel'),ct=$('#cmpToggle'); if(cp&&cp.hidden){cp.hidden=false; if(ct)ct.setAttribute('aria-expanded','true');}}
-  if(!A&&!B){out.innerHTML='';return;} var nA=esc((cut.cmpNames.A||'').trim()||'A'),nB=esc((cut.cmpNames.B||'').trim()||'B');
-  var ML={mill:'Fresatura',turn:'Tornitura',drill:'Foratura',tap:'Filettatura'};
+function cmpTableHTML(A,B,nA,nB){
+  var eA=esc(nA),eB=esc(nB),ML={mill:'Fresatura',turn:'Tornitura',drill:'Foratura',tap:'Filettatura'};
   function R(lbl,unit,dec,key,dir,fmtFn){var a=A?A[key]:null,b=B?B[key]:null;
     var ta=(a==null||isNaN(a))?'—':(fmtFn?fmtFn(a):fmt(a,dec)),tb=(b==null||isNaN(b))?'—':(fmtFn?fmtFn(b):fmt(b,dec)),wa='',wb='';
     if(dir&&a!=null&&b!=null&&!isNaN(a)&&!isNaN(b)&&a!==b){if((dir>0&&a>b)||(dir<0&&a<b))wa=' class="win"';else wb=' class="win"';}
     return '<tr><td class="l">'+lbl+(unit?' <span class="u">'+unit+'</span>':'')+'</td><td'+wa+'>'+ta+'</td><td'+wb+'>'+tb+'</td></tr>';}
   function ft(S){return S?S.feedLbl+' '+itc(fmt(S.feedVal,S.feedLbl==='fz'?4:3)):'—';}
-  out.innerHTML='<div class="card"><div class="ch"><span>Confronto strategie A / B</span><span class="tag">parametri · potenza · costo · risparmio</span></div>'+
-    '<div class="cb" style="padding:0"><div class="tbl-wrap"><table class="cmp"><thead><tr><th class="l">Parametro</th><th>'+nA+'</th><th>'+nB+'</th></tr></thead><tbody>'+
+  return '<div class="cb" style="padding:0"><div class="tbl-wrap"><table class="cmp"><thead><tr><th class="l">Parametro</th><th>'+eA+'</th><th>'+eB+'</th></tr></thead><tbody>'+
     '<tr><td class="l">Operazione</td><td>'+(A?ML[A.mode]:'—')+'</td><td>'+(B?ML[B.mode]:'—')+'</td></tr>'+
     R('Ø','mm',3,'Dc',0)+R('Vc','m/min',1,'vc',0)+R('n','rpm',0,'n',0)+
     '<tr><td class="l">Avanzamento <span class="u">mm</span></td><td>'+ft(A)+'</td><td>'+ft(B)+'</td></tr>'+
@@ -2264,8 +2268,14 @@ function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)retur
     R('Tc / pezzo','',3,'Tc',-1,fmtTime)+R('Pezzi / tagliente','pz',1,'ppe',1)+R('Costo macchina','€/pz',3,'cMach',-1)+R('Costo taglienti','€/pz',3,'cTool',-1)+R('Costo fermi','€/pz',3,'cStop',-1)+
     R('Costo / pezzo','€',3,'costPP',-1)+R('Costo lotto','€',2,'costLot',-1)+R('Inserti / lotto','pz',0,'insLot',-1)+R('Utensili / lotto','pz',0,'toolsLot',-1)+
     '</tbody>'+savFoot(A,B,nA,nB)+'</table></div></div>'+
-    ((function(){var bars=chartCmpBars(A,B,(cut.cmpNames.A||'').trim()||'A',(cut.cmpNames.B||'').trim()||'B'); return bars?'<div class="cb" style="border-top:1px solid var(--line)">'+bars+'<div class="chart-cap">Barre affiancate delle due strategie. Per <b>MRR</b> vince la barra più alta (più produttiva); per <b>Tc</b> e <b>Costo</b> vince la più bassa (più veloce/economica). Il cerchietto verde segna il vincitore di ogni voce.</div></div>':'';})())+
-    '</div>';}
+    ((function(){var bars=chartCmpBars(A,B,nA,nB); return bars?'<div class="cb" style="border-top:1px solid var(--line)">'+bars+'<div class="chart-cap">Barre affiancate delle due strategie. Per <b>MRR</b> vince la barra più alta (più produttiva); per <b>Tc</b> e <b>Costo</b> vince la più bassa (più veloce/economica). Il cerchietto verde segna il vincitore di ogni voce.</div></div>':'';})());
+}
+function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)return; document.body.classList.toggle('cmp-active',!!(A||B));
+  if(A||B){var cp=$('#cmpPanel'),ct=$('#cmpToggle'); if(cp&&cp.hidden){cp.hidden=false; if(ct)ct.setAttribute('aria-expanded','true');}}
+  var sc=$('#btnSaveCmp'); if(sc)sc.disabled=!(A&&B);
+  if(!A&&!B){out.innerHTML='';return;}
+  var nA=(cut.cmpNames.A||'').trim()||'A',nB=(cut.cmpNames.B||'').trim()||'B';
+  out.innerHTML='<div class="card"><div class="ch"><span>Confronto strategie A / B</span><span class="tag">parametri · potenza · costo · risparmio</span></div>'+cmpTableHTML(A,B,nA,nB)+'</div>';}
 if($('#cstepper'))$('#cstepper').addEventListener('click',function(e){
   var s=e.target.closest('[data-go-step]'); if(!s)return;
   var tgt=document.getElementById(s.getAttribute('data-go-step'));
@@ -2528,60 +2538,101 @@ function fillDynFilters(list){
   fillDynSel('#fOperator','Tutti gli operatori',uniqVals(list,function(r){return (r.meta||{}).operator;}));
 }
 function updateArchCount(){var n=archLoad().length,e=$('#archHomeCount'); if(e)e.textContent=n+(n===1?' prova':' prove');}
+function metaFromForm(m){return {article:gv('#a_article'),material:(cut.matGroup&&GRP[cut.matGroup]?GRP[cut.matGroup].family:''),norm:gv('#j_norm'),hardness:gv('#j_hardness'),
+  condition:gv('#j_heat'),machine:gv('#j_machine'),tool:toolLabel(),
+  application:gv('#a_application'),result:gv('#a_result'),operator:gv('#a_operator'),coolant:gv('#a_coolant'),
+  toollife:(cut.pw.life?''+cut.pw.life:''),weartype:gv('#a_weartype'),wearlevel:gv('#a_wearlevel'),
+  ra:gv('#a_ra'),video:gv('#a_video'),photo:gv('#a_photo'),
+  client:gv('#j_client'),agent:gv('#j_agent'),part:gv('#j_part'),machstate:gv('#j_machstate'),fixture:gv('#j_fix'),heat:gv('#j_heat'),
+  toolType:effType(m),toolId:JSON.parse(JSON.stringify(cut.toolId)),
+  matdb:cut.mat,kc11:cut.kc11,mc:cut.mc,notes:gv('#a_notes')};}
+function newRecId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function archiveCurrent(){
   if(!CUTLAST){showToast('Inserisci prima i dati di taglio');return;}
   var m=cut.mode;
-  var rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:new Date().toISOString(),updatedAt:Date.now(),
+  var rec={id:newRecId(),date:new Date().toISOString(),updatedAt:Date.now(),
     name:gv('#a_name'),mode:m,
     inputs:JSON.parse(JSON.stringify(cut[m])),pw:JSON.parse(JSON.stringify(cut.pw)),
     out:JSON.parse(JSON.stringify(CUTLAST)),
-    meta:{article:gv('#a_article'),material:(cut.matGroup&&GRP[cut.matGroup]?GRP[cut.matGroup].family:''),norm:gv('#j_norm'),hardness:gv('#j_hardness'),
-      condition:gv('#j_heat'),machine:gv('#j_machine'),tool:toolLabel(),
-      application:gv('#a_application'),result:gv('#a_result'),operator:gv('#a_operator'),coolant:gv('#a_coolant'),
-      toollife:(cut.pw.life?''+cut.pw.life:''),weartype:gv('#a_weartype'),wearlevel:gv('#a_wearlevel'),competitor:gv('#a_competitor'),
-      comppar:gv('#a_comppar'),compmrr:gv('#a_compmrr'),ra:gv('#a_ra'),video:gv('#a_video'),photo:gv('#a_photo'),
-      client:gv('#j_client'),agent:gv('#j_agent'),part:gv('#j_part'),machstate:gv('#j_machstate'),fixture:gv('#j_fix'),heat:gv('#j_heat'),
-      toolType:effType(m),toolId:JSON.parse(JSON.stringify(cut.toolId)),
-      matdb:cut.mat,kc11:cut.kc11,mc:cut.mc,notes:gv('#a_notes')}};
+    meta:metaFromForm(m)};
   var list=archLoad(); list.unshift(rec); archStore(list); updateArchCount(); cloudPush(rec);
   showToast('Salvato in archivio'+(rec.name?' · '+rec.name:''));
+}
+function archiveCompare(){
+  var A=cut.cmp.A,B=cut.cmp.B;
+  if(!A||!B){showToast('Salva prima A e B nel confronto');return;}
+  var m=cut.mode,nA=(cut.cmpNames.A||'').trim()||'A',nB=(cut.cmpNames.B||'').trim()||'B';
+  var rec={id:newRecId(),date:new Date().toISOString(),updatedAt:Date.now(),
+    type:'compare',name:(gv('#a_name')||(nA+' vs '+nB)),mode:m,
+    cmp:{A:JSON.parse(JSON.stringify(A)),B:JSON.parse(JSON.stringify(B))},
+    cmpNames:{A:nA,B:nB},pw:JSON.parse(JSON.stringify(cut.pw)),
+    meta:metaFromForm(m)};
+  var list=archLoad(); list.unshift(rec); archStore(list); updateArchCount(); cloudPush(rec);
+  showToast('Confronto salvato in archivio · '+nA+' vs '+nB);
 }
 function archFmtDate(iso){var d=new Date(iso); if(isNaN(d))return ''; function p(n){return(n<10?'0':'')+n;} return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes());}
 function badgeRes(res){var c=res==='Positivo'?'ok':res==='Negativo'?'no':res==='Da rivedere'?'rev':''; return res?'<span class="badge '+c+'">'+esc(res)+'</span>':'';}
 function archPC(k,v){return (v==null||v===''||v==='—')?'':'<div class="pc"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>';}
 function archCardHTML(r){
-  var o=r.out||{},m=r.mode,mt=MODE_TITLE[m]||m;
-  var title=esc(r.name||(r.meta&&r.meta.article)||mt);
-  var feed=o.feedLbl?(o.feedLbl+' '+itc(fmt(o.feedVal,o.feedLbl==='fz'?4:3))):'';
-  var inp=r.inputs||{};
-  var apv=(inp.ap!=null&&inp.ap!=='')?+inp.ap:(o.ap!=null?o.ap:null);
-  var aev=(inp.ae!=null&&inp.ae!=='')?+inp.ae:(o.ae!=null?o.ae:null);
-  var params=archPC('Ø mm',o.Dc!=null?fmt(o.Dc,2):'')+archPC('Vc',o.vc!=null?fmt(o.vc,1):'')+archPC('n rpm',o.n!=null?fmt(o.n,0):'')+
-    archPC('Vf',o.vf!=null?fmt(o.vf,0):'')+archPC('Avanz.',feed)+
-    archPC('aₚ mm',apv?fmt(apv,2):'')+archPC('aₑ mm',aev?fmt(aev,2):'')+
-    archPC('Q',o.Q?fmt(o.Q,2):'')+
-    archPC('Pc kW',o.Pc!=null?fmt(o.Pc,2):'')+archPC('Costo €',o.cost!=null?itc(fmt(o.cost,2)):'');
-  var me=r.meta||{};
+  var me=r.meta||{},m=r.mode,mt=MODE_TITLE[m]||m;
+  var isCmp=!!(r.cmp&&r.cmp.A&&r.cmp.B);
+  var title=esc(r.name||me.article||(isCmp?'Confronto A/B':mt));
+  var typeBadge=isCmp?'<span class="badge mode">⇄ '+esc(mt)+' · A/B</span>':'<span class="badge mode">'+esc(mt)+'</span>';
+  var params;
+  if(isCmp){
+    var A=r.cmp.A,B=r.cmp.B,nA=esc((r.cmpNames&&r.cmpNames.A)||'A'),nB=esc((r.cmpNames&&r.cmpNames.B)||'B');
+    var ca=A.costPP,cb=B.costPP,sav=(ca!=null&&cb!=null&&!isNaN(ca)&&!isNaN(cb))?Math.abs(ca-cb):null,who=(sav!=null)?(ca<cb?nA:nB):'';
+    params=archPC('Strategie',nA+' vs '+nB)+archPC('Costo/pz '+nA,ca!=null&&!isNaN(ca)?itc(fmt(ca,3))+' €':'')+archPC('Costo/pz '+nB,cb!=null&&!isNaN(cb)?itc(fmt(cb,3))+' €':'')+
+      archPC('MRR '+nA,A.Q?fmt(A.Q,1):'')+archPC('MRR '+nB,B.Q?fmt(B.Q,1):'')+(sav!=null&&sav>0?archPC('Risparmio/pz',itc(fmt(sav,3))+' € → '+who):'');
+  } else {
+    var o=r.out||{},inp=r.inputs||{};
+    var feed=o.feedLbl?(o.feedLbl+' '+itc(fmt(o.feedVal,o.feedLbl==='fz'?4:3))):'';
+    var apv=(inp.ap!=null&&inp.ap!=='')?+inp.ap:(o.ap!=null?o.ap:null);
+    var aev=(inp.ae!=null&&inp.ae!=='')?+inp.ae:(o.ae!=null?o.ae:null);
+    params=archPC('Ø mm',o.Dc!=null?fmt(o.Dc,2):'')+archPC('Vc',o.vc!=null?fmt(o.vc,1):'')+archPC('n rpm',o.n!=null?fmt(o.n,0):'')+
+      archPC('Vf',o.vf!=null?fmt(o.vf,0):'')+archPC('Avanz.',feed)+
+      archPC('aₚ mm',apv?fmt(apv,2):'')+archPC('aₑ mm',aev?fmt(aev,2):'')+
+      archPC('Q',o.Q?fmt(o.Q,2):'')+archPC('Pc kW',o.Pc!=null?fmt(o.Pc,2):'')+archPC('Costo €',o.cost!=null?itc(fmt(o.cost,2)):'');
+  }
   function mc(lbl,v,cls){return v?'<div class="mc'+(cls?' '+cls:'')+'"><div class="k">'+lbl+'</div><div class="v">'+esc(v)+'</div></div>':'';}
   var wl=(me.wearlevel||'').toLowerCase();
   var wcls=(wl==='avanzata'||wl==='rottura')?'sev':(wl==='moderata'?'warn':((wl==='assente'||wl==='lieve')?'good':''));
   var mcells=mc('Materiale',me.material)+mc('Norma',me.norm)+mc('Durezza',me.hardness)+mc('Condizione',me.condition)+
     mc('Macchina',me.machine)+mc('Utensile',me.tool)+mc('Applicazione',me.application)+mc('Refrigerante',me.coolant)+
     mc('Vita utensile',me.toollife)+mc('Tipo usura',me.weartype)+mc('Entità usura',me.wearlevel,wcls)+
-    mc('Finitura Ra µm',me.ra)+mc('Competitor',me.competitor)+mc('Par. competitor',me.comppar)+
-    mc('MRR comp.',me.compmrr)+mc('Articolo',me.article);
+    mc('Finitura Ra µm',me.ra)+mc('Articolo',me.article);
   var operator=me.operator?'<div class="meta"><div><span>Operatore:</span> '+esc(me.operator)+'</div></div>':'';
   function mlink(lbl,v){if(!v)return ''; var s=esc(v); var inner=/^https?:\/\//i.test(v)?'<a href="'+s+'" target="_blank" rel="noopener">'+s+'</a>':s; return '<div><span>'+lbl+':</span> '+inner+'</div>';}
   var media=(me.video||me.photo)?'<div class="meta media">'+mlink('🎥 Video',me.video)+mlink('📷 Foto',me.photo)+'</div>':'';
   var notes=me.notes?'<div class="notes">'+esc(me.notes)+'</div>':'';
-  return '<div class="arec" data-id="'+r.id+'" tabindex="0" role="button" aria-label="Apri scheda completa"><div class="arh"><span class="ttl">'+title+'</span><span class="badge mode">'+esc(mt)+'</span>'+badgeRes(me.result)+'<span class="open-hint">tocca per la scheda</span><span class="when">'+archFmtDate(r.date)+'</span></div>'+
+  return '<div class="arec" data-id="'+r.id+'" tabindex="0" role="button" aria-label="Apri scheda completa"><div class="arh"><span class="ttl">'+title+'</span>'+typeBadge+badgeRes(me.result)+'<span class="open-hint">tocca per la scheda</span><span class="when">'+archFmtDate(r.date)+'</span></div>'+
     '<div class="arb"><div class="pgrid">'+params+'</div>'+(mcells?'<div class="mgrid">'+mcells+'</div>':'')+operator+media+notes+
-    '<div class="acts"><button class="detail" data-act="detail" data-id="'+r.id+'">🔍 Scheda completa</button><button class="open" data-act="open" data-id="'+r.id+'">↗ Apri nel calcolatore</button><button class="del" data-act="del" data-id="'+r.id+'">Elimina</button></div></div></div>';
+    '<div class="acts"><button class="detail" data-act="detail" data-id="'+r.id+'">🔍 Scheda completa</button>'+(isCmp?'':'<button class="open" data-act="open" data-id="'+r.id+'">↗ Apri nel calcolatore</button>')+'<button class="del" data-act="del" data-id="'+r.id+'">Elimina</button></div></div></div>';
 }
 /* ---- Scheda completa di una prova (overlay + PDF) ---- */
 var DET_ID=null;
 function detCell(k,v,txt){return (v==null||v===''||v==='—')?'':'<div class="det-cell'+(txt?' txt':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+(txt===true?esc(v):v)+'</div></div>';}
+function compareDetailHTML(r){
+  var me=r.meta||{},A=r.cmp.A,B=r.cmp.B,nA=(r.cmpNames&&r.cmpNames.A)||'A',nB=(r.cmpNames&&r.cmpNames.B)||'B',mt=MODE_TITLE[r.mode]||r.mode;
+  var title=esc(r.name||(nA+' vs '+nB));
+  var matRow=(me.matdb&&typeof findMat==='function')?findMat(me.matdb):null,grp=matRow?matRow[3]:'',fam=(grp&&GRP[grp])?GRP[grp].family:'';
+  function dc(k,v,txt){return detCell(k,v,txt);}
+  function sec(t,rows){return rows?'<div class="det-sec"><h4>'+t+'</h4><div class="det-grid">'+rows+'</div></div>':'';}
+  function mlinkCell(lbl,v){if(!v)return ''; var s=esc(v),inner=/^https?:\/\//i.test(v)?'<a href="'+s+'" target="_blank" rel="noopener">'+s+'</a>':s; return '<div class="det-cell txt"><div class="k">'+esc(lbl)+'</div><div class="v">'+inner+'</div></div>';}
+  var matRows=dc('Materiale',me.matdb||me.material,true)+(grp?dc('Gruppo ISO',grp+(fam?' · '+fam:''),true):'')+dc('Norma',me.norm,true)+dc('Durezza',me.hardness,true)+dc('Trattamento termico',me.condition,true);
+  var macRows=dc('Macchina',me.machine,true)+dc('Stato macchina',me.machstate,true)+dc('Staffaggio',me.fixture,true);
+  var media=mlinkCell('🎥 Video',me.video)+mlinkCell('📷 Foto',me.photo);
+  var concl=(me.notes||media)?'<div class="det-sec"><h4>Conclusioni / Note</h4>'+(me.notes?'<div class="det-notes">'+esc(me.notes)+'</div>':'')+(media?'<div class="det-grid" style="margin-top:10px">'+media+'</div>':'')+'</div>':'';
+  var consBits=[me.client&&('Cliente: '+me.client),me.agent&&('Agente: '+me.agent),me.part&&('Componente: '+me.part)].filter(Boolean);
+  var consLine=consBits.length?'<div class="det-cons">'+consBits.map(function(b){return esc(b);}).join(' · ')+'</div>':'';
+  return '<div class="det-sheet" role="dialog" aria-modal="true">'+
+    '<div class="det-head"><span class="ttl">'+title+'</span><span class="badge mode">⇄ '+esc(mt)+' · A/B</span>'+badgeRes(me.result)+'<span class="when">'+archFmtDate(r.date)+'</span><button class="det-close" data-det="close" aria-label="Chiudi">×</button></div>'+
+    '<div class="det-body">'+consLine+sec('1 · Materiale lavorato',matRows)+sec('2 · Macchina',macRows)+
+      '<div class="det-sec"><h4>3 · Confronto strategie A / B</h4><div class="card">'+cmpTableHTML(A,B,nA,nB)+'</div></div>'+concl+'</div>'+
+    '<div class="det-acts"><button class="pdf" data-det="pdf">⎙ Scarica PDF</button><button class="del grow" data-det="del">Elimina</button><button data-det="close">Chiudi</button></div></div>';
+}
 function recDetailHTML(r){
+  if(r.cmp&&r.cmp.A&&r.cmp.B)return compareDetailHTML(r);
   var m=r.mode,mt=MODE_TITLE[m]||m,inp=r.inputs||{},o=r.out||{},pw=r.pw||{},me=r.meta||{},tid=me.toolId||{};
   var etype=me.toolType||o.etype||(m==='turn'?'insert':(m==='tap'?'mdi':'insert'));
   var title=esc(r.name||me.article||mt);
@@ -2629,7 +2680,7 @@ function recDetailHTML(r){
   // 7 · Usura & verifica
   var verRows=dc('Applicazione',me.application,true)+dc('Refrigerante',me.coolant,true)+dc('Vita utensile (campo)',me.toollife,true)+
     dc('Tipo usura',me.weartype,true)+dc('Entità usura',me.wearlevel,true)+dc('Ra misurata (µm)',me.ra,true)+
-    dc('Operatore',me.operator,true)+dc('Competitor',me.competitor,true)+dc('Par. competitor',me.comppar,true)+dc('MRR comp. (mm³/min)',me.compmrr,true);
+    dc('Operatore',me.operator,true);
   // 8 · Grafici (ricostruiti dai dati salvati)
   var charts='';
   if(me.kc11>0&&pw.kc>0&&me.mc>0&&m!=='tap'){
@@ -2694,7 +2745,7 @@ function recMatches(r,f){
   if(f.coolant&&me.coolant!==f.coolant)return false;
   if(f.wear&&me.wearlevel!==f.wear)return false;
   if(f.from||f.to){var d=(''+(r.date||'')).slice(0,10); if(f.from&&d<f.from)return false; if(f.to&&d>f.to)return false;}
-  if(f.q){var hay=[r.name,me.article,me.material,me.norm,me.hardness,me.condition,me.machine,me.tool,me.operator,me.application,me.coolant,me.toollife,me.weartype,me.wearlevel,me.competitor,me.comppar,me.compmrr,me.ra,me.notes,MODE_TITLE[r.mode]].join(' ').toLowerCase();
+  if(f.q){var hay=[r.name,me.article,me.material,me.norm,me.hardness,me.condition,me.machine,me.tool,me.operator,me.application,me.coolant,me.toollife,me.weartype,me.wearlevel,me.ra,me.notes,(r.cmpNames&&(r.cmpNames.A+' '+r.cmpNames.B)),MODE_TITLE[r.mode]].join(' ').toLowerCase();
     if(hay.indexOf(f.q)<0)return false;}
   return true;
 }
@@ -2734,8 +2785,8 @@ function openRecord(id){
   applyMatHint(); markChips(); recompute(null);
   sv('#a_name',r.name); sv('#a_article',me.article); sv('#a_application',me.application); sv('#a_result',me.result); sv('#a_notes',me.notes);
   sv('#a_operator',me.operator); sv('#a_coolant',me.coolant);
-  sv('#a_weartype',me.weartype); sv('#a_wearlevel',me.wearlevel); sv('#a_competitor',me.competitor);
-  sv('#a_comppar',me.comppar); sv('#a_compmrr',me.compmrr); sv('#a_ra',me.ra); sv('#a_video',me.video); sv('#a_photo',me.photo);
+  sv('#a_weartype',me.weartype); sv('#a_wearlevel',me.wearlevel);
+  sv('#a_ra',me.ra); sv('#a_video',me.video); sv('#a_photo',me.photo);
   sv('#j_client',me.client); sv('#j_agent',me.agent); sv('#j_part',me.part); sv('#j_machine',me.machine); sv('#j_machstate',me.machstate); sv('#j_fix',me.fixture);
   sv('#j_norm',me.norm); sv('#j_hardness',me.hardness); sv('#j_heat',me.heat||me.condition);
   updateDetCnt(); var dp=$('#archDetails'),dt=$('#detToggle');
@@ -2831,6 +2882,7 @@ function clearCloudCfg(){store.set('cloudcfg',''); var p=$('#cloudCfg'); if(p)p.
 function archInit(){
   fillArchSelects(); updateArchCount(); updateSyncUI();
   if($('#btnArchiveSave'))$('#btnArchiveSave').addEventListener('click',archiveCurrent);
+  if($('#btnSaveCmp'))$('#btnSaveCmp').addEventListener('click',archiveCompare);
   if($('#archSearch'))$('#archSearch').addEventListener('input',renderArchive);
   ['#fMode','#fMaterial','#fResult','#fApplication','#fMachine','#fTool','#fOperator','#fCoolant','#fWear','#fFrom','#fTo','#fSort'].forEach(function(s){var e=$(s); if(e)e.addEventListener('change',renderArchive);});
   if($('#archClear'))$('#archClear').addEventListener('click',function(){
@@ -2919,7 +2971,7 @@ function attachHints(sel){var root=$(sel); if(!root)return;
   });}
 function wireCollapse(btnSel,panelSel){var b=$(btnSel),p=$(panelSel); if(!b||!p)return;
   b.addEventListener('click',function(){var open=p.hidden; p.hidden=!open; b.setAttribute('aria-expanded',open?'true':'false');});}
-function updateDetCnt(){var c=$('#detCnt'); if(!c)return; var ids=['a_application','a_coolant','a_weartype','a_wearlevel','a_competitor','a_comppar','a_compmrr','a_ra','a_video','a_photo','a_notes'];
+function updateDetCnt(){var c=$('#detCnt'); if(!c)return; var ids=['a_application','a_coolant','a_weartype','a_wearlevel','a_ra','a_video','a_photo','a_notes'];
   var n=0; ids.forEach(function(id){var e=$('#'+id); if(e&&(''+e.value).trim())n++;}); c.textContent=n?(''+n):'';}
 function updateFiltCnt(f){var c=$('#filtCnt'); if(!c)return; var keys=['mode','material','result','application','machine','tool','operator','coolant','wear','from','to'];
   var n=0; keys.forEach(function(k){if(f[k])n++;}); c.textContent=n?(''+n):'';}
@@ -2931,7 +2983,7 @@ function wireGuide(){
   var clr=$('#matClear'); if(clr)clr.addEventListener('click',clearMaterial);
   var ch=$('#matChips'); if(ch)ch.addEventListener('click',function(e){var b=e.target.closest('button[data-term]'); if(b)resolveMaterial(b.getAttribute('data-term'));});
   applyMatHint(); markChips();
-  attachHints('#jobCard'); attachHints('#archCard'); attachHints('#tab-tol'); attachHints('#tab-thread'); attachHints('#tab-rough');
+  attachHints('#jobCard'); attachHints('#archCard'); attachHints('#tab-tol'); attachHints('#tab-thread'); attachHints('#tab-rough'); attachHints('#tab-units');
   document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.qmark'); if(b){e.preventDefault(); toggleHint(b.getAttribute('data-k'));}});
   wireCollapse('#cmpToggle','#cmpPanel'); wireCollapse('#detToggle','#archDetails'); wireCollapse('#archFiltToggle','#archFilters');
   var det=$('#archDetails'); if(det)det.addEventListener('input',updateDetCnt); updateDetCnt();
@@ -2968,7 +3020,7 @@ function renderMillFin(){var out=$('#mfOut'); if(!out)return;
   out.innerHTML=roughResBox('Profondità di rugosità Rth',itc(fmt(Rth,4)),'mm','≈ '+itc(fmt(Rth*1000,1))+' µm · Dc '+itc(fmt(Dc,2))+' mm · aₑ '+itc(fmt(ae,2))+' mm');}
 ['#tfRa','#tfRe','#tfMarg'].forEach(function(s){var e=$(s); if(e)e.addEventListener('input',renderTurnFin);});
 ['#mfDc','#mfAe'].forEach(function(s){var e=$(s); if(e)e.addEventListener('input',renderMillFin);});
-var ROUGH_SUB={conv:['Conversione Ra · Rz · N','tabella ISO 1302'],turn:['Avanzamento di finitura · tornitura','dalla Ra desiderata all’avanzamento fn'],mill:['Rugosità di fresatura · fresa a sfera','altezza scallop Rth da Dc e larghezza aₑ']};
+var ROUGH_SUB={conv:['Conversione Ra · Rz · N','tabella ISO 21920 · 1302'],turn:['Avanzamento di finitura · tornitura','dalla Ra desiderata all’avanzamento fn'],mill:['Rugosità di fresatura · fresa a sfera','altezza scallop Rth da Dc e larghezza aₑ']};
 function setRsub(key){ if(!ROUGH_SUB[key])key='conv'; V.rsub=key;
   $$('#rseg button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-r')===key);});
   $$('#tab-rough .rtool').forEach(function(t){t.classList.toggle('on',t.id==='rtool-'+key);});
@@ -3005,8 +3057,8 @@ function rzFromRa(ra){var t=ROUGH_TABLE.slice().sort(function(a,b){return a[1]-b
   for(var i=1;i<t.length;i++){if(ra<=t[i][1]){var a=t[i-1],b=t[i],lt=(Math.log(ra)-Math.log(a[1]))/(Math.log(b[1])-Math.log(a[1]));return Math.exp(Math.log(a[2])+(Math.log(b[2])-Math.log(a[2]))*lt);}} return ra*(t[t.length-1][2]/t[t.length-1][1]); }
 function cvRough(){var ra=num($('#cv_ra').value),out=$('#cv_rout'); if(!out)return; if(!(ra>0)){out.innerHTML='';return;}
   var rz=rzFromRa(ra),g=nGrade(ra);
-  out.innerHTML='<div class="card tol-res"><div class="cb"><div class="kv2grid"><div class="kv2"><span>Ra</span><b>'+itc(fmt(ra,3))+' µm</b></div><div class="kv2"><span>Ra</span><b>'+itc(fmt(ra*39.37,1))+' µin</b></div><div class="kv2"><span>Rz ≈</span><b>'+itc(fmt(rz,rz<10?2:1))+' µm</b></div><div class="kv2"><span>Rz ≈</span><b>'+itc(fmt(rz*39.37,0))+' µin</b></div><div class="kv2"><span>Grado</span><b>'+(g?g[0]+' '+g[3]:'—')+'</b></div></div></div></div>'; }
-var UNIT_SUB={len:['Lunghezze','mm · pollici · mil'],ang:['Angoli','gradi · radianti · gon'],hard:['Durezza','HRC · HV · HB · HRB · Rm'],rough:['Rugosità','Ra · Rz · N · µin']};
+  out.innerHTML='<div class="card tol-res"><div class="cb"><div class="kv2grid"><div class="kv2"><span>Ra</span><b>'+itc(fmt(ra,3))+' µm</b></div><div class="kv2"><span>Rz ≈</span><b>'+itc(fmt(rz,rz<10?2:1))+' µm</b></div><div class="kv2"><span>Grado</span><b>'+(g?g[0]+' '+g[3]:'—')+'</b></div></div></div></div>'; }
+var UNIT_SUB={len:['Lunghezze','mm · pollici · mil'],ang:['Angoli','gradi · radianti · gon'],hard:['Durezza','HRC · HV · HB · HRB · Rm'],rough:['Rugosità','Ra · Rz · N']};
 function setUsub(key){ if(!UNIT_SUB[key])key='len'; V.usub=key;
   $$('#useg button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-u')===key);});
   $$('#tab-units .rtool').forEach(function(t){t.classList.toggle('on',t.id==='utool-'+key);});
