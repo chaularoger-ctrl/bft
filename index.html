@@ -838,6 +838,7 @@ footer b{color:var(--text)}
         <div class="grid" style="margin-top:12px">
           <div class="f"><label>Applicazione</label><select id="a_application"></select></div>
           <div class="f"><label>Refrigerante</label><select id="a_coolant"></select></div>
+          <div class="f"><label>Pressione refrig. <span class="u">bar</span></label><input id="a_coolbar" type="number" step="any" inputmode="decimal" placeholder="es. 20"></div>
           <div class="f"><label>Tipo usura</label><select id="a_weartype"></select></div>
           <div class="f"><label>Entità usura</label><select id="a_wearlevel"></select></div>
           <div class="f"><label>Finitura Ra <span class="u">µm</span></label><input id="a_ra" type="text" placeholder="es. 0,8"></div>
@@ -1162,7 +1163,7 @@ var millFields=[['Dc','Ø fresa','mm'],['z','N° taglienti','z'],['vc','Vel. tag
   ['kr','Angolo κr','°'],['re','Raggio punta rₑ','mm']];
 var turnFields=[['Dc','Ø pezzo','mm'],['vc','Vel. taglio Vc','m/min'],['n','Giri mandrino n','rpm'],
   ['fn','Avanz./giro fn','mm'],['ap','Prof. taglio aₚ','mm'],['re','Raggio punta rₑ','mm']];
-var drillFields=[['Dc','Ø punta','mm'],['kr','Angolo punta κr','°'],['vc','Vel. taglio Vc','m/min'],['n','Giri mandrino n','rpm'],
+var drillFields=[['Dc','Ø punta','mm'],['vc','Vel. taglio Vc','m/min'],['n','Giri mandrino n','rpm'],['hole','Tipo foro','',{type:'sel',opts:['Passante','Cieco']}],
   ['fn','Avanz./giro fn','mm'],['z','N° taglienti','z']];
 var tapFields=[['preset','Filetto','',{type:'preset'}],['Dc','Ø nominale','mm'],['P','Passo p','mm'],
   ['vc','Vel. taglio Vc','m/min'],['n','Giri mandrino n','rpm']];
@@ -1175,7 +1176,7 @@ var MODE_DESC={mill:'Vc, n, avanzamenti, MRR, spessore truciolo e Ra teorica',tu
 var cut={mode:'mill',mat:'',matGroup:'',kc11:0,mc:0,toolType:'insert',
   mill:{Dc:0,z:0,vc:0,n:0,fz:0,vf:0,ap:0,ae:0,kr:0,re:0},
   turn:{Dc:0,vc:0,n:0,fn:0,ap:0,re:0},
-  drill:{Dc:0,kr:0,vc:0,n:0,fn:0,z:0},
+  drill:{Dc:0,vc:0,n:0,fn:0,z:0,hole:'Passante'},
   tap:{Dc:0,P:0,vc:0,n:0},
   toolId:{maker:'',code:'',body:'',ins:'',grade:''},
   pw:{kc:0,eta:0,L:0,np:0,rate:0,tool:0,rateStop:0,tChange:0,machP:0,life:0,toolPrice:0,edges:0,insP:0,bodyP:0,bodyLife:0,batch:0},
@@ -1989,7 +1990,9 @@ var HELP={
   rad:'Angolo in radianti. 1 rad = 57,2958°.',
   gon:'Angolo in gon (centesimali/grad). 1 gon = 0,9°.',
   hval:'Valore di durezza da convertire, espresso nella scala scelta accanto.',
-  hscale:'Scala di durezza del valore inserito: HRC, HV (Vickers), HB (Brinell), HRB o Rm (resistenza a trazione).'
+  hscale:'Scala di durezza del valore inserito: HRC, HV (Vickers), HB (Brinell), HRB o Rm (resistenza a trazione).',
+  hole:'Tipo di foro: passante (esce dall’altra parte) o cieco (a fondo chiuso). Influisce su evacuazione truciolo e refrigerazione.',
+  coolbar:'Pressione del refrigerante in bar (alta pressione migliora evacuazione truciolo e vita utensile).'
 };
 function buildCutInputs(){
   var m=cut.mode,fields=CUTFIELDS[m],data=cut[m],g=$('#inGrid'); g.innerHTML='';
@@ -2006,6 +2009,18 @@ function buildCutInputs(){
         sel.appendChild(grp);});
       d.appendChild(sel); g.appendChild(d);
       sel.addEventListener('change',function(){var v=sel.value; if(v){var pr=v.split(':'),oc=thr_compute(pr[0],THR.fam[pr[0]].rows[+pr[1]]); data.Dc=oc.d; data.P=oc.P; if($('#c_Dc'))$('#c_Dc').value=fmt(oc.d,2); if($('#c_P'))$('#c_P').value=fmt(oc.P,3);} recompute(null);});
+      return;
+    }
+    if(f[3]&&f[3].type==='sel'){
+      var qs=HELP[key]?' <button type="button" class="qmark" data-k="'+key+'" aria-label="Aiuto">?</button>':'';
+      d.innerHTML='<label>'+f[1]+qs+'</label>';
+      if(!data[key])data[key]=f[3].opts[0];
+      var ssel=el('select',{id:'c_'+key});
+      f[3].opts.forEach(function(o){var op=el('option',{value:o},o); if(data[key]===o)op.selected=true; ssel.appendChild(op);});
+      d.appendChild(ssel);
+      if(HELP[key]){var fhs=el('div',{'class':'fhint',id:'fhint_'+key}); fhs.hidden=true; fhs.innerHTML=HELP[key]; d.appendChild(fhs);}
+      g.appendChild(d);
+      ssel.addEventListener('change',function(){data[key]=ssel.value; recompute(null); persistCut();});
       return;
     }
     var q=HELP[key]?' <button type="button" class="qmark" data-k="'+key+'" aria-label="Aiuto">?</button>':'';
@@ -2034,7 +2049,8 @@ function buildToolGrid(defs){var g=$('#toolGrid'); if(!g)return; g.innerHTML='';
   inp.addEventListener('input',function(){cut.toolId[key]=inp.value; persistCut();});});}
 function buildPwInputs(){
   var et=effType();
-  buildFieldGrid('#pwGrid',PWF);
+  var pwf=PWF.map(function(f){return f[0]==='L'?[f[0],(cut.mode==='drill'?'Lunghezza foro':'Lungh. taglio L'),f[2]]:f;});
+  buildFieldGrid('#pwGrid',pwf);
   buildFieldGrid('#ecoGrid',(et==='mdi'?ECOF_MDI:ECOF_INS).concat(ECOF_BASE));
   buildToolGrid(et==='mdi'?TOOLF_MDI:TOOLF_INS);
   var bar=$('#toolTypeBar'); if(bar){ bar.hidden=!hasToolType();
@@ -2081,7 +2097,7 @@ function recompute(edited){
   } else if(m==='drill'){
     fn=d.fn; var zd=d.z||2; vf=fn*n; fz=zd?fn/zd:0; Q=(PI/4)*Dc*Dc*vf/1000;
     h=cell('n',fmt(n,n>=1000?0:1),'rpm')+cell('Vc',fmt(vc,1),'m/min')+cell('Vf',fmt(vf,0),'mm/min')+
-      cell('fn',fmt(fn,3),'mm/g')+cell('fz',fmt(fz,4),'mm/tagl.')+cell('Q',fmt(Q,Q>=100?0:Q>=10?1:2),'cm³/min','alt hero');
+      cell('fn',fmt(fn,3),'mm/g')+cell('Q',fmt(Q,Q>=100?0:Q>=10?1:2),'cm³/min','alt hero');
   } else { var P=d.P; vf=P*n;
     h=cell('n',fmt(n,n>=1000?0:1),'rpm')+cell('Vc',fmt(vc,1),'m/min')+cell('fn = p',itc(fmt(P,3)),'mm/g')+cell('Vf penetr.',fmt(vf,0),'mm/min','alt');
   }
@@ -2093,9 +2109,10 @@ function recompute(edited){
   }
   var pw=cut.pw;
   var Pc=(pw.kc>0&&Q)?Q*pw.kc/60000:null, Pmot=(Pc!=null)?Pc/(pw.eta||0.8):null, Mc=(Pc!=null&&n>0)?9549*Pc/n:null, Tc=(pw.L>0&&vf>0)?pw.L*(pw.np||1)/vf:null;
-  // Forza di avanzamento (spinta) in foratura — stima indicativa (κr = metà angolo di punta)
-  var krDrill=(m==='drill')?((d.kr>0?d.kr:118)/2)*PI/180:0;
-  var Ff=(m==='drill'&&pw.kc>0&&Dc>0&&fn>0)?0.5*pw.kc*(Dc/2)*fn*Math.sin(krDrill):null;
+  // Percorso lineare dell'utensile (avanzamento) = Vf · Tc = L · n° passate [mm]
+  var path=(pw.L>0)?pw.L*(pw.np||1):null;
+  // Forza di avanzamento (spinta) in foratura — stima indicativa (punta std 118°, κr 59°)
+  var Ff=(m==='drill'&&pw.kc>0&&Dc>0&&fn>0)?0.5*pw.kc*(Dc/2)*fn*Math.sin(59*PI/180):null;
   // ---- Economia: costo reale per pezzo (MDI: utensile unico · inserti: corpo + inserti) ----
   var etype=effType(m);
   var rate=pw.rate||0, rateStop=pw.rateStop||0, tCh=pw.tChange||0, machP=pw.machP||0;
@@ -2116,7 +2133,7 @@ function recompute(edited){
   var toolsLot=(etype==='mdi'&&ppe!=null&&ppe>0&&batch>0)?Math.ceil(batch/ppe):null;  // utensili/lotto (MDI)
   var bodyImpossible=(etype!=='mdi'&&bodyLife>0&&zEco*Math.max(edges,1)>bodyLife);    // vita corpo < taglienti montati
   var powOver=(machP>0&&Pmot!=null&&Pmot>machP), powUse=(machP>0&&Pmot!=null)?100*Pmot/machP:null;
-  var ph=cell('Pc netto',Pc==null?'—':fmt(Pc,Pc<10?2:1),Pc==null?'':'kW','alt')+cell('P motore',Pmot==null?'—':fmt(Pmot,Pmot<10?2:1),Pmot==null?'':'kW',powOver?'warn':'')+cell('Mc',Mc==null?'—':fmt(Mc,Mc<10?2:1),Mc==null?'':'Nm')+cell('Tc / pezzo',Tc==null?'—':fmtTime(Tc),'','hero')+(Ff!=null?cell('Forza avanz.',fmt(Ff,0),'N · stima'):'');
+  var ph=cell('Pc netto',Pc==null?'—':fmt(Pc,Pc<10?2:1),Pc==null?'':'kW','alt')+cell('P motore',Pmot==null?'—':fmt(Pmot,Pmot<10?2:1),Pmot==null?'':'kW',powOver?'warn':'')+cell('Mc',Mc==null?'—':fmt(Mc,Mc<10?2:1),Mc==null?'':'Nm')+cell('Tc / pezzo',Tc==null?'—':fmtTime(Tc),'','hero')+cell('Percorso utensile',path==null?'—':(path>=1000?fmt(path/1000,2):fmt(path,0)),path==null?'':(path>=1000?'m':'mm'))+(Ff!=null?cell('Forza avanz.',fmt(Ff,0),'N · stima'):'');
   if($('#pwgrid'))$('#pwgrid').innerHTML=ph;
   var pa=$('#powAdvice'); if(pa){ if(powOver)pa.innerHTML='<span class="adv warn">⚠ P motore <span class="av">'+fmt(Pmot,1)+'</span> kW supera la macchina ('+fmt(machP,1)+' kW): riduci Vc, ap/ae o avanzamento</span>'; else if(powUse!=null)pa.innerHTML='<span class="adv ok">✓ Mandrino al <span class="av">'+fmt(powUse,0)+'%</span> · '+fmt(Pmot,1)+' / '+fmt(machP,1)+' kW</span>'; else pa.innerHTML=''; }
   var ppeLbl=(etype==='mdi'?'Pezzi/utensile':'Pezzi/tagliente'), toolLbl=(etype==='mdi'?'Costo utensile':'Costo taglienti'), lifeLbl=(etype==='mdi'?'Vita utensile':'Vita tagliente');
@@ -2127,7 +2144,7 @@ function recompute(edited){
   var ea=$('#ecoAdvice'); if(ea){ if(bodyImpossible)ea.innerHTML='<span class="adv warn">⚠ <span class="av">Vita corpo</span> ('+fmt(bodyLife,0)+') inferiore ai taglienti montati ('+fmt(zEco*Math.max(edges,1),0)+'): valore non plausibile, è la durata totale del corpo su molti lotti</span>'; else if(costUnit>0&&ppe==null)ea.innerHTML='<span class="adv warn">⚠ Inserisci <span class="av">'+lifeLbl+'</span> per avere il costo '+(etype==='mdi'?'utensile':'taglienti')+' e il costo/pezzo completi</span>'; else if(costPP!=null&&batch>0)ea.innerHTML='<span class="adv ok">✓ Costo/pezzo <span class="av">'+itc(fmt(costPP,3))+'</span> € · lotto di '+fmt(batch,0)+' pz = '+itc(fmt(costLot,2))+' €'+(insLot!=null?' · '+fmt(insLot,0)+' inserti da comprare':(toolsLot!=null?' · '+fmt(toolsLot,0)+' utensili':''))+'</span>'; else ea.innerHTML=''; }
   renderAdvice(m,vc,(m==='mill'?'fz':'fn'),(m==='mill'?fz:fn));
   renderCharts(m,d,n,vc,(m==='mill'?fz:(m==='tap'?0:fn)),(m==='mill'?hm:(m==='turn'?d.fn:(m==='drill'?fz:0))));
-  CUTLAST={mode:m,Dc:Dc,vc:vc,n:n,vf:vf,Q:(Q||0),feedVal:(m==='mill'?fz:(m==='tap'?d.P:fn)),feedLbl:(m==='mill'?'fz':(m==='tap'?'p':'fn')),Pc:Pc,Pmot:Pmot,Mc:Mc,Tc:Tc,Ff:Ff,ppe:ppe,cMach:cMach,cTool:cTool,cStop:cStop,cost:costPP,costPP:costPP,costLot:costLot,batch:batch,machP:machP,powOver:powOver,etype:etype,zEco:zEco,edgesLot:edgesLot,insLot:insLot,toolsLot:toolsLot,ap:(d.ap!=null&&d.ap!==''?+d.ap:null),ae:(d.ae!=null&&d.ae!==''?+d.ae:null)};
+  CUTLAST={mode:m,Dc:Dc,vc:vc,n:n,vf:vf,Q:(Q||0),feedVal:(m==='mill'?fz:(m==='tap'?d.P:fn)),feedLbl:(m==='mill'?'fz':(m==='tap'?'p':'fn')),Pc:Pc,Pmot:Pmot,Mc:Mc,Tc:Tc,Ff:Ff,path:path,ppe:ppe,cMach:cMach,cTool:cTool,cStop:cStop,cost:costPP,costPP:costPP,costLot:costLot,batch:batch,machP:machP,powOver:powOver,etype:etype,zEco:zEco,edgesLot:edgesLot,insLot:insLot,toolsLot:toolsLot,ap:(d.ap!=null&&d.ap!==''?+d.ap:null),ae:(d.ae!=null&&d.ae!==''?+d.ae:null)};
   updateGuide();
   persistCut();
 }
@@ -2239,7 +2256,11 @@ function persistCut(){store.set('cut',JSON.stringify({mode:cut.mode,mat:cut.mat,
 function svuotaCut(){var m=cut.mode; CUTFIELDS[m].forEach(function(f){if(f[3]&&f[3].type==='preset'){var sp=$('#c_preset'); if(sp)sp.value=''; return;} cut[m][f[0]]=0; var e=$('#c_'+f[0]); if(e)e.value='';});
   ['kc','L','rate','tool'].forEach(function(k){cut.pw[k]=0; var e=$('#p_'+k); if(e)e.value='';});
   CUTLAST=null; if($('#rgrid'))$('#rgrid').innerHTML=''; if($('#pwgrid'))$('#pwgrid').innerHTML=''; persistCut(); showToast('Campi svuotati');}
-function saveCmp(slot){if(!CUTLAST){showToast('Nessun dato da salvare');return;} cut.cmp[slot]=JSON.parse(JSON.stringify(CUTLAST)); renderCmp(); persistCut(); showToast(((cut.cmpNames[slot]||'').trim()||('Strategia '+slot))+' salvata');}
+function saveCmp(slot){if(!CUTLAST){showToast('Nessun dato da salvare');return;}
+  var snap=JSON.parse(JSON.stringify(CUTLAST));
+  snap.toolId=JSON.parse(JSON.stringify(cut.toolId)); snap.tool=toolLabel();
+  snap.pwSnap=JSON.parse(JSON.stringify(cut.pw)); snap.inputs=JSON.parse(JSON.stringify(cut[cut.mode])); snap.etype=effType(cut.mode);
+  cut.cmp[slot]=snap; renderCmp(); persistCut(); showToast(((cut.cmpNames[slot]||'').trim()||('Strategia '+slot))+' salvata');}
 function savFoot(A,B,nA,nB){
   if(!A||!B)return '';
   var ca=A.costPP,cb=B.costPP;
@@ -2540,7 +2561,7 @@ function fillDynFilters(list){
 function updateArchCount(){var n=archLoad().length,e=$('#archHomeCount'); if(e)e.textContent=n+(n===1?' prova':' prove');}
 function metaFromForm(m){return {article:gv('#a_article'),material:(cut.matGroup&&GRP[cut.matGroup]?GRP[cut.matGroup].family:''),norm:gv('#j_norm'),hardness:gv('#j_hardness'),
   condition:gv('#j_heat'),machine:gv('#j_machine'),tool:toolLabel(),
-  application:gv('#a_application'),result:gv('#a_result'),operator:gv('#a_operator'),coolant:gv('#a_coolant'),
+  application:gv('#a_application'),result:gv('#a_result'),operator:gv('#a_operator'),coolant:gv('#a_coolant'),coolbar:gv('#a_coolbar'),
   toollife:(cut.pw.life?''+cut.pw.life:''),weartype:gv('#a_weartype'),wearlevel:gv('#a_wearlevel'),
   ra:gv('#a_ra'),video:gv('#a_video'),photo:gv('#a_photo'),
   client:gv('#j_client'),agent:gv('#j_agent'),part:gv('#j_part'),machstate:gv('#j_machstate'),fixture:gv('#j_fix'),heat:gv('#j_heat'),
@@ -2620,7 +2641,7 @@ function compareDetailHTML(r){
   function sec(t,rows){return rows?'<div class="det-sec"><h4>'+t+'</h4><div class="det-grid">'+rows+'</div></div>':'';}
   function mlinkCell(lbl,v){if(!v)return ''; var s=esc(v),inner=/^https?:\/\//i.test(v)?'<a href="'+s+'" target="_blank" rel="noopener">'+s+'</a>':s; return '<div class="det-cell txt"><div class="k">'+esc(lbl)+'</div><div class="v">'+inner+'</div></div>';}
   var matRows=dc('Materiale',me.matdb||me.material,true)+(grp?dc('Gruppo ISO',grp+(fam?' · '+fam:''),true):'')+dc('Norma',me.norm,true)+dc('Durezza',me.hardness,true)+dc('Trattamento termico',me.condition,true);
-  var macRows=dc('Macchina',me.machine,true)+dc('Stato macchina',me.machstate,true)+dc('Staffaggio',me.fixture,true);
+  var macRows=dc('Macchina',me.machine,true)+dc('Stato macchina',me.machstate,true)+dc('Staffaggio',me.fixture,true)+dc('Refrigerante',me.coolant,true)+dc('Pressione refrig. (bar)',me.coolbar,true)+dc('Applicazione',me.application,true);
   var media=mlinkCell('🎥 Video',me.video)+mlinkCell('📷 Foto',me.photo);
   var concl=(me.notes||media)?'<div class="det-sec"><h4>Conclusioni / Note</h4>'+(me.notes?'<div class="det-notes">'+esc(me.notes)+'</div>':'')+(media?'<div class="det-grid" style="margin-top:10px">'+media+'</div>':'')+'</div>':'';
   var consBits=[me.client&&('Cliente: '+me.client),me.agent&&('Agente: '+me.agent),me.part&&('Componente: '+me.part)].filter(Boolean);
@@ -2628,8 +2649,25 @@ function compareDetailHTML(r){
   return '<div class="det-sheet" role="dialog" aria-modal="true">'+
     '<div class="det-head"><span class="ttl">'+title+'</span><span class="badge mode">⇄ '+esc(mt)+' · A/B</span>'+badgeRes(me.result)+'<span class="when">'+archFmtDate(r.date)+'</span><button class="det-close" data-det="close" aria-label="Chiudi">×</button></div>'+
     '<div class="det-body">'+consLine+sec('1 · Materiale lavorato',matRows)+sec('2 · Macchina',macRows)+
-      '<div class="det-sec"><h4>3 · Confronto strategie A / B</h4><div class="card">'+cmpTableHTML(A,B,nA,nB)+'</div></div>'+concl+'</div>'+
+      '<div class="det-sec"><h4>3 · Confronto strategie A / B</h4><div class="card">'+cmpTableHTML(A,B,nA,nB)+'</div></div>'+
+      strategyToolSec('4 · '+esc(nA)+' — utensile e dati',A)+strategyToolSec('5 · '+esc(nB)+' — utensile e dati',B)+concl+'</div>'+
     '<div class="det-acts"><button class="pdf" data-det="pdf">⎙ Scarica PDF</button><button class="del grow" data-det="del">Elimina</button><button data-det="close">Chiudi</button></div></div>';
+}
+function strategyToolSec(label,S){
+  if(!S)return ''; var t=S.toolId||{},pw=S.pwSnap||{},inp=S.inputs||{},et=S.etype||'insert',mode=S.mode;
+  function dc(k,v,txt){return detCell(k,v,txt);}
+  function n0(v,d){return (v==null||v===''||isNaN(+v)||+v===0)?'':fmt(+v,d);}
+  function eu(v,d){return (v==null||v===''||isNaN(+v)||+v===0)?'':itc(fmt(+v,d==null?2:d));}
+  var feed=S.feedLbl?(S.feedLbl+' '+itc(fmt(S.feedVal,S.feedLbl==='fz'?4:3))+' mm'):'';
+  var rows=dc('Tipo utensile',et==='mdi'?'Integrale (MDI)':'A inserti',true)+dc('Fabbricante',t.maker,true);
+  if(et==='mdi')rows+=dc('Codice utensile',t.code,true);
+  else rows+=dc('Codice corpo / fresa',t.body,true)+dc('Codice inserto',t.ins,true)+dc('Rivestimento / qualità',t.grade,true)+dc('Taglienti per inserto',n0(pw.edges,0));
+  rows+=dc('Ø (mm)',n0(S.Dc!=null?S.Dc:inp.Dc,2))+(((mode==='mill'||mode==='drill')&&inp.z)?dc('N° taglienti',n0(inp.z,0)):'')+(inp.re?dc('Raggio punta (mm)',n0(inp.re,2)):'');
+  rows+=dc('Vc (m/min)',n0(S.vc,1))+dc('n (rpm)',n0(S.n,0))+dc('Avanzamento',feed,true)+(S.ap!=null?dc('aₚ (mm)',n0(S.ap,2)):'')+(S.ae!=null?dc('aₑ (mm)',n0(S.ae,2)):'');
+  if(mode==='drill')rows+=dc('Tipo foro',inp.hole,true)+dc('Lunghezza foro (mm)',n0(pw.L,1));
+  rows+=dc(et==='mdi'?'Vita utensile (min)':'Vita tagliente (min)',n0(pw.life,0))+(et==='mdi'?dc('Prezzo utensile (€)',eu(pw.toolPrice,2)):dc('Prezzo inserto (€)',eu(pw.insP,2))+dc('Prezzo corpo (€)',eu(pw.bodyP,2))+dc('Vita corpo (n° tagl.)',n0(pw.bodyLife,0)))+
+    dc('Costo / pezzo (€)',eu(S.costPP,3))+dc('Tc / pezzo',S.Tc!=null?fmtTime(S.Tc):'',true);
+  return rows?'<div class="det-sec"><h4>'+label+'</h4><div class="det-grid">'+rows+'</div></div>':'';
 }
 function recDetailHTML(r){
   if(r.cmp&&r.cmp.A&&r.cmp.B)return compareDetailHTML(r);
@@ -2660,11 +2698,13 @@ function recDetailHTML(r){
     (inp.kr?dc(m==='drill'?'Angolo di punta (°)':'κr (°)',n0(inp.kr,0)):'')+(inp.re?dc('Raggio punta (mm)',n0(inp.re,2)):'');
   // 4 · Parametri
   var parRows=dc('Vc (m/min)',n0(o.vc,1))+dc('n (rpm)',n0(o.n,0))+dc('Avanzamento',feed,true)+
-    dc('Vf (mm/min)',n0(o.vf,0))+(apv!=null?dc('aₚ (mm)',n0(apv,2)):'')+(aev!=null?dc('aₑ (mm)',n0(aev,2)):'');
+    dc('Vf (mm/min)',n0(o.vf,0))+(apv!=null?dc('aₚ (mm)',n0(apv,2)):'')+(aev!=null?dc('aₑ (mm)',n0(aev,2)):'')+
+    (m==='drill'?dc('Tipo foro',inp.hole,true)+dc('Lunghezza foro (mm)',n0(pw.L,1)):'');
   // 5 · Risultati (hero)
   var resHero=hc('MRR',n0(o.Q,o.Q>=100?0:2),'cm³/min')+hc('Pc netto',n0(o.Pc,2),'kW')+hc('Tc / pezzo',o.Tc!=null?fmtTime(o.Tc):'','')+
     (o.costPP!=null?hc('Costo/pezzo',eu(o.costPP,3),'€'):'')+(raTeo!=null?hc('Ra teorica',n0(raTeo,2),'µm'):'');
   var res2=dc('P motore (kW)',n0(o.Pmot,2))+dc('Mc (Nm)',n0(o.Mc,2))+(o.Ff!=null?dc('Forza avanz. (N)',n0(o.Ff,0)):'')+
+    (o.path!=null?dc('Percorso utensile',(o.path>=1000?itc(fmt(o.path/1000,2))+' m':n0(o.path,0)+' mm'),true):'')+
     (o.ppe!=null?dc(etype==='mdi'?'Pezzi/utensile':'Pezzi/tagliente',n0(o.ppe,o.ppe>=10?0:1)):'');
   var resSec=resHero?'<div class="det-sec"><h4>5 · Risultati</h4><div class="det-grid hero-row">'+resHero+'</div>'+(res2?'<div class="det-grid" style="margin-top:1px">'+res2+'</div>':'')+'</div>':'';
   // 6 · Economia
@@ -2678,7 +2718,7 @@ function recDetailHTML(r){
     (etype==='mdi'?dc('Prezzo utensile (€)',eu(pw.toolPrice,2)):dc('Prezzo inserto (€)',eu(pw.insP,2))+dc('Prezzo corpo (€)',eu(pw.bodyP,2))+dc('Vita corpo (n° tagl.)',n0(pw.bodyLife,0)));
   var ecoSec=(ecoHero||ecoRows)?'<div class="det-sec"><h4>6 · Economia</h4>'+(ecoHero?'<div class="det-grid hero-row">'+ecoHero+'</div>':'')+(ecoRows?'<div class="det-grid" style="margin-top:1px">'+ecoRows+'</div>':'')+'</div>':'';
   // 7 · Usura & verifica
-  var verRows=dc('Applicazione',me.application,true)+dc('Refrigerante',me.coolant,true)+dc('Vita utensile (campo)',me.toollife,true)+
+  var verRows=dc('Applicazione',me.application,true)+dc('Refrigerante',me.coolant,true)+dc('Pressione refrig. (bar)',me.coolbar,true)+dc('Vita utensile (campo)',me.toollife,true)+
     dc('Tipo usura',me.weartype,true)+dc('Entità usura',me.wearlevel,true)+dc('Ra misurata (µm)',me.ra,true)+
     dc('Operatore',me.operator,true);
   // 8 · Grafici (ricostruiti dai dati salvati)
@@ -2784,7 +2824,7 @@ function openRecord(id){
   var msel=$('#c_matSearch'); if(msel)msel.value=cut.mat||''; var pk0=$('#p_kc'); if(pk0&&!cut.kc11){pk0.readOnly=false; pk0.title='';}
   applyMatHint(); markChips(); recompute(null);
   sv('#a_name',r.name); sv('#a_article',me.article); sv('#a_application',me.application); sv('#a_result',me.result); sv('#a_notes',me.notes);
-  sv('#a_operator',me.operator); sv('#a_coolant',me.coolant);
+  sv('#a_operator',me.operator); sv('#a_coolant',me.coolant); sv('#a_coolbar',me.coolbar);
   sv('#a_weartype',me.weartype); sv('#a_wearlevel',me.wearlevel);
   sv('#a_ra',me.ra); sv('#a_video',me.video); sv('#a_photo',me.photo);
   sv('#j_client',me.client); sv('#j_agent',me.agent); sv('#j_part',me.part); sv('#j_machine',me.machine); sv('#j_machstate',me.machstate); sv('#j_fix',me.fixture);
@@ -2971,7 +3011,7 @@ function attachHints(sel){var root=$(sel); if(!root)return;
   });}
 function wireCollapse(btnSel,panelSel){var b=$(btnSel),p=$(panelSel); if(!b||!p)return;
   b.addEventListener('click',function(){var open=p.hidden; p.hidden=!open; b.setAttribute('aria-expanded',open?'true':'false');});}
-function updateDetCnt(){var c=$('#detCnt'); if(!c)return; var ids=['a_application','a_coolant','a_weartype','a_wearlevel','a_ra','a_video','a_photo','a_notes'];
+function updateDetCnt(){var c=$('#detCnt'); if(!c)return; var ids=['a_application','a_coolant','a_coolbar','a_weartype','a_wearlevel','a_ra','a_video','a_photo','a_notes'];
   var n=0; ids.forEach(function(id){var e=$('#'+id); if(e&&(''+e.value).trim())n++;}); c.textContent=n?(''+n):'';}
 function updateFiltCnt(f){var c=$('#filtCnt'); if(!c)return; var keys=['mode','material','result','application','machine','tool','operator','coolant','wear','from','to'];
   var n=0; keys.forEach(function(k){if(f[k])n++;}); c.textContent=n?(''+n):'';}
