@@ -1,4 +1,4 @@
-# BFT CALC — PWA d'officina
+# BFT HUB — PWA d'officina
 
 Calcolatrice dei parametri di taglio (fresatura, tornitura, foratura, filettatura) e
 tabelle tecniche di riferimento (tolleranze ISO 286, filettature M/Tr/Whitworth/Gas/NPT/Unificate).

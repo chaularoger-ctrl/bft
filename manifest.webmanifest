@@ -1,6 +1,6 @@
 {
-  "name": "BFT CALC — Calcolatrice e Tabelle d'officina",
-  "short_name": "BFT CALC",
+  "name": "BFT HUB — Strumenti d'officina",
+  "short_name": "BFT HUB",
   "description": "Calcolatrice parametri di taglio (fresatura, tornitura, foratura, filettatura) e tabelle tecniche d'officina (tolleranze ISO 286, filettature). 100% offline.",
   "lang": "it",
   "dir": "ltr",
