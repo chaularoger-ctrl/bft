@@ -113,8 +113,15 @@ html[data-theme="dark"] .hubhero .hh-art{filter:none; mix-blend-mode:screen}
 .herovid .hv-media{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; background:#0b0b0c}
 .herovid .hv-overlay{position:absolute; inset:0; z-index:1; background:linear-gradient(180deg, rgba(8,8,10,.10) 0%, rgba(8,8,10,.30) 45%, rgba(8,8,10,.74) 100%)}
 .herovid .hv-tx{position:relative; z-index:2; padding:24px 26px}
-.herovid .hv-tx h1{font-family:var(--display); font-weight:700; text-transform:uppercase; letter-spacing:.5px; font-size:36px; margin:0; line-height:1; color:#fff; text-shadow:0 2px 14px rgba(0,0,0,.55)}
-.herovid .hv-tx p{margin:9px 0 0; font-size:14px; line-height:1.4; color:rgba(255,255,255,.93); text-shadow:0 1px 8px rgba(0,0,0,.55); max-width:560px}
+.herovid .hv-tx h1{font-family:var(--display); font-weight:700; text-transform:uppercase; letter-spacing:.5px; font-size:36px; margin:0; line-height:1; color:#fff; text-shadow:0 2px 14px rgba(0,0,0,.55); min-height:1em; white-space:nowrap}
+.herovid .hv-tx p{margin:9px 0 0; font-size:14px; line-height:1.4; color:rgba(255,255,255,.93); text-shadow:0 1px 8px rgba(0,0,0,.55); max-width:560px; opacity:0; transform:translateY(6px); transition:opacity .52s ease-out, transform .52s ease-out}
+.herovid .hv-tx p.show{opacity:1; transform:none}
+.tw-out,.tw-cur{user-select:none}
+.tw-cur{display:inline-block; width:.6ch; height:.78em; margin-left:.06em; background:var(--yellow); vertical-align:-.02em; border-radius:1px}
+@keyframes twBlink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+@media (prefers-reduced-motion: no-preference){.tw-cur.is-idle{animation:twBlink 1.06s step-end infinite}}
+@media (prefers-reduced-motion: reduce){.tw-cur{display:none} .herovid .hv-tx p{opacity:1; transform:none; transition:none}}
+.sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0}
 @media (max-width:560px){.herovid{min-height:max(260px,52vh)} .herovid .hv-tx{padding:18px 18px} .herovid .hv-tx h1{font-size:28px}}
 @media print{.herovid{display:none !important}}
 .hub{display:grid; grid-template-columns:1fr 1fr; gap:18px}
@@ -669,8 +676,8 @@ footer b{color:var(--text)}
     </video>
     <div class="hv-overlay"></div>
     <div class="hv-tx">
-      <h1>Strumenti d'officina</h1>
-      <p>Calcolo parametri di taglio e tabelle tecniche di riferimento — 100% offline.</p>
+      <h1 aria-label="BFT HUB"><span class="tw-out" id="twOut" aria-hidden="true"></span><span class="tw-cur" id="twCur" aria-hidden="true"></span><span class="sr-only">BFT HUB</span></h1>
+      <p id="heroSub">Calcolo parametri di taglio e tabelle tecniche di riferimento — 100% offline.</p>
     </div>
   </div>
   <div class="hub">
@@ -3039,6 +3046,40 @@ function wireGuide(){
 (function(){var v=$('#hvMedia'); if(!v)return;
   try{if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches){v.removeAttribute('autoplay'); v.pause();}}catch(e){}
   v.addEventListener('error',function(){var s=v.querySelector('source'); if(s)s.remove();},true);})();
+
+/* Hero titolo: effetto macchina da scrivere — "BENVENUTI IN" → resta "B" → "BFT HUB" (una sola volta) */
+(function(){
+  var out=$('#twOut'),cur=$('#twCur'),sub=$('#heroSub');
+  if(!out||window.__bftHeroTyped)return; window.__bftHeroTyped=true;
+  var reduce=false; try{reduce=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);}catch(e){}
+  if(reduce){ out.textContent='BFT HUB'; if(cur)cur.style.display='none'; if(sub)sub.classList.add('show'); return; }
+  var ZW='\u200b',TYPE=75,DEL=45,HOLD1=900,HOLD2=350,START=350,timers=[];
+  function after(ms,fn){timers.push(setTimeout(fn,ms));}
+  function idle(on){ if(cur)cur.classList.toggle('is-idle',!!on); }
+  function jit(base,pct){return Math.max(20,base*(1+(Math.random()*2-1)*pct));}
+  function txt(){return out.textContent===ZW?'':out.textContent;}
+  function typeStr(str,done){var i=0;
+    function step(){ if(i>=str.length){done();return;}
+      var ch=str.charAt(i); out.textContent=txt()+ch; i++;
+      var d=jit(TYPE,0.25);
+      if(ch===' ')d+=(str==='BENVENUTI IN'?110:90);
+      if(i>=str.length||str.charAt(i)===' ')d+=60;
+      after(d,step); }
+    idle(false); step(); }
+  function delTo(len,done){
+    function step(){ var c=txt(); if(c.length<=len){done();return;}
+      out.textContent=c.slice(0,-1); after(jit(DEL,0.15),step); }
+    idle(false); step(); }
+  out.textContent=ZW;
+  after(START,function(){ typeStr('BENVENUTI IN',function(){ idle(true);
+    after(HOLD1,function(){ delTo(1,function(){ idle(true);
+      after(HOLD2,function(){ typeStr('FT HUB',function(){ idle(true);
+        after(260,function(){ if(sub)sub.classList.add('show'); });
+        after(2600,function(){ if(cur){cur.style.transition='opacity .4s'; cur.style.opacity='0'; after(400,function(){cur.style.display='none';});} });
+      }); });
+    }); });
+  }); });
+})();
 
 /* ================= INIT ================= */
 (function(){
