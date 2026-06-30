@@ -1,6 +1,6 @@
 /* Service worker BFT HUB — funzionamento offline e installazione PWA.
  * Cambia CACHE_VERSION quando aggiorni l'app per forzare il refresh della cache. */
-const CACHE_VERSION = 'bft-calc-v37';
+const CACHE_VERSION = 'bft-calc-v38';
 
 // Media opzionali: precache se presenti, senza far fallire l'install se mancano.
 const OPTIONAL_ASSETS = ['./media/hero.mp4'];
@@ -51,10 +51,11 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
 
-  // Navigazione (apertura dell'app): rete-prima, fallback alla cache offline.
+  // Navigazione (apertura dell'app): rete-prima senza cache HTTP (HTML sempre fresco),
+  // fallback alla cache offline.
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE_VERSION).then((c) => c.put('./index.html', copy));
