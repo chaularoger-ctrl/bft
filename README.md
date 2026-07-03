@@ -53,7 +53,7 @@ Le icone (la "B" gialla BFT) sono generate da uno script senza dipendenze:
 node scripts/gen-icons.js
 ```
 
-## Archivio cloud condiviso (Firebase Firestore)
+## Archivio cloud condiviso (Firebase Realtime Database)
 
 L'archivio funziona **offline su ogni dispositivo** (memoria locale) e, se configurato,
 si **sincronizza** con un database cloud condiviso tra tutti i dispositivi aziendali.
@@ -61,50 +61,50 @@ si **sincronizza** con un database cloud condiviso tra tutti i dispositivi azien
 ### Setup (gratuito, ~10 minuti)
 
 1. Vai su <https://console.firebase.google.com> → **Aggiungi progetto**.
-2. **Build → Firestore Database → Crea database** → modalità **test** (accesso aperto) → scegli una regione.
-3. **Impostazioni progetto** (⚙) → *Le tue app* → icona **Web `</>`** → registra un'app web →
-   copia da `firebaseConfig` i valori **`projectId`** e **`apiKey`**.
-4. Apri `cloud-config.js`, incolla i due valori, **committa**:
+2. **Build → Realtime Database → Crea database** → modalità **test** (accesso aperto) → scegli una regione.
+3. In alto compare l'**URL del database**, del tipo
+   `https://<progetto>-default-rtdb.firebaseio.com`
+   (oppure `...-default-rtdb.europe-west1.firebasedatabase.app`).
+4. Apri `cloud-config.js`, incolla l'URL, **committa**:
 
    ```js
    window.BFT_CLOUD = {
-     provider: 'firestore',
-     projectId: 'il-tuo-project-id',
-     apiKey: 'AIzaSy...',
+     provider: 'rtdb',
+     databaseURL: 'https://il-tuo-progetto-default-rtdb.firebaseio.com',
      collection: 'bft_tests'
    };
    ```
 
    Da quel momento **tutti i dispositivi** che aprono l'app condividono lo stesso archivio.
    In alternativa, per una prova rapida su un solo dispositivo, usa il pulsante **☁ Cloud…**
-   nella vista Archivio e incolla lì i valori (salvati solo in locale).
+   nella vista Archivio e incolla lì l'URL (salvato solo in locale).
 
 ### Come funziona la sincronizzazione
 - Ogni salvataggio va **subito in locale** e viene inviato al cloud.
-- L'app si sincronizza all'avvio, ogni ~20 secondi, al rientro online e al focus.
+- L'app si sincronizza all'avvio, ogni ~60 secondi, al rientro online e al focus.
 - Le **eliminazioni** si propagano a tutti i dispositivi.
 - In assenza di rete tutto continua a funzionare; le modifiche partono appena torna la connessione.
 - Stato visibile in alto a destra nell'Archivio: *Sincronizzato / Sincronizzazione… / Offline*.
 
-### Regole di sicurezza Firestore
+### Regole di sicurezza Realtime Database
 La modalità **test** scade dopo 30 giorni. Per un archivio interno permanente, in
-**Firestore → Regole** imposta (accesso aperto, come da scelta "Aperto"):
+**Realtime Database → Regole** imposta (accesso aperto, come da scelta "Aperto"):
 
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} { allow read, write: if true; }
+```json
+{
+  "rules": {
+    ".read": true,
+    ".write": true
   }
 }
 ```
 
-> Nota: con regole aperte chiunque conosca `projectId`/`apiKey` può leggere/scrivere.
+> Nota: con regole aperte chiunque conosca il `databaseURL` può leggere/scrivere.
 > Per un'app pubblica su internet, in futuro si può aggiungere un login per operatore.
 
 ### Limiti del piano gratuito
-Firestore free: **1 GB** di dati (≈ centinaia di migliaia di prove) e 50.000 letture /
-20.000 scritture al giorno — abbondante per un'officina.
+Realtime Database (piano Spark): **1 GB** di dati archiviati e **10 GB/mese** di traffico
+in download — abbondante per un'officina.
 
 ## Aggiornamenti
 
