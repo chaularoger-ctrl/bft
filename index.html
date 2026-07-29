@@ -2381,17 +2381,26 @@ function shaftFD(L,i,g){var D=isoDm(i),R=Math.round;switch(L){
   case 'k':return{t:'ei',v:(g>=4&&g<=7)?R(0.6*Math.pow(D,1/3)):0}; case 'm':return{t:'ei',v:itVal(7,i)-itVal(6,i)}; case 'n':return{t:'ei',v:R(5*Math.pow(D,0.34))};
   case 'p':return{t:'ei',v:i<6?ISO.P_EI[i]:null}; case 'r':return{t:'ei',v:i<6?ISO.R_EI[i]:null}; case 's':return{t:'ei',v:i<6?ISO.S_EI[i]:null};
 } return null;}
+/* Posizioni intermedie cd/ef/fg (ISO 286-1): lo scostamento fondamentale è la
+   media geometrica dei valori delle due posizioni adiacenti (usate soprattutto
+   per i piccoli diametri, meccanica di precisione/orologeria). */
+var GM_PAIR={cd:['c','d'],ef:['e','f'],fg:['f','g']};
+function baseShaftES(L,i,g,d){if(L==='a'||L==='b'||L==='c')return abcES(L,d);var fd=shaftFD(L,i,g);return(fd&&fd.t==='es')?fd.v:null;}
+function gmShaftES(L,i,g,d){var p=GM_PAIR[L];if(!p)return null;var a=baseShaftES(p[0],i,g,d),b=baseShaftES(p[1],i,g,d);if(a==null||b==null)return null;return -Math.round(Math.sqrt(Math.abs(a)*Math.abs(b)));}
 function shaftLimits(L,g,d){var i=isoIdx(d);if(i<0)return null;var it=itVal(g,i);if(it==null)return null;
-  if(L==='js'){var h=Math.round(it/2);return{es:h,ei:-h,it:it};}if('abc'.indexOf(L)>=0){var ea=abcES(L,d);if(ea==null)return null;return{es:ea,ei:ea-it,it:it};}var fd=shaftFD(L,i,g);if(!fd||fd.v==null)return null;
+  if(L==='js'){var h=Math.round(it/2);return{es:h,ei:-h,it:it};}
+  if(GM_PAIR[L]){var gv=gmShaftES(L,i,g,d);if(gv==null)return null;return{es:gv,ei:gv-it,it:it};}
+  if('abc'.indexOf(L)>=0){var ea=abcES(L,d);if(ea==null)return null;return{es:ea,ei:ea-it,it:it};}var fd=shaftFD(L,i,g);if(!fd||fd.v==null)return null;
   return fd.t==='es'?{es:fd.v,ei:fd.v-it,it:it}:{es:fd.v+it,ei:fd.v,it:it};}
 function holeLimits(L,g,d){var i=isoIdx(d);if(i<0)return null;var it=itVal(g,i);if(it==null)return null;
   if(L==='H')return{ES:it,EI:0,it:it};if(L==='JS'){var h=Math.round(it/2);return{ES:h,EI:-h,it:it};}
   var low=L.toLowerCase();
+  if(GM_PAIR[low]){var gs=gmShaftES(low,i,g,d);if(gs==null)return null;var EIg=-gs;return{ES:EIg+it,EI:EIg,it:it};}
   if('abc'.indexOf(low)>=0){var ea=abcES(low,d);if(ea==null)return null;var EIa=-ea;return{ES:EIa+it,EI:EIa,it:it};}
   if('defg'.indexOf(low)>=0){var s=shaftFD(low,i,g);if(!s||s.v==null)return null;var EI=-s.v;return{ES:EI+it,EI:EI,it:it};}
   var sd=shaftFD(low,i,g);if(!sd||sd.v==null||sd.t!=='ei')return null;
   var delta=g<=8?(itVal(g,i)-itVal(g-1,i)):0;var ES=-sd.v+delta;return{ES:ES,EI:ES-it,it:it};}
-var SHAFT_CLASSES=['a','b','c','d','e','f','g','h','js','k','m','n','p','r','s'],HOLE_CLASSES=['A','B','C','D','E','F','G','H','JS','K','M','N','P','R','S'],GRADES=[5,6,7,8,9,10,11,12];
+var SHAFT_CLASSES=['a','b','c','cd','d','e','ef','f','fg','g','h','js','k','m','n','p','r','s'],HOLE_CLASSES=['A','B','C','CD','D','E','EF','F','FG','G','H','JS','K','M','N','P','R','S'],GRADES=[5,6,7,8,9,10,11,12];
 var PREF=[['H','7','g','6'],['H','7','h','6'],['H','7','k','6'],['H','7','n','6'],['H','7','p','6'],['H','7','s','6'],['H','7','f','7'],['H','8','f','7'],['H','9','d','9'],['H','11','d','11'],['H','7','js','6']];
 function fillSel(sel,arr,def){arr.forEach(function(v){var o=el('option'); o.value=v; o.textContent=v; if(v==def)o.selected=true; sel.appendChild(o);});}
 var TOL_GRADES=[5,6,7,8,9,10,11,12,13,14];
