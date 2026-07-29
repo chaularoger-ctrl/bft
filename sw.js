@@ -1,6 +1,6 @@
 /* Service worker BFT HUB — funzionamento offline e installazione PWA.
  * Cambia CACHE_VERSION quando aggiorni l'app per forzare il refresh della cache. */
-const CACHE_VERSION = 'bft-calc-v41';
+const CACHE_VERSION = 'bft-calc-v42';
 // Cache media separata e NON versionata: il video pesante sopravvive agli update dell'app.
 const MEDIA_CACHE = 'bft-media-v1';
 
