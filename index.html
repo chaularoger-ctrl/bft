@@ -160,6 +160,15 @@ html[data-theme="dark"] .hubhero .hh-art{filter:none; mix-blend-mode:screen}
 textarea{font-family:var(--mono);font-size:14px;padding:9px 10px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--text);width:100%;border-radius:var(--rs);resize:vertical}
 textarea:focus{outline:none;border-color:var(--yellow);background:var(--card);box-shadow:0 0 0 3px var(--sel)}
 .f select{cursor:pointer}
+/* La spunta che decide se una prova puo' uscire dal HUB e finire nel catalogo
+   online. Di serie e' spenta: l'archivio contiene nomi di clienti e componenti. */
+.pubbl{display:flex; gap:10px; align-items:flex-start; margin-top:14px; padding:11px 13px;
+  border:1px solid var(--line); border-left:3px solid var(--yellow); border-radius:6px;
+  background:var(--panel-2); cursor:pointer}
+.pubbl input{width:17px; height:17px; margin:1px 0 0; accent-color:var(--yellow); flex-shrink:0; cursor:pointer}
+.pubbl span{font-size:11.5px; color:var(--muted); line-height:1.45}
+.pubbl b{color:var(--text); font-weight:600}
+.pubbl:hover{border-color:var(--line-2)}
 .archsave-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center}
 .archsave-row input{flex:1 1 240px;font-family:var(--sans);font-size:13px;padding:10px 12px;border:1px solid var(--line-2);background:var(--card);border-radius:6px}
 .archsave-row input:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 3px var(--sel)}
@@ -857,6 +866,13 @@ footer b{color:var(--text)}
         </div>
         <div class="f" style="margin-top:12px"><label>Note</label><textarea id="a_notes" rows="2" placeholder="osservazioni, problemi riscontrati, regolazioni…"></textarea></div>
       </div>
+      <label class="pubbl" for="a_public">
+        <input id="a_public" type="checkbox">
+        <span><b>Pubblicabile sul catalogo online.</b> Se spuntata, questa prova può comparire
+        nella scheda dell’articolo che vedono i clienti: <b>senza il nome del cliente</b> e senza
+        i dati di consulenza. Restano materiale, parametri, durata ed esito.
+        Di serie è spenta — spuntala solo se hai il consenso di chi ha fatto la prova.</span>
+      </label>
       <div class="archsave-row">
         <input id="a_name" type="text" placeholder="Nome prova (facoltativo)" maxlength="40">
         <button class="ctbtn prim" id="btnArchiveSave">＋ Salva in archivio</button>
@@ -2590,6 +2606,9 @@ function archLoad(){if(_archCache)return _archCache; try{var a=JSON.parse(store.
 function archStore(list){_archCache=list; store.set(ARCH_KEY,JSON.stringify(list));}
 function gv(sel){var e=$(sel);return e?(''+e.value).trim():'';}
 function sv(sel,v){var e=$(sel);if(e)e.value=(v==null?'':v);}
+/* gv/sv leggono .value: una casella di spunta vuole .checked. */
+function gc(sel){var e=$(sel);return !!(e&&e.checked);}
+function sc(sel,v){var e=$(sel);if(e)e.checked=!!v;}
 function optS(v,t){return '<option value="'+esc(v)+'">'+esc(t==null?v:t)+'</option>';}
 function setOnce(sel,label,arr,pair){var e=$(sel); if(!e||e.options.length)return; e.innerHTML=optS('',label)+arr.map(function(x){return pair?optS(x[0],x[1]):optS(x);}).join('');}
 function fillArchSelects(){
@@ -2619,7 +2638,8 @@ function metaFromForm(m){return {article:gv('#a_article'),material:(cut.matGroup
   ra:gv('#a_ra'),video:gv('#a_video'),photo:gv('#a_photo'),
   client:gv('#j_client'),agent:gv('#j_agent'),part:gv('#j_part'),machstate:gv('#j_machstate'),fixture:gv('#j_fix'),heat:gv('#j_heat'),
   toolType:effType(m),toolId:JSON.parse(JSON.stringify(cut.toolId)),
-  matdb:cut.mat,kc11:cut.kc11,mc:cut.mc,notes:gv('#a_notes')};}
+  matdb:cut.mat,kc11:cut.kc11,mc:cut.mc,notes:gv('#a_notes'),
+  pubblico:gc('#a_public')};}
 function newRecId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function archiveCurrent(){
   if(!CUTLAST){showToast('Inserisci prima i dati di taglio');return;}
@@ -2884,7 +2904,7 @@ function openRecord(id){
   go('calc');
   var msel=$('#c_matSearch'); if(msel)msel.value=cut.mat||''; var pk0=$('#p_kc'); if(pk0&&!cut.kc11){pk0.readOnly=false; pk0.title='';}
   applyMatHint(); markChips(); recompute(null);
-  sv('#a_name',r.name); sv('#a_article',me.article); sv('#a_application',me.application); sv('#a_result',me.result); sv('#a_notes',me.notes);
+  sc('#a_public',me.pubblico); sv('#a_name',r.name); sv('#a_article',me.article); sv('#a_application',me.application); sv('#a_result',me.result); sv('#a_notes',me.notes);
   sv('#a_operator',me.operator); sv('#a_coolant',me.coolant); sv('#a_coolbar',me.coolbar);
   sv('#a_weartype',me.weartype); sv('#a_wearlevel',me.wearlevel);
   sv('#a_ra',me.ra); sv('#a_video',me.video); sv('#a_photo',me.photo);
