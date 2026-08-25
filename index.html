@@ -3258,5 +3258,126 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
+
+<!-- Arrivo dal catalogo interattivo: compila la calcolatrice dai parametri
+     dell'indirizzo. Senza ?calc= non fa nulla. -->
+<script>
+/* ============================================================================
+   BFT HUB — arrivo dal catalogo interattivo
+   ----------------------------------------------------------------------------
+   Da incollare in fondo a index.html, subito prima della chiusura del body,
+   dentro un blocco <script> tutto suo. ATTENZIONE: qui dentro non si scrive mai
+   il tag di chiusura per esteso — il parser HTML chiuderebbe il blocco anche se
+   sta dentro un commento, e meta' del ponte diventerebbe testo sulla pagina.
+   Non tocca una riga di quello che c'e' gia':
+   il codice dell'app sta dentro un IIFE e non va disturbato; qui si lavora solo
+   sul DOM, con gli stessi bottoni e gli stessi campi che userebbe una persona.
+
+   COSA FA
+   Se l'indirizzo NON ha il parametro «calc», non fa assolutamente niente.
+   Se ce l'ha, apre la calcolatrice giusta e compila la geometria dell'utensile
+   che arriva dal catalogo:
+
+     .../bft/?calc=fresatura&Dc=24&z=3&kr=90&re=0.8&tipo=inserti&cod=T2090%2030%20PM%20024.17%20Z3
+
+   PARAMETRI RICONOSCIUTI
+     calc  fresatura | tornitura | foratura | filettatura
+     tipo  inserti | integrale
+     Dc z vc n fz fn vf ap ae kr re   (le quote: vanno nei campi c_*)
+     passo lo mette in c_P (filettatura)
+     mat   testo da mettere nella ricerca materiale
+     cod   codice articolo BFT -> finisce in «Codice articolo / ID test»,
+           cosi' la prova salvata resta legata all'utensile e l'archivio
+           diventa cercabile per codice.
+
+   PERCHE' PULISCE I CAMPI
+   Il HUB ricorda lo stato di prima (localStorage «bftcalc_»). Arrivando dal
+   catalogo con un utensile DIVERSO, i giri e gli avanzamenti di ieri sarebbero
+   sbagliati ma sembrerebbero giusti. Percio': se il link porta un diametro
+   nuovo e non porta i dati di taglio, quelli vecchi si azzerano.
+   Il MATERIALE invece si lascia stare: e' il passo 1 del percorso guidato e
+   deve sceglierlo chi lavora.
+
+   DOPO AVERLO INCOLLATO: alzare CACHE_VERSION in sw.js (es. bft-calc-v39),
+   se no il service worker continua a servire la versione vecchia e sembra
+   che non sia cambiato niente.
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  var MODI = { fresatura: 'mill', tornitura: 'turn', foratura: 'drill', filettatura: 'tap' };
+  /* I nomi dei campi cambiano da una lavorazione all'altra: in tornitura c'e'
+     c_fn al posto di c_fz, in filettatura c'e' c_P per il passo. Si prova a
+     scrivere tutto: quello che in quella vista non esiste viene saltato. */
+  var QUOTE = { Dc: 'c_Dc', z: 'c_z', vc: 'c_vc', n: 'c_n', fz: 'c_fz',
+                vf: 'c_vf', ap: 'c_ap', ae: 'c_ae', kr: 'c_kr', re: 'c_re',
+                fn: 'c_fn', passo: 'c_P' };
+  var TAGLIO = ['c_vc', 'c_n', 'c_fz', 'c_vf', 'c_ap', 'c_ae'];
+
+  function scrivi(id, valore) {
+    var e = document.getElementById(id);
+    if (!e) return false;
+    e.value = valore;
+    e.dispatchEvent(new Event('input', { bubbles: true }));
+    e.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  }
+
+  function avviso(codice) {
+    var d = document.createElement('div');
+    d.setAttribute('role', 'status');
+    d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:9999;' +
+      'max-width:min(680px,92vw);padding:10px 16px;border-radius:10px;font:500 14px/1.45 system-ui,sans-serif;' +
+      'background:#F4C400;color:#17181A;box-shadow:0 8px 30px rgba(0,0,0,.35)';
+    d.textContent = 'Arrivi dal catalogo' + (codice ? ' — ' + codice : '') +
+      '. Geometria dell\u2019utensile gi\u00e0 compilata: scegli il materiale e leggi i risultati.';
+    document.body.appendChild(d);
+    setTimeout(function () { d.style.transition = 'opacity .5s'; d.style.opacity = '0';
+      setTimeout(function () { d.remove(); }, 600); }, 7000);
+  }
+
+  function entra() {
+    var p = new URLSearchParams(location.search);
+    var calc = p.get('calc');
+    if (!calc) return;                                   // uso normale: non si tocca niente
+
+    var b = document.querySelector('[data-go="calc"][data-mode="' + (MODI[calc] || 'mill') + '"]');
+    if (!b) return;                                      // versione diversa del HUB: meglio fermarsi
+    b.click();
+
+    var tipo = p.get('tipo');
+    if (tipo) {
+      var t = document.querySelector('[data-ttype="' + (tipo === 'integrale' ? 'mdi' : 'insert') + '"]');
+      if (t) t.click();
+    }
+
+    // i dati di taglio di una sessione precedente non valgono per questo utensile
+    if (p.get('Dc') && !p.get('vc') && !p.get('n')) {
+      TAGLIO.forEach(function (id) { if (!p.get(id.slice(2))) scrivi(id, ''); });
+    }
+
+    Object.keys(QUOTE).forEach(function (k) {
+      var v = p.get(k);
+      if (v !== null && v !== '') scrivi(QUOTE[k], v);
+    });
+
+    var mat = p.get('mat');
+    if (mat) scrivi('c_matSearch', mat);
+
+    var cod = p.get('cod');
+    if (cod) scrivi('a_article', cod);                   // il link dichiara l'utensile: vince lui
+
+    // l'indirizzo si ripulisce: un ricarico non deve rifare tutto da capo
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+
+    avviso(cod);
+  }
+
+  // si parte dopo che l'app ha finito di rimettersi come l'avevamo lasciata
+  function avvia() { setTimeout(entra, 0); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', avvia);
+  else avvia();
+})();
+</script>
 </body>
 </html>
