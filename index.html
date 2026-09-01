@@ -22,8 +22,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Saira+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Saira+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&family=Roboto+Condensed:wght@500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&family=Roboto+Condensed:wght@500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{
   --bg:#FFFFFF; --surface:#FAFAFB; --panel:#FFFFFF; --panel-2:#F4F4F6; --card:#FFFFFF; --line:#E4E4E7; --line-2:#D4D6DB; --steel:#DDE1E7;
@@ -35,9 +35,9 @@
   --rev-fg:#8a6d1b; --rev-bd:#e0c98c; --rev-bg:#FBF3D9;
   --link:#0B63CE;
   --shadow:0 1px 2px rgba(20,20,20,.05); --shadow-md:0 4px 14px rgba(20,20,20,.07); --shadow-lg:0 8px 26px rgba(20,20,20,.08);
-  --display:'Saira Condensed','Arial Narrow',sans-serif;
-  --sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
-  --mono:'Courier New',ui-monospace,'Consolas',monospace;
+  --display:'Roboto Condensed','Arial Narrow',sans-serif;
+  --sans:'Roboto',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'Roboto Mono',ui-monospace,'Consolas','Courier New',monospace;
   --r:7px; --rs:5px;
 }
 html[data-theme="dark"]{
@@ -2486,7 +2486,7 @@ function threadSVG(g){
   var nutRaw=clampDown(clipX(pts),yD1).map(function(p){return [p[0],p[1]+tpf(p[0])];});
   var boltPoly=PP(bolt)+' '+X1+','+yAX+' '+X0+','+yAX;
   var nutPoly=PP(nutRaw)+' '+X1+','+yTop+' '+X0+','+yTop;
-  var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Courier New,monospace">';
+  var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Roboto Mono,Courier New,monospace">';
   s+='<defs><pattern id="hb" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#EFF1F4"/><line x1="0" y1="0" x2="0" y2="7" stroke="#C2C7D0" stroke-width="1"/></pattern>'
     +'<pattern id="hn" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="7" height="7" fill="#F3F0EA"/><line x1="0" y1="0" x2="0" y2="7" stroke="#CDBFA6" stroke-width="1"/></pattern></defs>';
   s+='<polygon points="'+nutPoly+'" fill="url(#hn)"/><polygon points="'+boltPoly+'" fill="url(#hb)"/>';
