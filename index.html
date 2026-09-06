@@ -461,7 +461,7 @@ svg.chart .barval{fill:var(--text);font-weight:700}
 .adv .av{font-family:var(--mono);font-weight:700;color:var(--text)}
 .adv.ok{color:var(--ok-fg);border-color:var(--ok-bd);background:var(--ok-bg)}
 .adv.ok .av{color:var(--ok-fg)}
-.adv.warn{color:#8a6d00;border-color:var(--yellow-dim);background:var(--sel)}
+.adv.warn{color:var(--yellow-text);border-color:var(--yellow-dim);background:var(--sel)}
 .adv.warn .av{color:var(--yellow-text)}
 /* output: stato vuoto + metrica "eroe" */
 .ro-empty{grid-column:1/-1;background:var(--card);padding:20px 16px;text-align:center;color:var(--muted);font-size:13px;line-height:1.5}
@@ -555,7 +555,9 @@ html[data-theme="dark"] .tp.pf{background:#262111}
 html[data-theme="dark"] .tp.pf .k{color:var(--yellow-text)}
 html[data-theme="dark"] .tl.hi{background:#211f12}
 html[data-theme="dark"] .toast{background:#E8E9EC;color:#15181D}
-.updbar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:10000;display:flex;align-items:center;gap:12px;background:#17181A;color:#fff;font-family:var(--sans);font-size:13.5px;font-weight:600;padding:10px 12px 10px 18px;border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,.34);max-width:calc(100vw - 28px)}
+/* Pillola elevata + bordo: resta scura per non rovinare il giallo dell'accento. */
+html[data-theme="dark"] .updbar{background:var(--card);border-color:var(--yellow-dim)}
+.updbar{border:1px solid transparent;position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:10000;display:flex;align-items:center;gap:12px;background:#17181A;color:#fff;font-family:var(--sans);font-size:13.5px;font-weight:600;padding:10px 12px 10px 18px;border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,.34);max-width:calc(100vw - 28px)}
 .updbar[hidden]{display:none}
 .updbar .ub-tx b{color:var(--yellow)}
 .updbar .ub-go{font-family:var(--sans);font-weight:700;font-size:13px;background:var(--yellow);color:#1a1500;border:0;border-radius:7px;padding:9px 16px;cursor:pointer;white-space:nowrap}
@@ -1317,15 +1319,15 @@ var KCDB=[
 ["316L · X2CrNiMo18-12 · 316 L · 1.4404",2150,0.2,"M"],
 ["316LN · X2CrNiMoN18-13 · 316 LN · 1.4429",2150,0.2,"M"],
 ["X2CrNiMoN17-13-3 · 316 LXN · 1.4429",2150,0.2,"M"],
-["316Ti · X8CrNiMoTi17-12-2 · 316 Ti · 1.4571",2150,0.2,"S"],
+["316Ti · X8CrNiMoTi17-12-2 · 316 Ti · 1.4571",2150,0.2,"M"],
 ["X2CrNiMo17-12-2+S+Cu · 316L (S+Cu)",2150,0.2,"P"],
 ["X2CrNiMo17-12-2 improved · 316L Decolletage",2150,0.2,"P"],
 ["317 · X5CrNiMo17-13 · 1.4449",2150,0.2,"M"],
 ["317L · X2CrNiMo18-16 · 317 L · 1.4438",2150,0.2,"M"],
 ["318 · X10CrNiMoNb18-12 · 1.4583",2150,0.2,"M"],
 ["320",2150,0.2,"P"],
-["321 · X10CrNiTi18-9 · 1.4541",2150,0.2,"S"],
-["X8CrNiTi18-10 · 321 H",2150,0.2,"S"],
+["321 · X10CrNiTi18-9 · 1.4541",2150,0.2,"M"],
+["X8CrNiTi18-10 · 321 H",2150,0.2,"M"],
 ["325",2150,0.2,"P"],
 ["326",2150,0.2,"P"],
 ["329 · X8CrNiMo27-5 · 1.4460",2150,0.2,"M"],
@@ -1345,7 +1347,7 @@ var KCDB=[
 ["403Cb",1875,0.21,"P"],
 ["X19CrMoVNb11-1 · 403Cb+ · 1.4914",1875,0.21,"M"],
 ["405 · X10CrAl13 · 1.4724",1875,0.21,"M"],
-["409 · X6CrTi12 · 1.4510",1875,0.21,"S"],
+["409 · X6CrTi12 · 1.4510",1875,0.21,"M"],
 ["409 Cb",1875,0.21,"P"],
 ["409 HP",1875,0.21,"P"],
 ["40CrMnMo7 · 40CMD8 · 1.2311",2450,0.23,"P"],
@@ -1493,10 +1495,10 @@ var KCDB=[
 ["Aermet 310",1875,0.21,"P"],
 ["Aermet 340",1875,0.21,"P"],
 ["AL 29-4C",2150,0.2,"N"],
-["ASTM B753 · AL 4750",3300,0.24,"N"],
+["ASTM B753 · AL 4750",3300,0.24,"S"],
 ["AL-6XN",2150,0.2,"N"],
 ["AL-6XN Plus",2150,0.2,"N"],
-["Allcorr",3300,0.24,"N"],
+["Allcorr",3300,0.24,"S"],
 ["AM 350",2150,0.2,"P"],
 ["Armco 18",2600,0.24,"P"],
 ["Armco 20-45-5",3300,0.24,"P"],
@@ -1581,7 +1583,7 @@ var KCDB=[
 ["GGG140B",4600,0.25,"K"],
 ["GGG80B",4600,0.25,"K"],
 ["GGG90B",4600,0.25,"K"],
-["AlSl 686 · GMR 235",3300,0.24,"N"],
+["AlSl 686 · GMR 235",3300,0.24,"S"],
 ["NiCr16MoAl · GMR 235-D",3300,0.24,"P"],
 ["5508 · Greek Ascoloy - 418",3100,0.24,"P"],
 ["32510 · GTS-35-10 · 0.8135",1225,0.25,"P"],
@@ -1625,21 +1627,21 @@ var KCDB=[
 ["5759 · LW2.4964 · Haynes 25",3300,0.24,"P"],
 ["Haynes 263",3300,0.24,"P"],
 ["5768 · X12CrCoNi2120 · Haynes 556",3300,0.24,"P"],
-["5540 · NiCr15Fe · Haynes 600 · 2.4816",3300,0.24,"N"],
-["5715 · Haynes 601 · 2.4851",3300,0.24,"N"],
-["ASME SB443 · NiCr22Mo9Nb · Haynes 625 · 2.4856",3300,0.24,"N"],
-["NiCr29Fe · Haynes 690 · 2.4642",3300,0.24,"N"],
+["5540 · NiCr15Fe · Haynes 600 · 2.4816",3300,0.24,"S"],
+["5715 · Haynes 601 · 2.4851",3300,0.24,"S"],
+["ASME SB443 · NiCr22Mo9Nb · Haynes 625 · 2.4856",3300,0.24,"S"],
+["NiCr29Fe · Haynes 690 · 2.4642",3300,0.24,"S"],
 ["Haynes 75",3300,0.24,"P"],
-["5542 · Haynes X-750 · 2.4669",3300,0.24,"N"],
+["5542 · Haynes X-750 · 2.4669",3300,0.24,"S"],
 ["HNV3 · X45CrSi9-3 · 1.4718",1875,0.21,"M"],
 ["ASTM F-75 · CoCr28Mo · HS 21",3300,0.24,"P"],
-["AlSl 670 · CoCr20W15Ni · HS 25",3300,0.24,"N"],
+["AlSl 670 · CoCr20W15Ni · HS 25",3300,0.24,"S"],
 ["5380 · CoCr26Ni14Mo · HS 30",3300,0.24,"P"],
 ["ASTM A567 · CoCr25NiW · HS 31",3300,0.24,"P"],
 ["CoCr19W14NiB · HS 36",3300,0.24,"P"],
 ["HW3 · X45GrSi93 · 1.4718",2450,0.23,"M"],
 ["A276 · X2CrNiMoCoN28-8-5-1 · Hyper Duplex 2707 (A276) · 1.4658",2150,0.2,"M"],
-["5397 · NiCo15Cr10MoAlTi · IN100 · 2.4674",3300,0.24,"N"],
+["5397 · NiCo15Cr10MoAlTi · IN100 · 2.4674",3300,0.24,"S"],
 ["ASTM B463 · Incoloy 020 · 2.4660",2600,0.24,"S"],
 ["ASME SB409 · X10NiCrAlTi3220 · Incoloy 800",2600,0.24,"S"],
 ["5552 · G.X50CrNi3030 · Incoloy 801 · 1.4868",2600,0.24,"S"],
@@ -1713,7 +1715,7 @@ var KCDB=[
 ["K12",4600,0.25,"S"],
 ["K12 (HT)",4700,0.25,"S"],
 ["L 251",3300,0.24,"P"],
-["5759 · CoCr20W15Ni · L 605 · 2.4964",3300,0.24,"N"],
+["5759 · CoCr20W15Ni · L 605 · 2.4964",3300,0.24,"S"],
 ["L1",2450,0.23,"P"],
 ["L3 · 100Cr6 · 1.2067",2450,0.23,"P"],
 ["L6 · 55NiCrMoV6 · 1.2713",2450,0.23,"P"],
@@ -1785,18 +1787,18 @@ var KCDB=[
 ["P4 · X6CrMo4 · 1.2341",2450,0.23,"P"],
 ["AISI 686 · R-235",3300,0.24,"P"],
 ["5592, 5716 · RA 330",2600,0.24,"P"],
-["AlSl 690 · Refractaloy 26",3300,0.24,"N"],
-["NiCo15Cr10MoAlTi · René 100 · 2.4674",3300,0.24,"N"],
+["AlSl 690 · Refractaloy 26",3300,0.24,"S"],
+["NiCo15Cr10MoAlTi · René 100 · 2.4674",3300,0.24,"S"],
 ["René 104",3300,0.24,"P"],
 ["René 125",3300,0.24,"P"],
-["5712, 5713 · NiCr19Co11MoTi · René 41 · 2.4973",3300,0.24,"N"],
+["5712, 5713 · NiCr19Co11MoTi · René 41 · 2.4973",3300,0.24,"S"],
 ["René 63",3300,0.24,"P"],
 ["René 77",3300,0.24,"P"],
 ["René 80",3300,0.24,"P"],
 ["René 95",3300,0.24,"P"],
 ["ASTM F1586 · REX 734",2150,0.2,"P"],
 ["5533 · X40CoCrNi2020 · S 590",3300,0.24,"P"],
-["5534 · CoCr20Ni20W · S 816 · 2.4979",3300,0.24,"N"],
+["5534 · CoCr20Ni20W · S 816 · 2.4979",3300,0.24,"S"],
 ["S1 · 45WCrV7 · 1.2542",2450,0.23,"P"],
 ["S240",2150,0.2,"P"],
 ["S4 · 60MnSiCr4 · 1.2826",2450,0.23,"P"],
@@ -2361,7 +2363,7 @@ $$('.pdfprint').forEach(function(b){b.addEventListener('click',doPrint);});
 
 /* ================= ISO 286 ================= */
 var ISO={bounds:[[0,3],[3,6],[6,10],[10,18],[18,30],[30,50],[50,80],[80,120],[120,180],[180,250],[250,315],[315,400],[400,500]],
-  IT:{5:[4,5,6,8,9,11,13,15,18,20,23,25,27],6:[6,8,9,11,13,16,19,22,25,29,32,36,40],
+  IT:{4:[3,4,4,5,6,7,8,10,12,14,16,18,20],5:[4,5,6,8,9,11,13,15,18,20,23,25,27],6:[6,8,9,11,13,16,19,22,25,29,32,36,40],
       7:[10,12,15,18,21,25,30,35,40,46,52,57,63],8:[14,18,22,27,33,39,46,54,63,72,81,89,97],
       9:[25,30,36,43,52,62,74,87,100,115,130,140,155],10:[40,48,58,70,84,100,120,140,160,185,210,230,250],
       11:[60,75,90,110,130,160,190,220,250,290,320,360,400],12:[100,120,150,180,210,250,300,350,400,460,520,570,630],
@@ -2408,7 +2410,9 @@ function holeLimits(L,g,d){var i=isoIdx(d);if(i<0)return null;var it=itVal(g,i);
   if('abc'.indexOf(low)>=0){var ea=abcES(low,d);if(ea==null)return null;var EIa=-ea;return{ES:EIa+it,EI:EIa,it:it};}
   if('defg'.indexOf(low)>=0){var s=shaftFD(low,i,g,d);if(!s||s.v==null)return null;var EI=-s.v;return{ES:EI+it,EI:EI,it:it};}
   var sd=shaftFD(low,i,g,d);if(!sd||sd.v==null||sd.t!=='ei')return null;
-  var delta=g<=8?(itVal(g,i)-itVal(g-1,i)):0;var ES=-sd.v+delta;return{ES:ES,EI:ES-it,it:it};}
+  /* ISO 286-1: il delta si applica fino a IT8 per K/M/N, ma solo fino a IT7 per P..ZC. */
+  var dmax=(low==='k'||low==='m'||low==='n')?8:7;
+  var delta=g<=dmax?(itVal(g,i)-itVal(g-1,i)):0;var ES=-sd.v+delta;return{ES:ES,EI:ES-it,it:it};}
 var SHAFT_CLASSES=['a','b','c','cd','d','e','ef','f','fg','g','h','js','k','m','n','p','r','s','t','u','v','x','y','z','za','zb','zc'],HOLE_CLASSES=['A','B','C','CD','D','E','EF','F','FG','G','H','JS','K','M','N','P','R','S','T','U','V','X','Y','Z','ZA','ZB','ZC'],GRADES=[5,6,7,8,9,10,11,12];
 var PREF=[['H','7','g','6'],['H','7','h','6'],['H','7','k','6'],['H','7','n','6'],['H','7','p','6'],['H','7','s','6'],['H','7','f','7'],['H','8','f','7'],['H','9','d','9'],['H','11','d','11'],['H','7','js','6']];
 function fillSel(sel,arr,def){arr.forEach(function(v){var o=el('option'); o.value=v; o.textContent=v; if(v==def)o.selected=true; sel.appendChild(o);});}
@@ -2588,6 +2592,12 @@ var SORTS=[['date_desc','Più recenti'],['date_asc','Più vecchi'],['dc_desc','�
 var _archCache=null;
 function archLoad(){if(_archCache)return _archCache; try{var a=JSON.parse(store.get(ARCH_KEY)||'[]'); _archCache=Array.isArray(a)?a:[];}catch(e){_archCache=[];} return _archCache;}
 function archStore(list){_archCache=list; store.set(ARCH_KEY,JSON.stringify(list));}
+/* La cache va invalidata quando un ALTRO contesto (PWA installata + scheda browser)
+   scrive l'archivio: senza questo un salvataggio qui riscriverebbe la lista con
+   un'istantanea vecchia, cancellando le prove salvate nell'altro contesto. */
+window.addEventListener('storage',function(e){ if(e.key&&e.key!=='bftcalc_'+ARCH_KEY)return; _archCache=null;
+  try{updateArchCount(); if(V.view==='archive')renderArchive();}catch(err){} });
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible')_archCache=null; });
 function gv(sel){var e=$(sel);return e?(''+e.value).trim():'';}
 function sv(sel,v){var e=$(sel);if(e)e.value=(v==null?'':v);}
 function optS(v,t){return '<option value="'+esc(v)+'">'+esc(t==null?v:t)+'</option>';}
