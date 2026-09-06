@@ -1131,7 +1131,6 @@ function fmtTime(min){ if(min==null||!isFinite(min)||min<0)return '—';
   var p=[]; if(h>0)p.push(h+' h'); if(m>0)p.push(m+' min'); if(s>0||p.length===0)p.push(s+' s'); return p.join(' '); }
 function fmtPathMm(p){return (p==null||isNaN(p))?'—':(p>=1000?itc(fmt(p/1000,2))+' m':itc(fmt(p,0))+' mm');}
 function D3(x){return fmt(x,3).replace('.',',');}
-function sign(x){return (x>0?'+':'')+x;}
 var store={get:function(k){try{return localStorage.getItem('bftcalc_'+k);}catch(e){return null;}},
            set:function(k,v){try{localStorage.setItem('bftcalc_'+k,v);}catch(e){}}};
 
@@ -1198,7 +1197,7 @@ var cut={mode:'mill',mat:'',matGroup:'',kc11:0,mc:0,toolType:'insert',
   drill:{Dc:0,vc:0,n:0,fn:0,z:0,hole:'Passante'},
   tap:{Dc:0,P:0,vc:0,n:0},
   toolId:{maker:'',code:'',body:'',ins:'',grade:''},
-  pw:{kc:0,eta:0,L:0,np:0,rate:0,tool:0,rateStop:0,tChange:0,machP:0,life:0,toolPrice:0,edges:0,insP:0,bodyP:0,bodyLife:0,batch:0},
+  pw:{kc:0,eta:0,L:0,np:0,rate:0,rateStop:0,tChange:0,machP:0,life:0,toolPrice:0,edges:0,insP:0,bodyP:0,bodyLife:0,batch:0},
   cmp:{A:null,B:null},cmpNames:{A:'',B:''},lastSpeed:'vc',lastFeed:'fz'};
 /* tipo utensile effettivo: tornitura sempre a inserti, maschiatura sempre integrale */
 function effType(m){m=m||cut.mode; return m==='turn'?'insert':(m==='tap'?'mdi':cut.toolType);}
@@ -2082,6 +2081,9 @@ function setToolType(tp){ if(tp!=='mdi'&&tp!=='insert')return; if(cut.toolType==
 function onCutInput(key){var data=cut[cut.mode]; data[key]=num($('#c_'+key).value);
   if(key==='vc')cut.lastSpeed='vc'; if(key==='n')cut.lastSpeed='n'; if(key==='fz')cut.lastFeed='fz'; if(key==='vf')cut.lastFeed='vf'; recompute(key);}
 function cell(k,v,u,cls){return '<div class="rcell '+(cls||'')+'"><div class="k">'+k+'</div><div class="v">'+v+(u?' <small>'+u+'</small>':'')+'</div></div>';}
+/* Rugosita teorica: costante e formula erano ripetute in 5 punti. */
+var RA_K=31.2;
+function raTeorica(f,re){return (f*f*1000)/(RA_K*(re||0.8));}
 function recompute(edited){
   var m=cut.mode,d=cut[m],PI=Math.PI;
   if(!(num(d.Dc)>0&&(num(d.vc)>0||num(d.n)>0))){
@@ -2107,12 +2109,12 @@ function recompute(edited){
     var r=Dc>0?ae/Dc:0; r=Math.max(0,Math.min(1,r)); var phideg=Math.acos(1-2*r)*180/PI;
     hm=phideg>0?(360*Math.sin(kr)*ae*fz)/(PI*Dc*phideg):0;
     hex=(r<=0.5)?fz*Math.sin(kr)*2*Math.sqrt(Math.max(0,ae*(Dc-ae)))/Dc:fz*Math.sin(kr);
-    Ra=(fz*fz*1000)/(31.2*(d.re||0.8));
+    Ra=raTeorica(fz,d.re);
     h=cell('n',fmt(n,n>=1000?0:1),'rpm')+cell('Vc',fmt(vc,1),'m/min')+cell('Vf',fmt(vf,0),'mm/min')+
       cell('fz',fmt(fz,4),'mm')+cell('fn',fmt(fn,3),'mm/g')+cell('Q',fmt(Q,Q>=100?0:Q>=10?1:2),'cm³/min','alt hero')+
       cell('hₘ',fmt(hm,4),'mm')+cell('hₑₓ',fmt(hex,4),'mm')+cell('Ra',fmt(Ra,2),'µm','warn');
   } else if(m==='turn'){
-    fn=d.fn; vf=fn*n; Q=vc*d.ap*fn; Ra=(fn*fn*1000)/(31.2*(d.re||0.8));
+    fn=d.fn; vf=fn*n; Q=vc*d.ap*fn; Ra=raTeorica(fn,d.re);
     h=cell('n',fmt(n,n>=1000?0:1),'rpm')+cell('Vc',fmt(vc,1),'m/min')+cell('Vf',fmt(vf,0),'mm/min')+
       cell('fn',fmt(fn,3),'mm/g')+cell('Q',fmt(Q,Q>=100?0:Q>=10?1:2),'cm³/min','alt hero')+cell('Ra',fmt(Ra,2),'µm','warn');
   } else if(m==='drill'){
@@ -2249,7 +2251,7 @@ function chartFeed(m,d,n,vc,curFeed){
   var fmax=Math.max((curFeed||0)*2,0.1),g=GRP[cut.matGroup],band=null;
   if(g&&g[m]){band=g[m].fz||g[m].fn; if(band)fmax=Math.max(fmax,band[1]*1.25);}
   function mrrOf(f){ if(m==='mill')return d.ap*d.ae*(f*z*n)/1000; if(m==='turn')return vc*d.ap*f; if(m==='drill')return (Math.PI/4)*d.Dc*d.Dc*(f*n)/1000; return 0;}
-  function raOf(f){return (f*f*1000)/(31.2*re);}
+  function raOf(f){return raTeorica(f,re);}
   var hasRa=(m==='mill'||m==='turn'),mrrMax=mrrOf(fmax)||1,raMax=raOf(fmax)||1;
   var W=300,H=185,padL=20,padR=12,padT=14,padB=28,x0=padL,x1=W-padR,y0=H-padB,y1=padT;
   function X(f){return x0+(f/fmax)*(x1-x0);}
@@ -2314,7 +2316,7 @@ function savFoot(A,B,nA,nB){
     '</tfoot>';
 }
 function cmpTableHTML(A,B,nA,nB){
-  var eA=esc(nA),eB=esc(nB),ML={mill:'Fresatura',turn:'Tornitura',drill:'Foratura',tap:'Filettatura'};
+  var eA=esc(nA),eB=esc(nB);
   function R(lbl,unit,dec,key,dir,fmtFn){var a=A?A[key]:null,b=B?B[key]:null;
     var ta=(a==null||isNaN(a))?'—':(fmtFn?fmtFn(a):fmt(a,dec)),tb=(b==null||isNaN(b))?'—':(fmtFn?fmtFn(b):fmt(b,dec)),wa='',wb='';
     if(dir&&a!=null&&b!=null&&!isNaN(a)&&!isNaN(b)&&a!==b){if((dir>0&&a>b)||(dir<0&&a<b))wa=' class="win"';else wb=' class="win"';}
@@ -2326,7 +2328,7 @@ function cmpTableHTML(A,B,nA,nB){
   var ppeL=etC?(etC==='mdi'?'Pezzi / utensile':'Pezzi / tagliente'):'Pezzi / tagliente o utensile',
       toolL=etC?(etC==='mdi'?'Costo utensile':'Costo taglienti'):'Costo utensile / taglienti';
   return '<div class="cb" style="padding:0"><div class="tbl-wrap"><table class="cmp"><thead><tr><th class="l">Parametro</th><th>'+eA+'</th><th>'+eB+'</th></tr></thead><tbody>'+
-    '<tr><td class="l">Operazione</td><td>'+(A?ML[A.mode]:'—')+'</td><td>'+(B?ML[B.mode]:'—')+'</td></tr>'+
+    '<tr><td class="l">Operazione</td><td>'+(A?MODE_TITLE[A.mode]:'—')+'</td><td>'+(B?MODE_TITLE[B.mode]:'—')+'</td></tr>'+
     R('Ø','mm',3,'Dc',0)+R('Vc','m/min',1,'vc',0)+R('n','rpm',0,'n',0)+
     '<tr><td class="l">Avanzamento <span class="u">mm</span></td><td>'+ft(A)+'</td><td>'+ft(B)+'</td></tr>'+
     R('Prof. assiale aₚ','mm',3,'ap',0)+R('Prof. radiale aₑ','mm',3,'ae',0)+
@@ -2430,9 +2432,7 @@ function holeLimits(L,g,d){var i=isoIdx(d);if(i<0)return null;var it=itVal(g,i);
   /* ISO 286-1: il delta si applica fino a IT8 per K/M/N, ma solo fino a IT7 per P..ZC. */
   var dmax=(low==='k'||low==='m'||low==='n')?8:7;
   var delta=g<=dmax?(itVal(g,i)-itVal(g-1,i)):0;var ES=-sd.v+delta;return{ES:ES,EI:ES-it,it:it};}
-var SHAFT_CLASSES=['a','b','c','cd','d','e','ef','f','fg','g','h','js','k','m','n','p','r','s','t','u','v','x','y','z','za','zb','zc'],HOLE_CLASSES=['A','B','C','CD','D','E','EF','F','FG','G','H','JS','K','M','N','P','R','S','T','U','V','X','Y','Z','ZA','ZB','ZC'],GRADES=[5,6,7,8,9,10,11,12];
-var PREF=[['H','7','g','6'],['H','7','h','6'],['H','7','k','6'],['H','7','n','6'],['H','7','p','6'],['H','7','s','6'],['H','7','f','7'],['H','8','f','7'],['H','9','d','9'],['H','11','d','11'],['H','7','js','6']];
-function fillSel(sel,arr,def){arr.forEach(function(v){var o=el('option'); o.value=v; o.textContent=v; if(v==def)o.selected=true; sel.appendChild(o);});}
+var SHAFT_CLASSES=['a','b','c','cd','d','e','ef','f','fg','g','h','js','k','m','n','p','r','s','t','u','v','x','y','z','za','zb','zc'],HOLE_CLASSES=['A','B','C','CD','D','E','EF','F','FG','G','H','JS','K','M','N','P','R','S','T','U','V','X','Y','Z','ZA','ZB','ZC'];
 var TOL_GRADES=[5,6,7,8,9,10,11,12,13,14];
 var TOL_PRE_S=['h7','g6','f7','e8','d9','h6','k6','m6','n6','p6','js6','h9','c11','a11'],TOL_PRE_H=['H7','H8','G7','F8','E9','D10','K7','N7','P7','JS7','H11','C11'];
 function tolSideV(){var b=$('#tolSide button.on');return b?b.getAttribute('data-s'):'albero';}
@@ -2460,7 +2460,8 @@ function renderTol(){var side=tolSideV(),d=num($('#tolD').value),L=$('#tolL').va
   '</div></div>';}
 ['tolD','tolL','tolG'].forEach(function(id){var e=$('#'+id);e.addEventListener('input',renderTol);e.addEventListener('change',renderTol);});
 $$('#tolSide button').forEach(function(b){b.addEventListener('click',function(){$$('#tolSide button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); buildTolLetters(); renderTol();});});
-function buildITTable(){var grades=[5,6,7,8,9,10,11,12,13,14,15,16];
+/* Nessun contenitore #itTable: guardia finche la tabella IT non viene collegata. */
+function buildITTable(){if(!$('#itTable'))return; var grades=[5,6,7,8,9,10,11,12,13,14,15,16];
   var hr='<tr><th class="l">Campo Ø<span class="u">mm</span></th>'; grades.forEach(function(g){hr+='<th>IT'+g+'</th>';}); hr+='</tr>'; $('#itTable thead').innerHTML=hr;
   $('#itTable tbody').innerHTML=ISO.bounds.map(function(b,i){var r='<tr><td class="l key">'+(b[0]===0?'≤ '+b[1]:b[0]+'–'+b[1])+'</td>';
     grades.forEach(function(g){r+='<td>'+ISO.IT[g][i]+'</td>';}); return r+'</tr>';}).join('');}
@@ -2591,7 +2592,8 @@ $('#thrSearch').addEventListener('input',function(){var q=this.value.trim().toLo
 /* ================= TORQUE ================= */
 var TORQUE=[['M4',3.0,4.4,5.1],['M5',5.9,8.7,10],['M6',10,15,18],['M8',25,36,43],['M10',49,72,84],['M12',85,125,145],
   ['M14',135,200,235],['M16',210,310,365],['M18',290,405,485],['M20',410,580,690],['M22',550,780,930],['M24',710,1000,1200],['M27',1050,1500,1800],['M30',1450,2000,2400]];
-function buildTorque(){$('#tTorque thead').innerHTML='<tr><th class="l">Vite</th><th>8.8<span class="u">Nm</span></th><th>10.9<span class="u">Nm</span></th><th>12.9<span class="u">Nm</span></th></tr>';
+/* Dataset coppie di serraggio pronto ma senza contenitore #tTorque. */
+function buildTorque(){if(!$('#tTorque'))return; $('#tTorque thead').innerHTML='<tr><th class="l">Vite</th><th>8.8<span class="u">Nm</span></th><th>10.9<span class="u">Nm</span></th><th>12.9<span class="u">Nm</span></th></tr>';
   $('#tTorque tbody').innerHTML=TORQUE.map(function(r){return '<tr><td class="l key">'+r[0]+'</td><td>'+itc(r[1])+'</td><td>'+itc(r[2])+'</td><td>'+itc(r[3])+'</td></tr>';}).join('');}
 
 /* ================= ARCHIVIO ================= */
@@ -2714,7 +2716,7 @@ function archCardHTML(r){
     mc('Vita utensile',me.toollife)+mc('Tipo usura',me.weartype)+mc('Entità usura',me.wearlevel,wcls)+
     mc('Finitura Ra µm',me.ra)+mc('Articolo',me.article);
   var operator=me.operator?'<div class="meta"><div><span>Operatore:</span> '+esc(me.operator)+'</div></div>':'';
-  function mlink(lbl,v){if(!v)return ''; var s=esc(v),ok=false; try{var u=new URL(v); ok=(u.protocol==='http:'||u.protocol==='https:');}catch(e){ok=false;} var inner=ok?'<a href="'+s+'" target="_blank" rel="noopener noreferrer">'+s+'</a>':s; return '<div><span>'+esc(lbl)+':</span> '+inner+'</div>';}
+  function mlink(lbl,v){if(!v)return ''; return '<div><span>'+esc(lbl)+':</span> '+safeLinkHTML(v)+'</div>';}
   var media=(me.video||me.photo)?'<div class="meta media">'+mlink('🎥 Video',me.video)+mlink('📷 Foto',me.photo)+'</div>':'';
   var notes=me.notes?'<div class="notes">'+esc(me.notes)+'</div>':'';
   var rid=esc(r.id);
@@ -2724,14 +2726,21 @@ function archCardHTML(r){
 }
 /* ---- Scheda completa di una prova (overlay + PDF) ---- */
 var DET_ID=null;
+/* Politica unica per i link inseriti dall'utente: le tre copie erano gia divergenti
+   (new URL nella scheda, regex piu debole nei due dettagli). */
+function safeLinkHTML(v){var t=esc(v),ok=false; try{var u=new URL(v); ok=(u.protocol==='http:'||u.protocol==='https:');}catch(e){ok=false;}
+  return ok?'<a href="'+t+'" target="_blank" rel="noopener noreferrer">'+t+'</a>':t;}
+/* Formattatori comuni alle schede: erano ridichiarati dentro tre funzioni. */
+function n0(v,d){return (v==null||v===''||isNaN(+v)||+v===0)?'':fmt(+v,d);}
+function eu(v,d){return (v==null||v===''||isNaN(+v)||+v===0)?'':itc(fmt(+v,d==null?2:d));}
+function dc(k,v,txt){return detCell(k,v,txt);}
 function detCell(k,v,txt){return (v==null||v===''||v==='—')?'':'<div class="det-cell'+(txt?' txt':'')+'"><div class="k">'+esc(k)+'</div><div class="v">'+(txt===true?esc(v):v)+'</div></div>';}
 function compareDetailHTML(r){
   var me=r.meta||{},A=r.cmp.A,B=r.cmp.B,nA=(r.cmpNames&&r.cmpNames.A)||'A',nB=(r.cmpNames&&r.cmpNames.B)||'B',mt=MODE_TITLE[r.mode]||r.mode;
   var title=esc(r.name||(nA+' vs '+nB));
   var matRow=(me.matdb&&typeof findMat==='function')?findMat(me.matdb):null,grp=matRow?matRow[3]:'',fam=(grp&&GRP[grp])?GRP[grp].family:'';
-  function dc(k,v,txt){return detCell(k,v,txt);}
   function sec(t,rows){return rows?'<div class="det-sec"><h4>'+t+'</h4><div class="det-grid">'+rows+'</div></div>':'';}
-  function mlinkCell(lbl,v){if(!v)return ''; var s=esc(v),inner=/^https?:\/\//i.test(v)?'<a href="'+s+'" target="_blank" rel="noopener noreferrer">'+s+'</a>':s; return '<div class="det-cell txt"><div class="k">'+esc(lbl)+'</div><div class="v">'+inner+'</div></div>';}
+  function mlinkCell(lbl,v){if(!v)return ''; return '<div class="det-cell txt"><div class="k">'+esc(lbl)+'</div><div class="v">'+safeLinkHTML(v)+'</div></div>';}
   var matRows=dc('Materiale',me.matdb||me.material,true)+(grp?dc('Gruppo ISO',grp+(fam?' · '+fam:''),true):'')+dc('Norma',me.norm,true)+dc('Durezza',me.hardness,true)+dc('Trattamento termico',me.condition,true);
   var macRows=dc('Macchina',me.machine,true)+dc('Stato macchina',me.machstate,true)+dc('Staffaggio',me.fixture,true)+dc('Refrigerante',me.coolant,true)+dc('Pressione refrig. (bar)',me.coolbar,true)+dc('Applicazione',me.application,true);
   var media=mlinkCell('🎥 Video',me.video)+mlinkCell('📷 Foto',me.photo);
@@ -2747,9 +2756,6 @@ function compareDetailHTML(r){
 }
 function strategyToolSec(label,S){
   if(!S)return ''; var t=S.toolId||{},pw=S.pwSnap||{},inp=S.inputs||{},et=S.etype||'insert',mode=S.mode;
-  function dc(k,v,txt){return detCell(k,v,txt);}
-  function n0(v,d){return (v==null||v===''||isNaN(+v)||+v===0)?'':fmt(+v,d);}
-  function eu(v,d){return (v==null||v===''||isNaN(+v)||+v===0)?'':itc(fmt(+v,d==null?2:d));}
   var feed=S.feedLbl?(S.feedLbl+' '+itc(fmt(S.feedVal,S.feedLbl==='fz'?4:3))+' mm'):'';
   var rows=dc('Tipo utensile',et==='mdi'?'Integrale (MDI)':'A inserti',true)+dc('Fabbricante',t.maker,true);
   if(et==='mdi')rows+=dc('Codice utensile',t.code,true);
@@ -2767,13 +2773,10 @@ function recDetailHTML(r){
   var etype=me.toolType||o.etype||(m==='turn'?'insert':(m==='tap'?'mdi':'insert'));
   var title=esc(r.name||me.article||mt);
   var matRow=(me.matdb&&typeof findMat==='function')?findMat(me.matdb):null, grp=matRow?matRow[3]:'', fam=(grp&&GRP[grp])?GRP[grp].family:'';
-  function n0(v,d){return (v==null||v===''||isNaN(+v)||+v===0)?'':fmt(+v,d);}
-  function eu(v,d){return (v==null||v===''||isNaN(+v)||+v===0)?'':itc(fmt(+v,d==null?2:d));}
   var feed=o.feedLbl?(o.feedLbl+' '+itc(fmt(o.feedVal,o.feedLbl==='fz'?4:3))+' mm'):'';
   var apv=(inp.ap!=null&&inp.ap!=='')?+inp.ap:(o.ap!=null?o.ap:null);
   var aev=(inp.ae!=null&&inp.ae!=='')?+inp.ae:(o.ae!=null?o.ae:null);
-  var fRa=(m==='mill'||m==='turn')?o.feedVal:0, raTeo=(fRa>0)?(fRa*fRa*1000)/(31.2*(inp.re||0.8)):null;
-  function dc(k,v,txt){return detCell(k,v,txt);}
+  var fRa=(m==='mill'||m==='turn')?o.feedVal:0, raTeo=(fRa>0)?raTeorica(fRa,inp.re):null;
   function hc(k,v,u){return (v==null||v==='')?'':'<div class="det-cell hero"><div class="k">'+esc(k)+'</div><div class="v">'+v+(u?' <small>'+u+'</small>':'')+'</div></div>';}
   function sec(t,rows){return rows?'<div class="det-sec"><h4>'+t+'</h4><div class="det-grid">'+rows+'</div></div>':'';}
   // 1 · Materiale
@@ -2826,8 +2829,7 @@ function recDetailHTML(r){
       (fcHtml?'<div class="det-chart"><div class="dc-h">MRR e Ra vs avanzamento</div>'+fcHtml+'</div>':'')+'</div></div>';
   }
   // 9 · Conclusioni / media
-  function mlinkCell(lbl,v){if(!v)return ''; var s=esc(v); var inner=/^https?:\/\//i.test(v)?'<a href="'+s+'" target="_blank" rel="noopener noreferrer">'+s+'</a>':s;
-    return '<div class="det-cell txt"><div class="k">'+esc(lbl)+'</div><div class="v">'+inner+'</div></div>';}
+  function mlinkCell(lbl,v){if(!v)return ''; return '<div class="det-cell txt"><div class="k">'+esc(lbl)+'</div><div class="v">'+safeLinkHTML(v)+'</div></div>';}
   var media=mlinkCell('🎥 Video',me.video)+mlinkCell('📷 Foto',me.photo);
   var concl=(me.notes||media)?'<div class="det-sec"><h4>9 · Conclusioni / Note</h4>'+(me.notes?'<div class="det-notes">'+esc(me.notes)+'</div>':'')+(media?'<div class="det-grid" style="margin-top:10px">'+media+'</div>':'')+'</div>':'';
   var consBits=[me.client&&('Cliente: '+me.client),me.agent&&('Agente: '+me.agent),me.part&&('Componente: '+me.part)].filter(Boolean);
@@ -3196,7 +3198,7 @@ function renderTurnFin(){var out=$('#tfOut'); if(!out)return;
   var Ra=num($('#tfRa').value),re=num($('#tfRe').value),marg=num($('#tfMarg').value)/100;
   var mv=$('#tfMargVal'); if(mv)mv.textContent=Math.round(marg*100)+'%';
   if(Ra<=0||re<=0){out.innerHTML='<div class="warnbox">Inserisci Ra desiderata e raggio punta maggiori di 0.</div>';return;}
-  var fnTeo=Math.sqrt(Ra*re*31.2/1000),fn=fnTeo*(1-marg),g=nGrade(Ra);
+  var fnTeo=Math.sqrt(Ra*re*RA_K/1000),fn=fnTeo*(1-marg),g=nGrade(Ra);
   out.innerHTML=roughResBox('Avanzamento consigliato fn',itc(fmt(fn,3)),'mm/giro','teorico '+itc(fmt(fnTeo,3))+' mm/g · margine '+Math.round(marg*100)+'%'+(marg>0?' (−'+itc(fmt((fnTeo-fn),3))+')':'')+' · per Ra '+itc(fmt(Ra,2))+' µm · rε '+itc(fmt(re,2))+' mm'+(g?' · grado ≈ '+g[0]+' '+g[3]:''));}
 function renderMillFin(){var out=$('#mfOut'); if(!out)return;
   var Dc=num($('#mfDc').value),ae=num($('#mfAe').value);
