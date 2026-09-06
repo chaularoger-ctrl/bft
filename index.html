@@ -1146,7 +1146,13 @@ function buildCrumb(){var c=$('#crumb');
   if(V.view==='archive'){c.textContent='Archivio'; return;}
   var name={tol:'Tolleranze',thread:'Filettature',rough:'Rugosità',units:'Convertitore'}[V.tsub];
   c.innerHTML='Tabelle<span class="sep">/</span><span class="dim">'+name+'</span>';}
+/* Il video hero resta in loop anche con la Home nascosta (display:none non ferma
+   la decodifica): su tablet e consumo di CPU e batteria per tutto il turno. */
+function heroVideo(on){var v=$('#hvMedia'); if(!v)return;
+  var rm=false; try{rm=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);}catch(e){}
+  try{ if(on&&!rm){var pr=v.play(); if(pr&&pr.catch)pr.catch(function(){});} else if(!v.paused)v.pause(); }catch(e){}}
 function render(){
+  heroVideo(V.view==='home');
   $$('.view').forEach(function(s){s.classList.toggle('on',s.id==='view-'+V.view);});
   var sn=$('#subnav');
   if(V.view==='home'){sn.classList.add('hidden'); buildCrumb(); persistNav(); window.scrollTo(0,0); return;}
@@ -2629,10 +2635,18 @@ function fillArchSelects(){
 }
 function uniqVals(list,getter){var seen={},out=[]; list.forEach(function(r){var v=((getter(r)||'')+'').trim(); if(v&&!seen[v]){seen[v]=1;out.push(v);}}); out.sort(function(a,b){return a.localeCompare(b);}); return out;}
 function fillDynSel(sel,label,values){var s=$(sel); if(!s)return; var cur=s.value; s.innerHTML=optS('',label)+values.map(function(x){return optS(x);}).join(''); s.value=(values.indexOf(cur)>=0)?cur:'';}
+var _dynSig=null;
 function fillDynFilters(list){
-  fillDynSel('#fMachine','Tutte le macchine',uniqVals(list,function(r){return (r.meta||{}).machine;}));
-  fillDynSel('#fTool','Tutti gli utensili',uniqVals(list,function(r){return (r.meta||{}).tool;}));
-  fillDynSel('#fOperator','Tutti gli operatori',uniqVals(list,function(r){return (r.meta||{}).operator;}));
+  var ma=uniqVals(list,function(r){return (r.meta||{}).machine;}),
+      to=uniqVals(list,function(r){return (r.meta||{}).tool;}),
+      op=uniqVals(list,function(r){return (r.meta||{}).operator;});
+  /* Ricerca e filtri non cambiano l'insieme dei valori distinti: senza questa
+     guardia i tre select venivano distrutti e ricreati a ogni battuta. */
+  var sig=ma.join('\u0001')+'\u0002'+to.join('\u0001')+'\u0002'+op.join('\u0001');
+  if(sig===_dynSig)return; _dynSig=sig;
+  fillDynSel('#fMachine','Tutte le macchine',ma);
+  fillDynSel('#fTool','Tutti gli utensili',to);
+  fillDynSel('#fOperator','Tutti gli operatori',op);
 }
 function updateArchCount(){var n=archLoad().length,e=$('#archHomeCount'); if(e)e.textContent=n+(n===1?' prova':' prove');}
 function metaFromForm(m){return {article:gv('#a_article'),material:(cut.matGroup&&GRP[cut.matGroup]?GRP[cut.matGroup].family:''),norm:gv('#j_norm'),hardness:gv('#j_hardness'),
@@ -3274,6 +3288,13 @@ if('serviceWorker' in navigator){
       if(go)go.onclick=function(){var w=reg.waiting||reg.installing; b.hidden=true; if(w){wantReload=true; w.postMessage({type:'SKIP_WAITING'});} else {window.location.reload();}};
       if(x)x.onclick=function(){b.hidden=true;};
     }
+    /* Il precache del video (6,9 MB) parte a pagina ferma: in activate competeva
+       con lo streaming del <video> stesso, raddoppiando il traffico al 1o avvio. */
+    window.addEventListener('load',function(){
+      try{var cn=navigator.connection; if(cn&&(cn.saveData||/(^|-)2g$/.test(cn.effectiveType||'')))return;}catch(e){}
+      var go=function(){try{if(navigator.serviceWorker.controller)navigator.serviceWorker.controller.postMessage({type:'PRECACHE_MEDIA'});}catch(e){}};
+      if(window.requestIdleCallback)requestIdleCallback(go,{timeout:8000}); else setTimeout(go,4000);
+    });
     navigator.serviceWorker.register('sw.js').then(function(reg){
       if(reg.waiting && navigator.serviceWorker.controller)showUpdate(reg);
       reg.addEventListener('updatefound',function(){

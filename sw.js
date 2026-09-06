@@ -1,6 +1,6 @@
 /* Service worker BFT HUB — funzionamento offline e installazione PWA.
  * Cambia CACHE_VERSION quando aggiorni l'app per forzare il refresh della cache. */
-const CACHE_VERSION = 'bft-calc-v45';
+const CACHE_VERSION = 'bft-calc-v46';
 // Cache media separata e NON versionata: il video pesante sopravvive agli update dell'app.
 const MEDIA_CACHE = 'bft-media-v1';
 
@@ -29,8 +29,17 @@ self.addEventListener('install', (event) => {
 });
 
 // La pagina chiede l'attivazione immediata quando l'utente tocca "Aggiorna".
+function precacheMedia() {
+  return caches.open(MEDIA_CACHE).then((c) =>
+    c.match('./media/hero.mp4').then((hit) => (hit ? null : c.add('./media/hero.mp4').catch(() => {})))
+  );
+}
+
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+  if (!event.data) return;
+  if (event.data.type === 'SKIP_WAITING') self.skipWaiting();
+  // La pagina lo invia a caricamento finito e connessione non a consumo ridotto.
+  if (event.data.type === 'PRECACHE_MEDIA') event.waitUntil(precacheMedia());
 });
 
 self.addEventListener('activate', (event) => {
@@ -41,10 +50,8 @@ self.addEventListener('activate', (event) => {
       ))
       .then(() => self.clients.claim())
   );
-  // Precache del video fuori dal waitUntil: non ritarda l'attivazione né la prima apertura.
-  caches.open(MEDIA_CACHE).then((c) =>
-    c.match('./media/hero.mp4').then((hit) => { if (!hit) c.add('./media/hero.mp4').catch(() => {}); })
-  );
+  // Il video NON si precarica qui: competerebbe con lo streaming del <video> della
+  // Home, raddoppiando il traffico al primo avvio. Lo chiede la pagina a riposo.
 });
 
 self.addEventListener('fetch', (event) => {
