@@ -1157,7 +1157,7 @@ function render(){
   tabs.forEach(function(t){var b=el('button',{'class':'stab'+(t[0]===active?' on':'')},t[1]);
     b.addEventListener('click',function(){ if(V.view==='calc')V.mode=t[0]; else V.tsub=t[0]; render(); });
     st.appendChild(b);});
-  if(V.view==='calc'){cut.mode=V.mode; buildCutInputs(); buildPwInputs(); recompute(null);}
+  if(V.view==='calc'){ if(cut.mode!==V.mode){cut.lastSpeed='vc'; cut.lastFeed='fz';} cut.mode=V.mode; buildCutInputs(); buildPwInputs(); recompute(null);}
   else {$$('.tsub').forEach(function(x){x.classList.toggle('on',x.id==='tab-'+V.tsub);});}
   buildCrumb(); persistNav(); window.scrollTo(0,0);
 }
@@ -2026,21 +2026,21 @@ function buildCutInputs(){
       return;
     }
     if(f[3]&&f[3].type==='sel'){
-      var qs=HELP[key]?' <button type="button" class="qmark" data-k="'+key+'" aria-label="Aiuto">?</button>':'';
+      var qs=HELP[key]?' <button type="button" class="qmark" data-k="'+key+'" data-t="fhint_c_'+key+'" aria-label="Aiuto">?</button>':'';
       d.innerHTML='<label>'+f[1]+qs+'</label>';
       if(!data[key])data[key]=f[3].opts[0];
       var ssel=el('select',{id:'c_'+key});
       f[3].opts.forEach(function(o){var op=el('option',{value:o},o); if(data[key]===o)op.selected=true; ssel.appendChild(op);});
       d.appendChild(ssel);
-      if(HELP[key]){var fhs=el('div',{'class':'fhint',id:'fhint_'+key}); fhs.hidden=true; fhs.innerHTML=HELP[key]; d.appendChild(fhs);}
+      if(HELP[key]){var fhs=el('div',{'class':'fhint',id:'fhint_c_'+key}); fhs.hidden=true; fhs.innerHTML=HELP[key]; d.appendChild(fhs);}
       g.appendChild(d);
       ssel.addEventListener('change',function(){data[key]=ssel.value; recompute(null); persistCut();});
       return;
     }
-    var q=HELP[key]?' <button type="button" class="qmark" data-k="'+key+'" aria-label="Aiuto">?</button>':'';
+    var q=HELP[key]?' <button type="button" class="qmark" data-k="'+key+'" data-t="fhint_c_'+key+'" aria-label="Aiuto">?</button>':'';
     d.innerHTML='<label>'+f[1]+' <span class="u">'+f[2]+'</span>'+q+'</label>';
     var inp=el('input',{type:'number',id:'c_'+key,step:'any',inputmode:'decimal'}); if(PH[key])inp.placeholder=PH[key]; inp.value=data[key]?data[key]:''; d.appendChild(inp);
-    if(HELP[key]){var fh=el('div',{'class':'fhint',id:'fhint_'+key}); fh.hidden=true; fh.innerHTML=HELP[key]; d.appendChild(fh);}
+    if(HELP[key]){var fh=el('div',{'class':'fhint',id:'fhint_c_'+key}); fh.hidden=true; fh.innerHTML=HELP[key]; d.appendChild(fh);}
     g.appendChild(d);
     inp.addEventListener('input',(function(k){return function(){onCutInput(k);};})(key));
   });
@@ -2217,7 +2217,7 @@ function chartCmpBars(A,B,nA,nB){
     inner+=bar(xa,a,'bar-a',winA)+bar(xb,b,'bar-b',winB)+chTxt('lbl',cx,baseY+15,mm[1],'middle')+chTxt('tick',cx,baseY+26,mm[2],'middle');
   });
   return '<div class="chart-box"><div class="chart-h">Confronto a colpo d’occhio</div>'+svgEl(W,H,inner)+
-    '<div class="chart-legend"><span><i style="background:var(--yellow)"></i>'+esc(nA)+'</span><span><i style="background:var(--muted-2)"></i>'+esc(nB)+'</span><span>★ = migliore</span></div></div>';
+    '<div class="chart-legend"><span><i style="background:var(--yellow)"></i>'+esc(nA)+'</span><span><i style="background:var(--muted-2)"></i>'+esc(nB)+'</span><span><i style="background:transparent;border:2px solid var(--ok-fg)"></i>bordo verde = migliore</span></div></div>';
 }
 function chartKc(kc11,mc,hm,kcEff){
   if(!(kc11>0))return '';
@@ -2279,8 +2279,14 @@ function persistCut(){ if(_pcTimer)clearTimeout(_pcTimer); _pcTimer=setTimeout(f
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&_pcTimer){clearTimeout(_pcTimer);_pcTimer=null;persistCutNow();}});
 window.addEventListener('pagehide',function(){if(_pcTimer){clearTimeout(_pcTimer);_pcTimer=null;persistCutNow();}});
 function svuotaCut(){var m=cut.mode; CUTFIELDS[m].forEach(function(f){if(f[3]&&f[3].type==='preset'){var sp=$('#c_preset'); if(sp)sp.value=''; return;} cut[m][f[0]]=0; var e=$('#c_'+f[0]); if(e)e.value='';});
-  ['kc','L','rate','tool'].forEach(function(k){cut.pw[k]=0; var e=$('#p_'+k); if(e)e.value='';});
-  CUTLAST=null; if($('#rgrid'))$('#rgrid').innerHTML=''; if($('#pwgrid'))$('#pwgrid').innerHTML=''; persistCut(); showToast('Campi svuotati');}
+  /* Tutti i campi dichiarati di potenza/economia: la vecchia lista scritta a mano
+     ne azzerava 3 su 15, lasciando prezzi utensile, lotto e potenza della prova
+     precedente a falsare il costo/pezzo successivo. */
+  var pkeys={}; [PWF,ECOF_BASE,ECOF_MDI,ECOF_INS].forEach(function(L){L.forEach(function(f){pkeys[f[0]]=1;});});
+  Object.keys(pkeys).forEach(function(k){cut.pw[k]=0; var e=$('#p_'+k); if(e)e.value='';});
+  /* recompute() con i campi vuoti esegue gia il reset completo di griglie,
+     pannelli consiglio, grafici e stepper: riusarlo evita una lista parallela. */
+  recompute(null); showToast('Campi svuotati');}
 function saveCmp(slot){if(!CUTLAST){showToast('Nessun dato da salvare');return;}
   var snap=JSON.parse(JSON.stringify(CUTLAST));
   snap.toolId=JSON.parse(JSON.stringify(cut.toolId)); snap.tool=toolLabel();
@@ -2308,16 +2314,21 @@ function cmpTableHTML(A,B,nA,nB){
     if(dir&&a!=null&&b!=null&&!isNaN(a)&&!isNaN(b)&&a!==b){if((dir>0&&a>b)||(dir<0&&a<b))wa=' class="win"';else wb=' class="win"';}
     return '<tr><td class="l">'+lbl+(unit?' <span class="u">'+unit+'</span>':'')+'</td><td'+wa+'>'+ta+'</td><td'+wb+'>'+tb+'</td></tr>';}
   function ft(S){return S?S.feedLbl+' '+itc(fmt(S.feedVal,S.feedLbl==='fz'?4:3)):'—';}
+  /* Utensile integrale (MDI) e a inserti hanno terminologia diversa: recompute la
+     distingue gia, qui era fissa da inserti anche confrontando due integrali. */
+  var etA=A&&A.etype,etB=B&&B.etype,etC=(etA&&etB)?(etA===etB?etA:null):(etA||etB||null);
+  var ppeL=etC?(etC==='mdi'?'Pezzi / utensile':'Pezzi / tagliente'):'Pezzi / tagliente o utensile',
+      toolL=etC?(etC==='mdi'?'Costo utensile':'Costo taglienti'):'Costo utensile / taglienti';
   return '<div class="cb" style="padding:0"><div class="tbl-wrap"><table class="cmp"><thead><tr><th class="l">Parametro</th><th>'+eA+'</th><th>'+eB+'</th></tr></thead><tbody>'+
     '<tr><td class="l">Operazione</td><td>'+(A?ML[A.mode]:'—')+'</td><td>'+(B?ML[B.mode]:'—')+'</td></tr>'+
     R('Ø','mm',3,'Dc',0)+R('Vc','m/min',1,'vc',0)+R('n','rpm',0,'n',0)+
     '<tr><td class="l">Avanzamento <span class="u">mm</span></td><td>'+ft(A)+'</td><td>'+ft(B)+'</td></tr>'+
     R('Prof. assiale aₚ','mm',3,'ap',0)+R('Prof. radiale aₑ','mm',3,'ae',0)+
     R('Vf','mm/min',0,'vf',1)+R('Q (MRR)','cm³/min',2,'Q',1)+R('Pc netto','kW',2,'Pc',0)+R('P motore','kW',2,'Pmot',0)+R('Mc','Nm',2,'Mc',0)+
-    R('Tc / pezzo','',3,'Tc',-1,fmtTime)+R('Percorso totale','',0,'pathTot',0,fmtPathMm)+R('Pezzi / tagliente','pz',1,'ppe',1)+R('Costo macchina','€/pz',3,'cMach',-1)+R('Costo taglienti','€/pz',3,'cTool',-1)+R('Costo fermi','€/pz',3,'cStop',-1)+
+    R('Tc / pezzo','',3,'Tc',-1,fmtTime)+R('Percorso totale','',0,'pathTot',0,fmtPathMm)+R(ppeL,'pz',1,'ppe',1)+R('Costo macchina','€/pz',3,'cMach',-1)+R(toolL,'€/pz',3,'cTool',-1)+R('Costo fermi','€/pz',3,'cStop',-1)+
     R('Costo / pezzo','€',3,'costPP',-1)+R('Costo lotto','€',2,'costLot',-1)+R('Inserti / lotto','pz',0,'insLot',-1)+R('Utensili / lotto','pz',0,'toolsLot',-1)+
     '</tbody>'+savFoot(A,B,nA,nB)+'</table></div></div>'+
-    ((function(){var bars=chartCmpBars(A,B,nA,nB); return bars?'<div class="cb" style="border-top:1px solid var(--line)">'+bars+'<div class="chart-cap">Barre affiancate delle due strategie. Per <b>MRR</b> vince la barra più alta (più produttiva); per <b>Tc</b> e <b>Costo</b> vince la più bassa (più veloce/economica). Il cerchietto verde segna il vincitore di ogni voce.</div></div>':'';})());
+    ((function(){var bars=chartCmpBars(A,B,nA,nB); return bars?'<div class="cb" style="border-top:1px solid var(--line)">'+bars+'<div class="chart-cap">Barre affiancate delle due strategie. Per <b>MRR</b> vince la barra più alta (più produttiva); per <b>Tc</b> e <b>Costo</b> vince la più bassa (più veloce/economica). Il bordo verde segna il vincitore di ogni voce.</div></div>':'';})());
 }
 function renderCmp(){var A=cut.cmp.A,B=cut.cmp.B,out=$('#cmpOut'); if(!out)return; document.body.classList.toggle('cmp-active',!!(A||B));
   if(A||B){var cp=$('#cmpPanel'),ct=$('#cmpToggle'); if(cp&&cp.hidden){cp.hidden=false; if(ct)ct.setAttribute('aria-expanded','true');}}
@@ -2579,7 +2590,9 @@ function buildTorque(){$('#tTorque thead').innerHTML='<tr><th class="l">Vite</th
 
 /* ================= ARCHIVIO ================= */
 var ARCH_KEY='archive';
-var MATERIALS=['Acciaio','Acciaio inox','Ghisa','Alluminio','Titanio/Superleghe','Rame/Ottone','Plastica/Composito','Altro'];
+/* Derivate da GRP: le voci scritte a mano ('Rame/Ottone','Altro') non
+   corrispondevano a nessuna famiglia salvata e il filtro restava sempre vuoto. */
+var MATERIALS=(function(){var out=[],seen={};for(var k in GRP){var f=GRP[k]&&GRP[k].family;if(f&&!seen[f]){seen[f]=1;out.push(f);}}return out.sort();})();
 var APPS=['Sgrossatura','Semifinitura','Finitura','Foratura','Filettatura','Troncatura','Scanalatura','Altro'];
 var RESULTS=['Positivo','Negativo','Da rivedere'];
 var COOLANTS=['Emulsione','Olio intero','Aria','MQL (lubr. minimale)','A secco','Alta pressione','Altro'];
@@ -2856,7 +2869,7 @@ function recMatches(r,f){
   if(f.coolant&&me.coolant!==f.coolant)return false;
   if(f.wear&&me.wearlevel!==f.wear)return false;
   if(f.from||f.to){var d=(''+(r.date||'')).slice(0,10); if(f.from&&d<f.from)return false; if(f.to&&d>f.to)return false;}
-  if(f.q){var hay=[r.name,me.article,me.material,me.norm,me.hardness,me.condition,me.machine,me.tool,me.operator,me.application,me.coolant,me.toollife,me.weartype,me.wearlevel,me.ra,me.notes,(r.cmpNames&&(r.cmpNames.A+' '+r.cmpNames.B)),MODE_TITLE[r.mode]].join(' ').toLowerCase();
+  if(f.q){var hay=[r.name,me.article,me.material,me.matdb,me.norm,me.hardness,me.condition,me.machine,me.tool,me.operator,me.application,me.coolant,me.toollife,me.weartype,me.wearlevel,me.ra,me.notes,(r.cmpNames&&(r.cmpNames.A+' '+r.cmpNames.B)),MODE_TITLE[r.mode]].join(' ').toLowerCase();
     if(hay.indexOf(f.q)<0)return false;}
   return true;
 }
@@ -2971,7 +2984,10 @@ function syncNow(){
     var cloud={}; docs.forEach(function(d){var r=fsDec(d); if(r&&r.id)cloud[r.id]=r;});
     var local=archLoad(), byId={}; local.forEach(function(r){byId[r.id]=r;});
     var map={}; local.forEach(function(r){map[r.id]=r;}); var changed=false;
-    Object.keys(cloud).forEach(function(id){var cr=cloud[id],lr=byId[id],lu=lr?(lr.updatedAt||Date.parse(lr.date)||0):-1;
+    /* Le cancellazioni non ancora confermate dal cloud vanno escluse dal merge,
+       altrimenti il record cancellato viene riscritto in locale e riappare. */
+    var pendingDel={}; tombLoad().forEach(function(t){pendingDel[t.id]=1;});
+    Object.keys(cloud).forEach(function(id){ if(pendingDel[id])return; var cr=cloud[id],lr=byId[id],lu=lr?(lr.updatedAt||Date.parse(lr.date)||0):-1;
       if((cr.updatedAt||0)>lu){ if(cr.deleted){ if(map[id]){delete map[id]; changed=true;} } else { map[id]=cr; changed=true; } }});
     var arr=[]; Object.keys(map).forEach(function(k){ if(!map[k].deleted)arr.push(map[k]); });
     arr.sort(function(a,b){return (''+(b.date||'')).localeCompare(''+(a.date||''));});
@@ -3046,7 +3062,7 @@ function toggleTheme(){setTheme(curTheme()==='dark'?'light':'dark');}
 function themeInit(){var b=$('#btnTheme'); if(b)b.addEventListener('click',toggleTheme); applyThemeUI();}
 
 /* ============ GUIDA: materiale, aiuti, sezioni collassabili ============ */
-var KCMAP={}; (function(){for(var i=0;i<KCDB.length;i++)KCMAP[KCDB[i][0].toLowerCase()]=KCDB[i];})();
+var KCMAP=Object.create(null); (function(){for(var i=0;i<KCDB.length;i++)KCMAP[KCDB[i][0].toLowerCase()]=KCDB[i];})();
 function buildKcList(){var dl=$('#kcList'); if(dl&&!dl.options.length){var frag=document.createDocumentFragment();
     for(var i=0;i<KCDB.length;i++)frag.appendChild(el('option',{value:KCDB[i][0]})); dl.appendChild(frag);}
   var ch=$('#matChips'); if(ch&&!ch.children.length){KC_CHIPS.forEach(function(c){var b=el('button',{type:'button','data-term':c[1]},c[0]); ch.appendChild(b);});}}
@@ -3080,15 +3096,16 @@ function rangeText(key){var g=GRP[cut.matGroup]; if(!g)return ''; var m=cut.mode
   else if(key==='fn'&&g[m]&&g[m].fn){r=g[m].fn;lbl='fn';}
   if(!r)return '';
   return '<br><b>Consigliato '+(g.label||'')+':</b> '+lbl+' '+itc(fmt(r[0],r[0]<10?2:0))+'–'+itc(fmt(r[1],r[1]<10?2:0));}
-function toggleHint(key){var fh=$('#fhint_'+key); if(!fh)return;
+function toggleHint(key,tid){var fh=$('#'+(tid||('fhint_'+key))); if(!fh)return;
   if(fh.hidden){fh.innerHTML=HELP[key]+rangeText(key); fh.hidden=false;} else fh.hidden=true;}
 function attachHints(sel){var root=$(sel); if(!root)return;
   Array.prototype.forEach.call(root.querySelectorAll('.f'),function(f){
     var ctrl=f.querySelector('input,select,textarea'); if(!ctrl||!ctrl.id)return;
     var key=ctrl.id.replace(/^[a-z]+_/,''); if(!HELP[key])return;
     var lab=f.querySelector('label'); if(!lab||lab.querySelector('.qmark'))return;
-    var b=el('button',{type:'button','class':'qmark','data-k':key,'aria-label':'Aiuto'}); b.textContent='?'; lab.appendChild(b);
-    if(!$('#fhint_'+key)){var fh=el('div',{'class':'fhint',id:'fhint_'+key}); fh.hidden=true; f.appendChild(fh);}
+    var hid='fhint_'+ctrl.id;
+    var b=el('button',{type:'button','class':'qmark','data-k':key,'data-t':hid,'aria-label':'Aiuto'}); b.textContent='?'; lab.appendChild(b);
+    if(!$('#'+hid)){var fh=el('div',{'class':'fhint',id:hid}); fh.hidden=true; f.appendChild(fh);}
   });}
 function wireCollapse(btnSel,panelSel){var b=$(btnSel),p=$(panelSel); if(!b||!p)return;
   b.addEventListener('click',function(){var open=p.hidden; p.hidden=!open; b.setAttribute('aria-expanded',open?'true':'false');});}
@@ -3105,7 +3122,7 @@ function wireGuide(){
   var ch=$('#matChips'); if(ch)ch.addEventListener('click',function(e){var b=e.target.closest('button[data-term]'); if(b)resolveMaterial(b.getAttribute('data-term'));});
   applyMatHint(); markChips();
   attachHints('#jobCard'); attachHints('#archCard'); attachHints('#tab-tol'); attachHints('#tab-thread'); attachHints('#tab-rough'); attachHints('#tab-units');
-  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.qmark'); if(b){e.preventDefault(); toggleHint(b.getAttribute('data-k'));}});
+  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.qmark'); if(b){e.preventDefault(); toggleHint(b.getAttribute('data-k'),b.getAttribute('data-t'));}});
   wireCollapse('#cmpToggle','#cmpPanel'); wireCollapse('#detToggle','#archDetails'); wireCollapse('#archFiltToggle','#archFilters');
   var det=$('#archDetails'); if(det)det.addEventListener('input',updateDetCnt); updateDetCnt();
   var ob=$('#onboard'); if(ob){ if(!store.get('seen1'))ob.hidden=false; var obx=$('#obClose'); if(obx)obx.addEventListener('click',function(){ob.hidden=true; store.set('seen1','1');}); }
@@ -3229,7 +3246,11 @@ if($('#useg'))$('#useg').addEventListener('click',function(e){var b=e.target.clo
   ['mat','matGroup','toolType','lastSpeed','lastFeed'].forEach(function(k){if(typeof c2[k]==='string')cut[k]=c2[k];});
   ['kc11','mc'].forEach(function(k){if(typeof c2[k]==='number')cut[k]=c2[k];});
   ['mill','turn','drill','tap','pw','cmp','cmpNames','toolId'].forEach(function(k){if(c2[k]&&typeof c2[k]==='object')cut[k]=c2[k];});
-  var ms=$('#c_matSearch'); if(ms)ms.value=cut.mat||''; applyMatHint(); markChips();
+  var ms=$('#c_matSearch'); if(ms)ms.value=cut.mat||'';
+  /* Senza questo la tabella mostrava i nomi ripristinati ma i campi restavano
+     vuoti, e il primo carattere digitato sostituiva l'intero nome. */
+  if(cut.cmpNames){var nA=$('#nameA'),nB=$('#nameB'); if(nA)nA.value=cut.cmpNames.A||''; if(nB)nB.value=cut.cmpNames.B||'';}
+  applyMatHint(); markChips();
 }catch(e){}})();
 buildTolLetters(); renderTol(); buildThreadFamilies(); fillDrawFam(); fillDrawSize('mc'); (function(){var rs=THR.fam.mc.rows; for(var i=0;i<rs.length;i++){if(rs[i][0]===8&&rs[i][1]===1.25){$('#drawSize').value=i;break;}}})(); renderDraw(); wireThreadRows(); renderRoughTbl(); renderTurnFin(); renderMillFin(); setRsub(V.rsub); cvLen('mm'); cvAng('deg'); hardConv(); cvRough(); setUsub(V.usub); renderCmp(); archInit(); themeInit(); wireGuide();
 go('home');

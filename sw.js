@@ -1,6 +1,6 @@
 /* Service worker BFT HUB — funzionamento offline e installazione PWA.
  * Cambia CACHE_VERSION quando aggiorni l'app per forzare il refresh della cache. */
-const CACHE_VERSION = 'bft-calc-v44';
+const CACHE_VERSION = 'bft-calc-v45';
 // Cache media separata e NON versionata: il video pesante sopravvive agli update dell'app.
 const MEDIA_CACHE = 'bft-media-v1';
 
@@ -60,10 +60,10 @@ self.addEventListener('fetch', (event) => {
         const net = fetch(req).then((res) => {
           if (res && res.ok) {
             const copy = res.clone();
-            caches.open(CACHE_VERSION).then((c) => c.put('./index.html', copy));
+            caches.open(CACHE_VERSION).then((c) => c.put('./index.html', copy)).catch(() => {});
           }
           return res;
-        }).catch(() => cached || caches.match('./'));
+        }).catch(() => cached || caches.match('./').then((r) => r || Response.error()));
         return cached || net;
       })
     );
@@ -75,7 +75,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.open(MEDIA_CACHE).then((c) =>
         c.match(req).then((hit) => hit ||
-          fetch(req).then((res) => { if (res && res.status === 200) c.put(req, res.clone()); return res; })
+          fetch(req).then((res) => { if (res && res.status === 200) c.put(req, res.clone()).catch(() => {}); return res; })
         )
       )
     );
@@ -92,10 +92,10 @@ self.addEventListener('fetch', (event) => {
       fetch(req).then((res) => {
         if (res && (res.ok || res.type === 'opaque') && (sameOrigin || isFont)) {
           const copy = res.clone();
-          caches.open(CACHE_VERSION).then((c) => c.put(req, copy));
+          caches.open(CACHE_VERSION).then((c) => c.put(req, copy)).catch(() => {});
         }
         return res;
-      }).catch(() => cached)
+      }).catch(() => Response.error())
     )
   );
 });
